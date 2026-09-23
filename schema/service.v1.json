@@ -10,7 +10,8 @@
 		"versions",
 		"defaultVersion",
 		"port",
-		"healthcheck"
+		"healthcheck",
+		"primaryExport"
 	],
 	"properties": {
 		"id": {
@@ -63,6 +64,11 @@
 					"type": "string"
 				}
 			]
+		},
+		"categoryLabel": {
+			"minLength": 1,
+			"description": "Dashboard grouping label overriding the category name, e.g. Redis for redis and upstash-redis",
+			"type": "string"
 		},
 		"tags": {
 			"default": [],
@@ -243,6 +249,25 @@
 				}
 			}
 		},
+		"primaryExport": {
+			"pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+			"description": "Key of `exports` that is the service's connection URL (Copy URL, link.names renames, KEY in snippets)",
+			"type": "string"
+		},
+		"snippets": {
+			"type": "object",
+			"properties": {
+				"node": {
+					"type": "string"
+				},
+				"python": {
+					"type": "string"
+				},
+				"go": {
+					"type": "string"
+				}
+			}
+		},
 		"connect": {
 			"minItems": 1,
 			"type": "array",
@@ -288,6 +313,128 @@
 				"url": {
 					"description": "Template URL for iframe/link panels",
 					"type": "string"
+				}
+			}
+		},
+		"data": {
+			"type": "object",
+			"required": ["kind"],
+			"properties": {
+				"kind": {
+					"anyOf": [
+						{
+							"const": "sql",
+							"type": "string"
+						},
+						{
+							"const": "redis",
+							"type": "string"
+						},
+						{
+							"const": "none",
+							"type": "string"
+						}
+					]
+				},
+				"label": {
+					"minLength": 1,
+					"description": "Heading of the object list, e.g. Tables or Key patterns",
+					"type": "string"
+				},
+				"listObjects": {
+					"minItems": 1,
+					"description": "docker exec argv printing one object name per line on stdout (e.g. the public tables); items may be templates",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"objects": {
+					"minItems": 1,
+					"description": "Static object list for services whose objects cannot be listed (e.g. redis key patterns ['*'])",
+					"type": "array",
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					}
+				},
+				"runQuery": {
+					"minItems": 1,
+					"description": "docker exec argv printing the result as CSV (header row first) on stdout; one item is exactly {{query}}",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"defaultQuery": {
+					"minLength": 1,
+					"description": "Query prefilled when an object is selected; {{object}} is its name",
+					"type": "string"
+				}
+			}
+		},
+		"seed": {
+			"type": "object",
+			"required": ["mountPath", "fileName", "run"],
+			"properties": {
+				"mountPath": {
+					"pattern": "^/",
+					"description": "Absolute directory in the container, e.g. /docker-entrypoint-initdb.d",
+					"type": "string"
+				},
+				"fileName": {
+					"pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+					"description": "File name inside mountPath, e.g. seed.sql",
+					"type": "string"
+				},
+				"run": {
+					"minItems": 1,
+					"description": "docker exec argv applying the seed read from stdin, e.g. psql … -v ON_ERROR_STOP=1 -f -; items may be templates",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				}
+			}
+		},
+		"secretOptions": {
+			"additionalProperties": false,
+			"description": "Flags per secret name, e.g. bakedIntoVolume",
+			"type": "object",
+			"patternProperties": {
+				"^[A-Za-z_][A-Za-z0-9_]*$": {
+					"type": "object",
+					"properties": {
+						"bakedIntoVolume": {
+							"description": "The value is written into the data volume on first init (e.g. POSTGRES_PASSWORD): rotating it without wiping the volume would lock clients out, so rotateSecret refuses unless forced with wipeVolume",
+							"type": "boolean"
+						}
+					}
+				}
+			}
+		},
+		"import": {
+			"type": "object",
+			"required": ["images"],
+			"properties": {
+				"images": {
+					"minItems": 1,
+					"description": "Image repositories without tag, e.g. postgres, postgis/postgis, pgvector/pgvector",
+					"type": "array",
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					}
+				},
+				"env": {
+					"description": "Compose env var → config.<KEY> or secrets.<NAME> (in addition to same-name matches)",
+					"type": "object",
+					"patternProperties": {
+						"^[A-Za-z_][A-Za-z0-9_]*$": {
+							"pattern": "^(config|secrets)\\.[A-Za-z_][A-Za-z0-9_]*$",
+							"type": "string"
+						}
+					}
 				}
 			}
 		}

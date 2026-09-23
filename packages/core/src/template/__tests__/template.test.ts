@@ -8,20 +8,26 @@ import {
 import type { TemplateContext } from "../template.model";
 import { TemplateError } from "../template.model";
 
+const redis = {
+	host: "cache",
+	port: 6380,
+	secrets: { REDIS_PASSWORD: "r3dis" },
+	config: {},
+};
+
 const context: TemplateContext = {
+	name: "main-db",
 	version: "17",
 	port: 5433,
-	stack: { name: "sovr" },
-	config: { POSTGRES_USER: "postgres", POSTGRES_DB: "sovr" },
+	stack: { name: "shop" },
+	config: { POSTGRES_USER: "postgres", POSTGRES_DB: "shop" },
 	secrets: { POSTGRES_PASSWORD: "s3cret" },
 	services: {
-		redis: {
-			port: 6380,
-			secrets: { REDIS_PASSWORD: "r3dis" },
-			config: {},
-		},
-		"upstash-redis": { port: 8080, secrets: {}, config: {} },
+		redis,
+		cache: redis,
+		"upstash-redis": { host: "rest", port: 8080, secrets: {}, config: {} },
 	},
+	byType: { redis },
 };
 
 function thrown(fn: () => unknown): TemplateError {
@@ -41,11 +47,11 @@ describe("renderTemplate", () => {
 				"postgres://{{config.POSTGRES_USER}}:{{secrets.POSTGRES_PASSWORD}}@127.0.0.1:{{port}}/{{config.POSTGRES_DB}}",
 				context,
 			),
-		).toBe("postgres://postgres:s3cret@127.0.0.1:5433/sovr");
+		).toBe("postgres://postgres:s3cret@127.0.0.1:5433/shop");
 		expect(renderTemplate("postgres:{{version}}-alpine", context)).toBe(
 			"postgres:17-alpine",
 		);
-		expect(renderTemplate("{{stack.name}}", context)).toBe("sovr");
+		expect(renderTemplate("{{stack.name}}", context)).toBe("shop");
 	});
 
 	test("resolves dependency paths, including hyphenated ids", () => {
@@ -60,9 +66,22 @@ describe("renderTemplate", () => {
 		);
 	});
 
+	test("resolves the instance name, dependency hosts, instance keys and byType", () => {
+		expect(renderTemplate("{{name}}", context)).toBe("main-db");
+		expect(
+			renderTemplate(
+				"{{services.redis.host}}|{{services.cache.port}}|{{byType.redis.host}}",
+				context,
+			),
+		).toBe("cache|6380|cache");
+		expect(() => renderTemplate("{{byType.postgres.port}}", context)).toThrow(
+			TemplateError,
+		);
+	});
+
 	test("tolerates whitespace inside braces", () => {
 		expect(renderTemplate("{{ port }}|{{\tstack.name }}", context)).toBe(
-			"5433|sovr",
+			"5433|shop",
 		);
 	});
 
@@ -134,7 +153,7 @@ describe("renderTemplateRecord / renderTemplateList", () => {
 	test("render every value, keeping order", () => {
 		expect(
 			renderTemplateRecord({ A: "{{port}}", B: "{{stack.name}}" }, context),
-		).toEqual({ A: "5433", B: "sovr" });
+		).toEqual({ A: "5433", B: "shop" });
 		expect(
 			renderTemplateList(["CMD-SHELL", "pg_isready -p {{port}}"], context),
 		).toEqual(["CMD-SHELL", "pg_isready -p 5433"]);

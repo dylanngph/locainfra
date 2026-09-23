@@ -6,16 +6,14 @@ import { resolveStackTarget } from "../shared/stack-target";
 
 /** Parsed flags of `locainfra up`. */
 export interface UpCommandOptions {
-	/** Start the global stack. */
-	readonly global: boolean;
-	/** Only these service ids (all when empty or omitted). */
+	/** Only these service instances (all when empty or omitted). */
 	readonly services?: readonly string[];
 	/** Machine-readable output. */
 	readonly json: boolean;
 }
 
 /**
- * `locainfra up`: discover the stack, stream `upStack` progress, and map the
+ * `locainfra up`: discover the project stack from cwd, stream `upStack` progress, and map the
  * outcome to an exit code (so CI fails when services never become healthy).
  *
  * @param ctx - IO and deps loader.
@@ -42,7 +40,7 @@ export async function runUp(
 }
 
 /**
- * Registers `up [--global] [--service <name...>]` on the root program.
+ * Registers `up [--service <name...>]` on the root program.
  *
  * @param program - Root program.
  * @param ctx - IO and deps loader.
@@ -53,13 +51,13 @@ export function registerUpCommand(
 ): void {
 	program
 		.command("up")
-		.description("start the current project's stack (or the global one)")
-		.option("-g, --global", "use the global stack (~/.locainfra/global.yaml)")
-		.option("-s, --service <name...>", "only start these services")
+		.description(
+			"start the services of the project in this folder (nearest locainfra.yaml)",
+		)
+		.option("-s, --service <name...>", "only start these service instances")
 		.action(async (opts, cmd) => {
 			const { json } = cmd.optsWithGlobals();
 			const options: UpCommandOptions = {
-				global: opts.global === true,
 				json: json === true,
 				...(opts.service ? { services: opts.service } : {}),
 			};

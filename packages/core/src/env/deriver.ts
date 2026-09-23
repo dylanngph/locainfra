@@ -95,8 +95,8 @@ export function isReservedEnvName(name: string): boolean {
 }
 
 /**
- * The primary connection variable of a service: the first key of its
- * definition's `exports` (e.g. `DATABASE_URL` for postgres).
+ * The primary connection variable of a service: its definition's
+ * `primaryExport` (e.g. `DATABASE_URL` for postgres).
  *
  * @param service - A resolved service.
  * @returns The variable name, or `undefined` when the service exports nothing.
@@ -104,102 +104,224 @@ export function isReservedEnvName(name: string): boolean {
 export function primaryExportName(
 	service: ResolvedService,
 ): string | undefined {
-	return Object.keys(service.exports)[0];
+	const name = service.definition.primaryExport;
+	return Object.hasOwn(service.exports, name) ? name : undefined;
+}
+
+/** One exported variable with the service it came from. */
+export interface DerivedEnvLine {
+	/** Final variable name (renamed by `link.names`, or `<INSTANCE>_`-prefixed on a collision). */
+	readonly key: string;
+	/** Evaluated value (contains secrets; mask before showing it). */
+	readonly value: string;
+	/** Instance name of the service that exports it. */
+	readonly service: string;
+	/** Catalog id of that service. */
+	readonly type: string;
+	/** The variable's name in the catalog definition's `exports`. */
+	readonly sourceKey: string;
+	/** Whether this is the service's `primaryExport`. */
+	readonly primary: boolean;
 }
 
 /**
- * Merges every service's evaluated `exports` into one variable map, in stack
- * (dependency) order, renaming each service's primary variable via
- * `link.names` (`{ redis: "REDIS_URL" }`).
+ * The prefix a service's variables get when one of them collides with an
+ * earlier service's: the instance name upper-cased, every character other
+ * than `A-Z0-9` as `_`, then `_`.
  *
- * Two services exporting the same name with different values is an
- * `INVALID_STACK` error (rename one via `link.names`); identical values merge.
+ * @param instance - Service instance name, e.g. `main-db`.
+ * @returns e.g. `MAIN_DB_`.
+ */
+export function envKeyPrefix(instance: string): string {
+	return `${instance.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_`;
+}
+
+function invalidName(
+	service: string,
+	variable: string,
+	message: string,
+	fix: string,
+) {
+	return err(
+		new OpError("INVALID_STACK", message, {
+			details: { service, variable, fix },
+		}),
+	);
+}
+
+function orderServices(
+	resolved: ResolvedStack,
+	order: readonly string[] | undefined,
+): ResolvedService[] {
+	if (order === undefined) return [...resolved.services];
+	const rank = new Map(order.map((name, index) => [name, index]));
+	return [...resolved.services].sort(
+		(a, b) =>
+			(rank.get(a.name) ?? Number.MAX_SAFE_INTEGER) -
+			(rank.get(b.name) ?? Number.MAX_SAFE_INTEGER),
+	);
+}
+
+/**
+ * Lists every service's evaluated `exports` as variables, service by
+ * service. Naming rules:
+ *
+ * 1. `link.names.<instance>` renames the service's primary export (never prefixed).
+ * 2. Otherwise, when any of a service's variable names is already taken by an
+ *    earlier service, every non-renamed variable of that service gets the
+ *    {@link envKeyPrefix} (`DATABASE_URL` → `EVENTS_DATABASE_URL`).
+ * 3. A final name that is still taken is `INVALID_STACK` (rename via `link.names`).
+ *
  * No variable may be a reserved shell/loader/runtime name
- * ({@link isReservedEnvName}): a rename to one is `INVALID_STACK`, a catalog
- * export of one is `INVALID_CATALOG`.
+ * ({@link isReservedEnvName}): a rename or prefix producing one is
+ * `INVALID_STACK`, a catalog export of one is `INVALID_CATALOG`.
  * `link.names` entries for services not in the stack are ignored.
  *
  * @param resolved - The resolved stack.
  * @param link - The stack file's `link` section, if any.
- * @returns Variable name → value, or an error (messages never contain values).
+ * @param order - Instance names in stack file order (default: the resolved,
+ *   dependency order). "Earlier" in rule 2 follows this order.
+ * @returns The variables in order, or an error (messages never contain values).
  */
-export function deriveEnv(
+export function deriveEnvLines(
 	resolved: ResolvedStack,
 	link?: StackLink,
-): Result<Record<string, string>> {
+	order?: readonly string[],
+): Result<DerivedEnvLine[]> {
 	const names = link?.names ?? {};
-	const vars: Record<string, string> = {};
-	const owners: Record<string, string> = {};
+	const lines: DerivedEnvLine[] = [];
+	const owners = new Map<string, string>();
 
-	for (const service of resolved.services) {
+	for (const service of orderServices(resolved, order)) {
 		const primary = primaryExportName(service);
-		const rename = names[service.id];
+		const rename = names[service.name];
 		if (rename !== undefined && !ENV_NAME.test(rename)) {
-			return err(
-				new OpError(
-					"INVALID_STACK",
-					`link.names.${service.id} "${rename}" is not a valid variable name`,
-					{
-						details: {
-							service: service.id,
-							fix: "Use letters, digits and underscores, not starting with a digit.",
-						},
-					},
-				),
+			return invalidName(
+				service.name,
+				rename,
+				`link.names.${service.name} "${rename}" is not a valid variable name`,
+				"Use letters, digits and underscores, not starting with a digit.",
 			);
 		}
 		if (rename !== undefined && isReservedEnvName(rename)) {
-			return err(
-				new OpError(
-					"INVALID_STACK",
-					`link.names.${service.id} "${rename}" is a reserved variable name`,
-					{
-						details: {
-							service: service.id,
-							variable: rename,
-							fix: `Pick an application-specific name such as ${service.id.toUpperCase().replaceAll("-", "_")}_URL; shell, loader and runtime variables (PATH, PROMPT_COMMAND, NODE_OPTIONS, LD_*, …) cannot be exported.`,
-						},
-					},
-				),
+			return invalidName(
+				service.name,
+				rename,
+				`link.names.${service.name} "${rename}" is a reserved variable name`,
+				`Pick an application-specific name such as ${envKeyPrefix(service.name)}URL; shell, loader and runtime variables (PATH, PROMPT_COMMAND, NODE_OPTIONS, LD_*, …) cannot be exported.`,
 			);
 		}
-		for (const [name, value] of Object.entries(service.exports)) {
-			const target = name === primary && rename ? rename : name;
-			if (isReservedEnvName(target)) {
+		const planned = Object.entries(service.exports).map(
+			([sourceKey, value]) => {
+				const renamed = sourceKey === primary && rename !== undefined;
+				return {
+					sourceKey,
+					value,
+					renamed,
+					base: renamed ? rename : sourceKey,
+				};
+			},
+		);
+		for (const { base, renamed } of planned) {
+			if (!renamed && isReservedEnvName(base)) {
 				return err(
 					new OpError(
 						"INVALID_CATALOG",
-						`Catalog definition "${service.catalogId}" exports the reserved variable ${target}`,
+						`Catalog definition "${service.type}" exports the reserved variable ${base}`,
 						{
 							details: {
-								service: service.id,
-								catalogId: service.catalogId,
-								variable: target,
+								service: service.name,
+								catalogId: service.type,
+								variable: base,
 								fix: "Fix the definition (catalog override or registry entry) to export application-specific names only.",
 							},
 						},
 					),
 				);
 			}
-			const owner = owners[target];
-			if (owner !== undefined && vars[target] !== value) {
+		}
+		const collides = planned.some(
+			({ base, renamed }) => !renamed && owners.has(base),
+		);
+		const prefix = collides ? envKeyPrefix(service.name) : "";
+		for (const { sourceKey, value, renamed, base } of planned) {
+			const key = renamed ? base : `${prefix}${base}`;
+			if (isReservedEnvName(key)) {
+				return invalidName(
+					service.name,
+					key,
+					`Variable ${key} of "${service.name}" is a reserved variable name`,
+					`Rename the service "${service.name}" or set link.names.${service.name}.`,
+				);
+			}
+			const owner = owners.get(key);
+			if (owner !== undefined) {
 				return err(
 					new OpError(
 						"INVALID_STACK",
-						`Services "${owner}" and "${service.id}" both export ${target}`,
+						`Services "${owner}" and "${service.name}" both export ${key}`,
 						{
 							details: {
-								variable: target,
-								services: [owner, service.id],
-								fix: `Rename one of them with link.names (e.g. link.names.${service.id}: ${target}_2).`,
+								variable: key,
+								services: [owner, service.name],
+								fix: `Rename one of them with link.names (e.g. link.names.${service.name}: ${envKeyPrefix(service.name)}URL) or rename a service.`,
 							},
 						},
 					),
 				);
 			}
-			vars[target] = value;
-			owners[target] ??= service.id;
+			owners.set(key, service.name);
+			lines.push({
+				key,
+				value,
+				service: service.name,
+				type: service.type,
+				sourceKey,
+				primary: sourceKey === primary,
+			});
 		}
 	}
-	return ok(vars);
+	return ok(lines);
+}
+
+/**
+ * {@link deriveEnvLines} as one variable map (what `locainfra env` prints).
+ *
+ * @param resolved - The resolved stack.
+ * @param link - The stack file's `link` section, if any.
+ * @param order - Instance names in stack file order.
+ * @returns Variable name → value, or an error (messages never contain values).
+ */
+export function deriveEnv(
+	resolved: ResolvedStack,
+	link?: StackLink,
+	order?: readonly string[],
+): Result<Record<string, string>> {
+	const lines = deriveEnvLines(resolved, link, order);
+	if (!lines.ok) return lines;
+	return ok(
+		Object.fromEntries(lines.value.map((line) => [line.key, line.value])),
+	);
+}
+
+/**
+ * Replaces every occurrence of the given secret values in `value` with
+ * `mask` (longest first, so a secret containing another is masked whole).
+ *
+ * @param value - A value that may embed secrets (e.g. a connection URL).
+ * @param secrets - Secret values; empty strings are ignored.
+ * @param mask - Replacement text.
+ * @returns The masked value.
+ */
+export function maskSecrets(
+	value: string,
+	secrets: Iterable<string>,
+	mask: string,
+): string {
+	const sorted = [...new Set(secrets)]
+		.filter((secret) => secret !== "")
+		.sort((a, b) => b.length - a.length);
+	let out = value;
+	for (const secret of sorted) out = out.split(secret).join(mask);
+	return out;
 }

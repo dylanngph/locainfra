@@ -1,8 +1,9 @@
 # yaml-language-server: $schema=../schema/service.v1.json
 id: redis
 name: Redis
-description: In-memory key-value store, password protected with append-only persistence.
+description: Classic redis:// for ioredis, redis-py, go-redis.
 category: cache
+categoryLabel: Redis
 tags: [key-value, cache, queue]
 icon: redis
 homepage: https://redis.io
@@ -24,5 +25,24 @@ exports:
   REDIS_URL: "redis://:{{secrets.REDIS_PASSWORD}}@127.0.0.1:{{port}}"
   REDIS_HOST: "127.0.0.1"
   REDIS_PORT: "{{port}}"
+primaryExport: REDIS_URL
+snippets:
+  node: |-
+    import Redis from "ioredis";
+    const redis = new Redis(process.env.KEY);
+  python: |-
+    import os, redis
+    r = redis.from_url(os.environ["KEY"])
+  go: |-
+    opt, _ := redis.ParseURL(os.Getenv("KEY"))
+    rdb := redis.NewClient(opt)
 connect: ["redis-cli"]
 studio: { panel: redis }
+data:
+  kind: redis                # {{query}} is split into argv words; REDISCLI_AUTH (env) authenticates, so no -a
+  label: Key patterns
+  objects: ["*"]             # keys are not listable cheaply; SCAN patterns instead
+  runQuery: ["redis-cli", "--csv", "{{query}}"]
+  defaultQuery: "SCAN 0 MATCH {{object}} COUNT 100"
+import:
+  images: [redis, valkey/valkey]

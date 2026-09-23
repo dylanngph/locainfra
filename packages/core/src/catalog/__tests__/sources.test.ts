@@ -30,6 +30,8 @@ versions: ["1"]
 defaultVersion: "1"
 port: { container: 80, default: 8080, range: [8080, 8090] }
 healthcheck: { test: ["CMD", "true"] }
+exports: { DEMO_URL: "http://127.0.0.1:{{port}}" }
+primaryExport: DEMO_URL
 `;
 }
 

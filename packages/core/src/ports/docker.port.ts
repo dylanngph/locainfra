@@ -76,3 +76,142 @@ export interface SocketLocator {
 	/** @returns The socket path, or `null` when none is found. */
 	locate(): Promise<string | null>;
 }
+
+/** Container details from the Engine API inspect endpoint (fields the dashboard needs). */
+export const ContainerDetails = Type.Object({
+	id: Type.String(),
+	name: Type.String({
+		description: "Container name without the leading slash",
+	}),
+	image: Type.String(),
+	state: Type.String({
+		description:
+			"Docker state: created | running | paused | restarting | removing | exited | dead",
+	}),
+	health: Type.Optional(ContainerHealth),
+	startedAt: Type.Optional(
+		Type.String({ description: "ISO-8601; absent when never started" }),
+	),
+	exitCode: Type.Optional(Type.Integer()),
+	error: Type.Optional(
+		Type.String({
+			description:
+				'Docker\'s State.Error, e.g. a port bind failure ("port is already allocated")',
+		}),
+	),
+	labels: Type.Record(Type.String(), Type.String()),
+	ports: Type.Array(PortMapping),
+});
+/** Container details from inspect. */
+export type ContainerDetails = Static<typeof ContainerDetails>;
+
+/** Reads one container's details (Engine API inspect). */
+export interface ContainerInspector {
+	/**
+	 * @param id - Container id or name.
+	 * @returns The details, or `null` when no such container exists.
+	 */
+	inspect(id: string): Promise<ContainerDetails | null>;
+}
+
+/** Output stream of a log line. */
+export const LogStream = Type.Union([
+	Type.Literal("stdout"),
+	Type.Literal("stderr"),
+]);
+/** Output stream of a log line. */
+export type LogStream = Static<typeof LogStream>;
+
+/** One demultiplexed container log line (ANSI escapes kept; the dashboard renders them). */
+export const LogLine = Type.Object({
+	stream: LogStream,
+	text: Type.String({ description: "Line without the trailing newline" }),
+	at: Type.Optional(
+		Type.String({
+			description: "ISO-8601 Docker timestamp (when requested with timestamps)",
+		}),
+	),
+});
+/** One container log line. */
+export type LogLine = Static<typeof LogLine>;
+
+/** Options of {@link ContainerStreams.logs}. */
+export interface LogOptions {
+	/** Keep streaming new lines (`follow=1`). */
+	readonly follow: boolean;
+	/** Number of trailing lines to start with (`tail`); all when omitted. */
+	readonly tail?: number;
+	/** Only lines after this ISO-8601 instant or Unix timestamp (`since`). */
+	readonly since?: string;
+	/** Aborts the stream; the iterator then ends without throwing. */
+	readonly signal?: AbortSignal;
+}
+
+/** One resource-usage sample of a container (Engine API stats, computed). */
+export const StatsSample = Type.Object({
+	cpuPercent: Type.Number({
+		minimum: 0,
+		description: "Percent of one CPU (docker stats semantics; may exceed 100)",
+	}),
+	memBytes: Type.Integer({
+		minimum: 0,
+		description: "Memory usage minus page cache",
+	}),
+	memLimitBytes: Type.Integer({ minimum: 0 }),
+	netRx: Type.Integer({
+		minimum: 0,
+		description: "Bytes received, cumulative",
+	}),
+	netTx: Type.Integer({ minimum: 0, description: "Bytes sent, cumulative" }),
+	at: Type.String({ description: "ISO-8601 sample time" }),
+});
+/** One resource-usage sample of a container. */
+export type StatsSample = Static<typeof StatsSample>;
+
+/** One Docker daemon event (container scope). */
+export const DockerEvent = Type.Object({
+	action: Type.String({
+		description: "e.g. start | die | stop | health_status: healthy | destroy",
+	}),
+	id: Type.String({ description: "Container id" }),
+	at: Type.String({ description: "ISO-8601 event time" }),
+	attributes: Type.Record(Type.String(), Type.String(), {
+		description: "Actor attributes: labels, name, image, exitCode…",
+	}),
+});
+/** One Docker daemon event. */
+export type DockerEvent = Static<typeof DockerEvent>;
+
+/** Filter for {@link ContainerStreams.events}. */
+export interface EventFilter {
+	/** Only events of containers carrying all of these labels. */
+	readonly labels?: Readonly<Record<string, string>>;
+}
+
+/**
+ * Long-lived Engine API streams. Every iterator ends (without throwing) when
+ * its signal aborts, and rejects when the daemon is unreachable.
+ */
+export interface ContainerStreams {
+	/**
+	 * Demultiplexed logs of one container.
+	 *
+	 * @param id - Container id or name.
+	 * @param options - Follow, tail, since and abort signal.
+	 */
+	logs(id: string, options: LogOptions): AsyncIterable<LogLine>;
+	/**
+	 * Resource-usage samples (about one per second while running).
+	 *
+	 * @param id - Container id or name.
+	 * @param signal - Aborts the stream.
+	 */
+	stats(id: string, signal: AbortSignal): AsyncIterable<StatsSample>;
+	/**
+	 * Container events from the daemon.
+	 *
+	 * @param filter - Label filter.
+	 * @param signal - Aborts the stream.
+	 */
+	events(filter: EventFilter, signal: AbortSignal): AsyncIterable<DockerEvent>;
+}

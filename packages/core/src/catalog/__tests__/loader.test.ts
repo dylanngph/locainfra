@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
+import { DATA_QUERY_TIMEOUT_MS, SEED_TIMEOUT_MS } from "../../ops/ops.model";
 import { BUILTIN_CATALOG_FILES } from "../builtin";
 import { loadServiceDefinition, parseServiceDefinition } from "../loader";
 import { checkCatalogReferences } from "../validator";
@@ -23,6 +24,8 @@ versions: [1, "2"]
 defaultVersion: 1
 port: { container: 80, default: 8080, range: [8080, 8090] }
 healthcheck: { test: ["CMD", "true"] }
+exports: { DEMO_URL: "http://127.0.0.1:{{port}}" }
+primaryExport: DEMO_URL
 `;
 
 async function builtins() {
@@ -96,6 +99,27 @@ describe("built-in catalog", () => {
 		]);
 	});
 
+	test("postgres bounds data queries and seeding on the server, below the exec deadlines", async () => {
+		const [postgres] = await builtins();
+		const timeoutOf = (argv: readonly string[] | undefined) => {
+			const conninfo = argv?.find((item) => item.startsWith("dbname=")) ?? "";
+			expect(conninfo).toContain("client_connection_check_interval=");
+			expect(conninfo).toContain("idle_in_transaction_session_timeout=");
+			return Number(/statement_timeout=(\d+)/.exec(conninfo)?.[1]);
+		};
+		for (const argv of [
+			postgres?.data?.runQuery,
+			postgres?.data?.listObjects,
+		]) {
+			const ms = timeoutOf(argv);
+			expect(ms).toBeGreaterThan(0);
+			expect(ms).toBeLessThan(DATA_QUERY_TIMEOUT_MS);
+		}
+		const seedMs = timeoutOf(postgres?.seed?.run);
+		expect(seedMs).toBeGreaterThan(0);
+		expect(seedMs).toBeLessThan(SEED_TIMEOUT_MS);
+	});
+
 	test("redis runs with a password and append-only persistence", async () => {
 		const [, redis] = await builtins();
 		expect(redis?.command).toEqual([
@@ -120,7 +144,7 @@ describe("built-in catalog", () => {
 			SRH_MODE: "env",
 			SRH_TOKEN: "{{secrets.SRH_TOKEN}}",
 			SRH_CONNECTION_STRING:
-				"redis://:{{services.redis.secrets.REDIS_PASSWORD}}@redis:6379",
+				"redis://:{{services.redis.secrets.REDIS_PASSWORD}}@{{services.redis.host}}:6379",
 		});
 		expect(upstash?.exports).toEqual({
 			UPSTASH_REDIS_REST_URL: "http://127.0.0.1:{{port}}",
@@ -157,7 +181,7 @@ describe("parseServiceDefinition", () => {
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
 		expect(result.error.issues).toEqual([
-			"demo.yaml:9:8: /env/bad-name: invalid key; keys must match ^[A-Za-z_][A-Za-z0-9_]*$",
+			"demo.yaml:11:8: /env/bad-name: invalid key; keys must match ^[A-Za-z_][A-Za-z0-9_]*$",
 		]);
 	});
 

@@ -116,23 +116,107 @@ describe("doctor", () => {
 	});
 });
 
-describe("default action", () => {
-	test("prints the M2 placeholder and the doctor summary, exit 0", async () => {
+describe("default action (dashboard)", () => {
+	test("starts on the first free port from 4488, prints the URL, opens it and waits", async () => {
 		const io = createFakeIo();
-		const { loadDeps } = createFakeDeps({ report: failingReport });
+		const { loadDeps, calls } = createFakeDeps({ report: failingReport });
 		expect(await runCli([], loadDeps, io)).toBe(ExitCode.Ok);
-		expect(io.out.text).toContain("Dashboard coming in M2");
+		expect(calls.dashboard).toEqual([
+			"find",
+			"port:4488",
+			"start:4489",
+			"open:http://127.0.0.1:4489/?t=tok",
+			"wait",
+			"stop",
+		]);
+		expect(io.out.text).toContain("http://127.0.0.1:4489/?t=tok");
 		expect(io.out.text).toContain("0 ok · 0 warn · 1 fail");
 		expect(io.out.text).toContain("Start Docker Desktop");
+		expect(io.out.text).toContain("Dashboard stopped");
 	});
 
-	test("--json prints a machine-readable placeholder", async () => {
+	test("--port and --no-open are honoured", async () => {
+		const io = createFakeIo();
+		const { loadDeps, calls } = createFakeDeps();
+		await runCli(["--port", "4599", "--no-open"], loadDeps, io);
+		expect(calls.dashboard).toEqual(["find", "start:4599", "wait", "stop"]);
+	});
+
+	test("an invalid --port is a usage error", async () => {
+		const io = createFakeIo();
+		const { loadDeps, calls } = createFakeDeps();
+		expect(await runCli(["--port", "80"], loadDeps, io)).toBe(ExitCode.Usage);
+		expect(await runCli(["--port", "abc"], loadDeps, io)).toBe(ExitCode.Usage);
+		expect(calls.dashboard).toEqual([]);
+	});
+
+	test("reuses a live dashboard and only opens the browser", async () => {
+		const io = createFakeIo();
+		const { loadDeps, calls } = createFakeDeps({
+			running: { pid: 42, port: 4488, url: "http://127.0.0.1:4488/?t=old" },
+		});
+		expect(await runCli([], loadDeps, io)).toBe(ExitCode.Ok);
+		expect(calls.dashboard).toEqual([
+			"find",
+			"open:http://127.0.0.1:4488/?t=old",
+		]);
+		expect(io.out.text).toContain("already running (pid 42)");
+	});
+
+	test("--project registers an existing folder and preselects it", async () => {
+		const io = createFakeIo({ cwd: "/work" });
+		const { loadDeps, calls } = createFakeDeps({
+			stackFiles: {
+				"/work/acme": "version: 1\nname: acme\nservices: {}\n",
+			},
+		});
+		await runCli(["--project", "acme", "--no-open"], loadDeps, io);
+		expect(calls.projects).toEqual([
+			{ op: "register", name: "acme", root: "/work/acme" },
+		]);
+		expect(io.out.text).toContain("/?t=tok&project=acme");
+	});
+
+	test("--project creates locainfra.yaml in a folder without one", async () => {
+		const io = createFakeIo({ cwd: "/work" });
+		const { loadDeps, calls } = createFakeDeps({
+			running: { pid: 42, port: 4488, url: "http://127.0.0.1:4488/?t=old" },
+		});
+		await runCli(["--project", "/tmp/My App", "--json"], loadDeps, io);
+		expect(calls.projects).toEqual([
+			{ op: "create", name: "my-app", root: "/tmp/My App" },
+		]);
+		const line = JSON.parse(io.out.text);
+		expect(line.dashboard).toEqual({
+			url: "http://127.0.0.1:4488/?t=old&project=my-app",
+			port: 4488,
+			reused: true,
+		});
+		expect(calls.dashboard).toContain(
+			"open:http://127.0.0.1:4488/?t=old&project=my-app",
+		);
+	});
+
+	test("--json prints one machine-readable line with the URL", async () => {
 		const io = createFakeIo();
 		const { loadDeps } = createFakeDeps();
-		expect(await runCli(["--json"], loadDeps, io)).toBe(ExitCode.Ok);
+		expect(await runCli(["--json", "--no-open"], loadDeps, io)).toBe(
+			ExitCode.Ok,
+		);
 		const parsed = JSON.parse(io.out.text);
-		expect(parsed.dashboard.available).toBe(false);
+		expect(parsed.dashboard).toEqual({
+			url: "http://127.0.0.1:4489/?t=tok",
+			port: 4489,
+			reused: false,
+		});
 		expect(parsed.doctor).toEqual(sampleReport);
+	});
+
+	test("a start failure exits 1 with the reason", async () => {
+		const io = createFakeIo();
+		const { loadDeps } = createFakeDeps({ startFails: true });
+		expect(await runCli(["--no-open"], loadDeps, io)).toBe(ExitCode.OpError);
+		expect(io.errOut.text).toContain("EADDRINUSE");
 	});
 
 	test("extra positional arguments are a usage error", async () => {
@@ -147,22 +231,18 @@ describe("up", () => {
 		const io = createFakeIo();
 		const { loadDeps, calls } = createFakeDeps();
 		expect(await runCli(["up"], loadDeps, io)).toBe(ExitCode.Ok);
-		expect(calls.discover).toEqual([{ cwd: "/work/acme", global: false }]);
+		expect(calls.discover).toEqual([{ cwd: "/work/acme" }]);
 		expect(calls.up[0]?.services).toBeUndefined();
 		expect(io.out.text).toContain("Starting stack acme");
 		expect(io.out.text).toContain("Stack acme is up");
 	});
 
-	test("--global and --service are forwarded", async () => {
+	test("--service is forwarded and --global no longer exists", async () => {
 		const io = createFakeIo();
 		const { loadDeps, calls } = createFakeDeps();
-		await runCli(
-			["up", "--global", "--service", "postgres", "redis"],
-			loadDeps,
-			io,
-		);
-		expect(calls.discover[0]?.global).toBe(true);
-		expect(calls.up[0]?.services).toEqual(["postgres", "redis"]);
+		await runCli(["up", "--service", "main-db", "cache"], loadDeps, io);
+		expect(calls.up[0]?.services).toEqual(["main-db", "cache"]);
+		expect(await runCli(["up", "--global"], loadDeps, io)).toBe(ExitCode.Usage);
 	});
 
 	test("--json emits NDJSON progress events", async () => {

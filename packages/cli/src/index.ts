@@ -7,6 +7,7 @@
  *
  * @packageDocumentation
  */
+import type { ExitCode } from "./cli.types";
 import { runCli } from "./program";
 
 export type {
@@ -16,16 +17,30 @@ export type {
 	CliOps,
 	CliPrompter,
 	CommandContext,
+	DashboardLauncher,
 	GlobalOptions,
+	RunningDashboardInfo,
+	StartedDashboard,
 } from "./cli.types";
 export { ExitCode } from "./cli.types";
 export { createProcessIo } from "./io";
 export { createProgram, runCli } from "./program";
 export type { RootCommand } from "./root";
 
-if (import.meta.main) {
-	await runCli(process.argv.slice(2), async () => {
+/**
+ * Runs the real CLI (composition root loaded lazily). Called when this file
+ * is executed directly: from source and as the compiled binary's entry.
+ *
+ * @param args - User arguments (without the executable and script path).
+ * @returns The exit code.
+ */
+export function main(args: readonly string[]): Promise<ExitCode> {
+	return runCli(args, async () => {
 		const { composeDeps } = await import("./composition");
 		return composeDeps();
 	});
+}
+
+if (import.meta.main) {
+	await main(process.argv.slice(2));
 }

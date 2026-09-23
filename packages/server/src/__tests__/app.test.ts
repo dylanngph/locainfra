@@ -1,25 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { DOCTOR_CHECK_IDS } from "@locainfra/core";
-import {
-	FakeComposeInfo,
-	FakeDockerInfo,
-	FakeSocketLocator,
-	FixedClock,
-} from "@locainfra/core/testing";
 import { createApp } from "../app";
-import { createDoctorRunner } from "../modules/doctor/doctor.service";
+import { createTestDeps, HOST } from "./support/fixtures";
 
-const HOST = "127.0.0.1:4488";
-const app = createApp({
-	token: "secret",
-	allowedHosts: [HOST],
-	doctor: createDoctorRunner({
-		docker: new FakeDockerInfo(),
-		compose: new FakeComposeInfo(),
-		socket: new FakeSocketLocator(),
-		clock: new FixedClock(),
-	}),
-});
+const app = createApp(createTestDeps());
 
 const req = (path: string, headers: Record<string, string> = {}) =>
 	app.handle(
@@ -30,7 +14,9 @@ const req = (path: string, headers: Record<string, string> = {}) =>
 
 describe("app", () => {
 	it("health is public", async () => {
-		expect((await req("/api/health")).status).toBe(200);
+		const res = await req("/api/health");
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ ok: true });
 	});
 	it("rejects doctor without token", async () => {
 		expect((await req("/api/doctor")).status).toBe(401);
@@ -41,6 +27,12 @@ describe("app", () => {
 				headers: { host: "evil.test" },
 			}),
 		);
+		expect(res.status).toBe(403);
+	});
+	it("rejects a foreign origin", async () => {
+		const res = await req("/api/doctor?t=secret", {
+			origin: "http://evil.test",
+		});
 		expect(res.status).toBe(403);
 	});
 	it("returns a report with a valid token", async () => {
@@ -54,5 +46,9 @@ describe("app", () => {
 		expect(body.checks.map((c) => c.id)).toEqual(
 			Object.values(DOCTOR_CHECK_IDS),
 		);
+	});
+	it("does not serve an SPA without staticDir", async () => {
+		expect((await req("/")).status).toBe(404);
+		expect((await req("/p/shop-api")).status).toBe(404);
 	});
 });

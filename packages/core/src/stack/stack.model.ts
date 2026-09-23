@@ -1,24 +1,86 @@
 import { type Static, Type } from "@sinclair/typebox";
 
-/** Name of the single global stack (`~/.locainfra/global.yaml`). */
-export const GLOBAL_STACK_NAME = "global";
 /** File name of a project stack inside its project folder. */
 export const PROJECT_STACK_FILE_NAME = "locainfra.yaml";
-/** File name of the global stack inside the state directory. */
-export const GLOBAL_STACK_FILE_NAME = "global.yaml";
 
-/** One service instance in a stack file. Omitted fields fall back to catalog defaults. */
-export const StackServiceEntry = Type.Object({
-	version: Type.Optional(Type.String()),
-	port: Type.Optional(
-		Type.Union([
-			Type.Integer({ minimum: 1, maximum: 65535 }),
-			Type.Literal("auto"),
-		]),
-	),
-	config: Type.Optional(Type.Record(Type.String(), Type.String())),
+/**
+ * Pattern of project names and service instance names: lowercase letters,
+ * digits and dashes, starting with a letter (e.g. `shop-api`, `main-db`).
+ */
+export const NAME_PATTERN = "^[a-z][a-z0-9-]*$";
+
+/** Pattern of catalog definition ids referenced by `type`. */
+const CATALOG_ID_PATTERN = "^[a-z0-9][a-z0-9-]*$";
+
+/** Whether a service keeps its data in named volumes or discards it on removal. */
+export const PersistMode = Type.Union(
+	[Type.Literal("volume"), Type.Literal("ephemeral")],
+	{
+		description:
+			"volume: named Docker volumes li-<project>-<service>-<vol> survive restarts and `down`; ephemeral: no named volumes, data is lost when the container is removed",
+	},
+);
+/** Whether a service keeps its data in named volumes (`volume`, the default) or not. */
+export type PersistMode = Static<typeof PersistMode>;
+
+/**
+ * Pattern of a stack entry's `seed` path: relative to the project root, no
+ * leading `/`, `\\` or `~`, no drive letter, no `..` segment, no NUL.
+ */
+export const SEED_PATH_PATTERN =
+	"^(?![/\\\\~])(?![A-Za-z]:)(?!(?:.*[/\\\\])?\\.\\.(?:[/\\\\]|$))[^\\u0000]+$";
+
+/** A seed file path relative to the project root (see {@link SEED_PATH_PATTERN}). */
+export const SeedPath = Type.String({
+	minLength: 1,
+	maxLength: 1024,
+	pattern: SEED_PATH_PATTERN,
+	description:
+		"Seed file relative to the project root, e.g. db/seed.sql; bind-mounted read-only where the catalog's seed.mountPath says. Absolute paths and .. escapes are rejected",
 });
-/** One service instance in a stack file. */
+/** A seed file path relative to the project root. */
+export type SeedPath = Static<typeof SeedPath>;
+
+/** {@link PersistMode} applied when a stack entry omits `persist`. */
+export const DEFAULT_PERSIST_MODE: PersistMode = "volume";
+
+/**
+ * One named service instance in a stack file. Omitted fields fall back to
+ * catalog defaults (`version` → `defaultVersion`, `port` → `auto`,
+ * `persist` → `volume`, `config.*` → the definition's config defaults).
+ */
+export const StackServiceEntry = Type.Object({
+	type: Type.String({
+		pattern: CATALOG_ID_PATTERN,
+		description: "Catalog definition id, e.g. postgres",
+	}),
+	version: Type.Optional(
+		Type.String({ description: "One of the definition's versions" }),
+	),
+	port: Type.Optional(
+		Type.Union(
+			[Type.Integer({ minimum: 1, maximum: 65535 }), Type.Literal("auto")],
+			{
+				description:
+					"Host port bound on 127.0.0.1; auto (the default) allocates and pins a free one",
+			},
+		),
+	),
+	persist: Type.Optional(PersistMode),
+	config: Type.Optional(
+		Type.Record(Type.String(), Type.String(), {
+			description: "Overrides of the definition's config values",
+		}),
+	),
+	seed: Type.Optional(SeedPath),
+	uses: Type.Optional(
+		Type.Record(Type.String({ pattern: CATALOG_ID_PATTERN }), Type.String(), {
+			description:
+				"Catalog id → instance name satisfying the definition's dependsOn; only needed when the stack holds several instances of that type",
+		}),
+	),
+});
+/** One named service instance in a stack file. */
 export type StackServiceEntry = Static<typeof StackServiceEntry>;
 
 /** Optional env-file linking settings of a project stack. */
@@ -30,7 +92,7 @@ export const StackLink = Type.Object({
 	),
 	names: Type.Optional(
 		Type.Record(Type.String(), Type.String(), {
-			description: "Service id → variable name for its primary URL",
+			description: "Service instance name → variable name for its primary URL",
 		}),
 	),
 });
@@ -38,18 +100,18 @@ export const StackLink = Type.Object({
 export type StackLink = Static<typeof StackLink>;
 
 /**
- * Schema of `locainfra.yaml` / `global.yaml`. Secrets never appear here.
- * `services` keys are catalog ids.
+ * Schema of `locainfra.yaml`. Secrets never appear here.
+ * `services` keys are instance names; several instances may share a `type`.
  */
 export const StackFile = Type.Object(
 	{
 		version: Type.Literal(1),
 		name: Type.String({
-			pattern: "^[a-z0-9][a-z0-9_-]*$",
-			description: "Stack name; compose project becomes li-<name>",
+			pattern: NAME_PATTERN,
+			description: "Project name; compose project and network become li-<name>",
 		}),
 		services: Type.Record(
-			Type.String({ pattern: "^[a-z0-9][a-z0-9-]*$" }),
+			Type.String({ pattern: NAME_PATTERN }),
 			StackServiceEntry,
 			{
 				default: {},
@@ -63,27 +125,16 @@ export const StackFile = Type.Object(
 /** Parsed stack file. */
 export type StackFile = Static<typeof StackFile>;
 
-/** Whether a stack is the global one or belongs to a project folder. */
-export const StackKind = Type.Union([
-	Type.Literal("global"),
-	Type.Literal("project"),
-]);
-/** Stack kind. */
-export type StackKind = Static<typeof StackKind>;
-
-/** A discovered, validated stack with its origin. */
+/** A validated project stack: a folder containing `locainfra.yaml`. */
 export const Stack = Type.Object({
-	kind: StackKind,
-	name: Type.String(),
-	root: Type.Optional(
-		Type.String({
-			description: "Project folder (absent for the global stack)",
-		}),
-	),
-	filePath: Type.String({ description: "Absolute path of the stack file" }),
+	name: Type.String({ description: "Project name (= file.name)" }),
+	root: Type.String({ description: "Absolute path of the project folder" }),
+	filePath: Type.String({
+		description: "Absolute path of <root>/locainfra.yaml",
+	}),
 	file: StackFile,
 });
-/** A discovered, validated stack. */
+/** A validated project stack. */
 export type Stack = Static<typeof Stack>;
 
 /** Construction options for {@link StackError}. */

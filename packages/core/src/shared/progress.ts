@@ -60,3 +60,37 @@ export async function* terminalProgress(
 	}
 	yield withTimestamp({ kind: "done", message: doneMessage }, clock);
 }
+
+/**
+ * Stamps every event of a stream with an operation id (the `op:<opId>`
+ * WebSocket channel). Events that already carry one keep it.
+ *
+ * @param events - Progress stream of an op.
+ * @param opId - Operation id chosen by the caller (the server).
+ * @returns The same events with `opId` set.
+ */
+export async function* withOpId(
+	events: AsyncIterable<Progress>,
+	opId: string,
+): AsyncIterable<Progress> {
+	for await (const event of events) {
+		yield event.opId === undefined ? { ...event, opId } : event;
+	}
+}
+
+/**
+ * Stamps every event of a stream with the service instance it concerns.
+ * Events that already name a service keep it.
+ *
+ * @param events - Progress events.
+ * @param service - Service instance name.
+ * @returns The same events with `service` set.
+ */
+export async function* withService(
+	events: AsyncIterable<Progress>,
+	service: string,
+): AsyncIterable<Progress> {
+	for await (const event of events) {
+		yield event.service === undefined ? { ...event, service } : event;
+	}
+}

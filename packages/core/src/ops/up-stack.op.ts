@@ -1,11 +1,4 @@
-import { join } from "node:path";
-import { composeFilePath, composeProjectName, stackDir } from "../paths/layout";
-import type { ComposeInfoPort } from "../ports/compose.port";
-import {
-	renderCompose,
-	renderComposeEnvFile,
-} from "../render/compose-renderer";
-import { provisionStack } from "../resolve/provision";
+import { composeProjectName } from "../paths/layout";
 import { OpError } from "../shared/op-error";
 import {
 	errorProgress,
@@ -13,26 +6,20 @@ import {
 	withTimestamp,
 } from "../shared/progress";
 import { err, ok, type Result } from "../shared/result";
-import { isAtLeast, MIN_COMPOSE_VERSION } from "../shared/version";
 import { claimProjectName } from "../stack/project-registry";
 import type { UpStack, UpStackDeps, UpStackInput } from "./ops.contract";
-
-/** Seconds `docker compose up --wait` waits for services to become healthy. */
-export const UP_WAIT_TIMEOUT_SEC = 120;
-
-/** File name of the compose interpolation env file next to `docker-compose.yml`. */
-export const COMPOSE_ENV_FILE_NAME = ".env";
-
-/** Permission bits of the compose `.env`, which holds secret values (owner read/write only). */
-export const SECRET_FILE_MODE = 0o600;
+import { loadDefinitions } from "./support/catalog";
+import { checkComposeVersion, UP_WAIT_TIMEOUT_SEC } from "./support/compose";
+import { provisionAndRender } from "./support/provision";
 
 /**
  * Checks the compose version (`COMPOSE_MISSING` / `COMPOSE_TOO_OLD`), binds
- * a project stack's name to its folder (`INVALID_STACK` when another folder
- * owns it), resolves the stack (pinning ports, generating missing secrets), writes
- * `docker-compose.yml` and `.env` to `~/.locainfra/stacks/<name>/`, then runs
- * `docker compose up -d --wait`, forwarding its progress. Ends with exactly
- * one `done` or `error` event; no event carries a secret value.
+ * the project's name to its folder (`INVALID_STACK` when another folder owns
+ * it or a container name would clash), resolves the stack (pinning ports,
+ * generating missing secrets), writes `docker-compose.yml` and `.env` to
+ * `~/.locainfra/stacks/<name>/`, then runs `docker compose up -d --wait`,
+ * forwarding its progress. Ends with exactly one `done` or `error` event; no
+ * event carries a secret value.
  */
 export const upStack: UpStack = async function* (deps, input) {
 	const { stack } = input;
@@ -89,80 +76,10 @@ async function prepare(
 	const claimed = await claimProjectName(deps, stack);
 	if (!claimed.ok) return claimed;
 
-	let definitions: Awaited<ReturnType<UpStackDeps["catalog"]["definitions"]>>;
-	try {
-		definitions = await deps.catalog.definitions();
-	} catch (cause) {
-		return err(
-			new OpError("INVALID_CATALOG", "Could not load the service catalog", {
-				cause,
-			}),
-		);
-	}
+	const definitions = await loadDefinitions(deps.catalog);
+	if (!definitions.ok) return definitions;
 
-	const resolved = await provisionStack(deps, stack, definitions);
-	if (!resolved.ok) return resolved;
-
-	const dir = stackDir(deps.paths, stack.name);
-	const composeFile = composeFilePath(deps.paths, stack.name);
-	try {
-		await deps.files.mkdirp(dir);
-		await deps.files.writeText(composeFile, renderCompose(resolved.value));
-		// The `.env` holds the secret values the compose file references.
-		await deps.files.writeText(
-			join(dir, COMPOSE_ENV_FILE_NAME),
-			renderComposeEnvFile(resolved.value),
-			{ mode: SECRET_FILE_MODE },
-		);
-	} catch (cause) {
-		return err(
-			new OpError("IO", `Could not write the compose project to ${dir}`, {
-				cause,
-				details: { dir },
-			}),
-		);
-	}
-	return ok(composeFile);
-}
-
-/**
- * Enforces {@link MIN_COMPOSE_VERSION} before any lifecycle call (`--wait` and
- * `--wait-timeout` need it). An unparsable version is let through; `doctor`
- * reports it.
- */
-async function checkComposeVersion(
-	compose: ComposeInfoPort,
-): Promise<Result<void>> {
-	let version: string | null;
-	try {
-		version = await compose.version();
-	} catch {
-		version = null;
-	}
-	if (version === null) {
-		return err(
-			new OpError("COMPOSE_MISSING", "docker compose is not installed", {
-				details: {
-					minimum: MIN_COMPOSE_VERSION,
-					fix: `Install Docker Desktop (or the docker compose plugin ${MIN_COMPOSE_VERSION}+) and run \`locainfra doctor\`.`,
-				},
-			}),
-		);
-	}
-	if (isAtLeast(version, MIN_COMPOSE_VERSION) === false) {
-		return err(
-			new OpError(
-				"COMPOSE_TOO_OLD",
-				`docker compose ${version} is too old (need ${MIN_COMPOSE_VERSION} or newer)`,
-				{
-					details: {
-						version,
-						minimum: MIN_COMPOSE_VERSION,
-						fix: `Update Docker Desktop (or the docker compose plugin) to ${MIN_COMPOSE_VERSION} or newer.`,
-					},
-				},
-			),
-		);
-	}
-	return ok(undefined);
+	const rendered = await provisionAndRender(deps, stack, definitions.value);
+	if (!rendered.ok) return rendered;
+	return ok(rendered.value.composeFile);
 }

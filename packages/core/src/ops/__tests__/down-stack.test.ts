@@ -9,7 +9,7 @@ import {
 } from "../../testing/fakes";
 import { downStack } from "../down-stack.op";
 
-const stack = createProjectStack("sovr", { postgres: {} });
+const stack = createProjectStack("shop", { postgres: { type: "postgres" } });
 
 function deps(
 	lifecycle: FakeLifecycleRunner,
@@ -23,7 +23,7 @@ describe("downStack", () => {
 	test("runs compose down for li-<stack> and forwards progress", async () => {
 		const lifecycle = new FakeLifecycleRunner();
 		lifecycle.downScript = [
-			{ kind: "log", message: "Container li-sovr-postgres Removed" },
+			{ kind: "log", message: "Container li-shop-postgres Removed" },
 			{ kind: "done", message: "Stopped" },
 		];
 		const events = await collect(
@@ -31,8 +31,8 @@ describe("downStack", () => {
 		);
 		expect(lifecycle.downCalls).toEqual([
 			{
-				projectName: "li-sovr",
-				composeFile: "/home/test/.locainfra/stacks/sovr/docker-compose.yml",
+				projectName: "li-shop",
+				composeFile: "/home/test/.locainfra/stacks/shop/docker-compose.yml",
 				volumes: true,
 			},
 		]);
@@ -51,11 +51,11 @@ describe("downStack", () => {
 	test("refuses a stack whose name belongs to another project folder", async () => {
 		const lifecycle = new FakeLifecycleRunner();
 		const state = new InMemoryStateStore({
-			projects: [{ name: "sovr", root: "/work/other" }],
+			projects: [{ name: "shop", root: "/work/other" }],
 			stacks: {},
 		});
 		const files = new InMemoryFileStore({
-			"/work/other/locainfra.yaml": "version: 1\nname: sovr\n",
+			"/work/other/locainfra.yaml": "version: 1\nname: shop\n",
 		});
 		const events = await collect(
 			downStack(deps(lifecycle, state, files), { stack, volumes: true }),
@@ -69,10 +69,10 @@ describe("downStack", () => {
 	});
 
 	test("runs for the registered folder, an unregistered name, or a stale claim", async () => {
-		for (const root of ["/work/sovr", undefined, "/gone"]) {
+		for (const root of ["/work/shop", undefined, "/gone"]) {
 			const lifecycle = new FakeLifecycleRunner();
 			const state = new InMemoryStateStore({
-				projects: root === undefined ? [] : [{ name: "sovr", root }],
+				projects: root === undefined ? [] : [{ name: "shop", root }],
 				stacks: {},
 			});
 			const events = await collect(

@@ -1,5 +1,10 @@
 /** Values another service exposes to templates of services that depend on it. */
 export interface TemplateServiceContext {
+	/**
+	 * Hostname of the dependency on the stack network: its instance name (the
+	 * compose service key), e.g. `cache` in `redis://…@{{services.redis.host}}:6379`.
+	 */
+	readonly host: string;
 	/** Resolved host port of the dependency. */
 	readonly port: number;
 	/** Secrets of the dependency, by name. */
@@ -12,10 +17,12 @@ export interface TemplateServiceContext {
  * Everything a catalog `{{path}}` template may reference.
  *
  * Paths are dot-separated lookups into this object, e.g. `{{port}}`,
- * `{{stack.name}}`, `{{config.POSTGRES_DB}}` or
+ * `{{name}}`, `{{stack.name}}`, `{{config.POSTGRES_DB}}` or
  * `{{services.redis.secrets.REDIS_PASSWORD}}`.
  */
 export interface TemplateContext {
+	/** Instance name of the service (the `services` key in `locainfra.yaml`). */
+	readonly name: string;
 	/** Selected image version of the service. */
 	readonly version: string;
 	/** Resolved host port of the service. */
@@ -26,8 +33,21 @@ export interface TemplateContext {
 	readonly config: Readonly<Record<string, string>>;
 	/** Secrets of the service. */
 	readonly secrets: Readonly<Record<string, string>>;
-	/** Dependencies (from `dependsOn`), keyed by catalog id. */
+	/**
+	 * Dependencies (from the definition's `dependsOn`), keyed by catalog id
+	 * (what catalog templates use, e.g. `{{services.redis.host}}`) and also by
+	 * the bound instance name (e.g. `{{services.cache.port}}`); the catalog-id
+	 * key wins when both spell the same. Each dependency resolves to the
+	 * instance named in the entry's `uses`, else to the first instance of that
+	 * type in the stack file.
+	 */
 	readonly services: Readonly<Record<string, TemplateServiceContext>>;
+	/**
+	 * Dependencies keyed by catalog id only (`{{byType.redis.port}}`): the
+	 * same instance as `services.<catalogId>`. Unambiguous even when an
+	 * instance name equals another catalog id.
+	 */
+	readonly byType: Readonly<Record<string, TemplateServiceContext>>;
 }
 
 /** Why a template path could not be substituted. */

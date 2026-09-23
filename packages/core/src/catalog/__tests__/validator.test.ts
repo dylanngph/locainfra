@@ -18,6 +18,8 @@ const base = {
 	defaultVersion: "1",
 	port: { container: 80, default: 8080, range: [8080, 8090] },
 	healthcheck: { test: ["CMD", "true"] },
+	exports: { DEMO_URL: "http://127.0.0.1:{{port}}" },
+	primaryExport: "DEMO_URL",
 };
 
 function paths(raw: Record<string, unknown>, allowedRegistries?: string[]) {
@@ -149,13 +151,13 @@ describe("checkDefinitionSafety", () => {
 
 	test("unsafe definitions fail to load even when otherwise valid", () => {
 		const result = parseServiceDefinition(
-			"id: demo\nname: Demo\ncategory: other\nimage: demo/app:1\nversions: ['1']\ndefaultVersion: '1'\nport: { container: 80, default: 8080, range: [8080, 8090] }\nhealthcheck: { test: [CMD, 'true'] }\nprivileged: true\n",
+			"id: demo\nname: Demo\ncategory: other\nimage: demo/app:1\nversions: ['1']\ndefaultVersion: '1'\nport: { container: 80, default: 8080, range: [8080, 8090] }\nhealthcheck: { test: [CMD, 'true'] }\nexports: { URL: x }\nprimaryExport: URL\nprivileged: true\n",
 			"demo.yaml",
 		);
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
 			expect(result.error.issues).toEqual([
-				"demo.yaml:9:1: /privileged: privileged containers are not allowed",
+				"demo.yaml:11:1: /privileged: privileged containers are not allowed",
 			]);
 		}
 	});
@@ -236,6 +238,7 @@ describe("checkDefinitionConsistency", () => {
 				E: "{{stack.id}}",
 			},
 			exports: { URL: "{{port.x}}" },
+			primaryExport: "URL",
 			healthcheck: { test: ["CMD", "{{version.major}}"] },
 		});
 		expect(issues.map((issue) => issue.path)).toEqual([
@@ -268,6 +271,30 @@ describe("checkDefinitionConsistency", () => {
 		).toEqual(["/env/A"]);
 	});
 
+	test("byType, host and name paths are allowed for dependencies", () => {
+		expect(
+			consistency({
+				dependsOn: ["redis"],
+				env: {
+					A: "{{byType.redis.port}}",
+					B: "{{byType.redis.secrets.X}}",
+					C: "{{services.redis.host}}",
+					D: "{{byType.redis.host}}",
+					E: "{{name}}",
+				},
+			}),
+		).toEqual([]);
+		expect(
+			consistency({ env: { A: "{{byType.redis.port}}" } }).map((i) => i.path),
+		).toEqual(["/env/A"]);
+	});
+
+	test("primaryExport must name an export", () => {
+		expect(consistency({ primaryExport: "NOPE" }).map((i) => i.path)).toEqual([
+			"/primaryExport",
+		]);
+	});
+
 	test("config defaults may not reference config", () => {
 		expect(
 			consistency({
@@ -292,11 +319,13 @@ describe("checkCatalogReferences", () => {
 			env: {
 				A: "{{services.redis.secrets.REDIS_PASSWORD}}",
 				B: "{{services.redis.secrets.NOPE}}",
+				C: "{{byType.redis.config.NOPE}}",
 			},
 		});
 		expect(checkCatalogReferences([redis, proxy])).toEqual([
 			'proxy: dependsOn "ghost" is not in the catalog',
 			'proxy: /env/B: template "services.redis.secrets.NOPE" is not declared by "redis"',
+			'proxy: /env/C: template "byType.redis.config.NOPE" is not declared by "redis"',
 		]);
 	});
 });

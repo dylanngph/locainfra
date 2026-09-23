@@ -4,8 +4,9 @@ import {
 	composeFilePath,
 	composeProjectName,
 	dashboardFilePath,
-	globalStackFilePath,
 	secretsFilePath,
+	serviceContainerName,
+	serviceVolumeName,
 	stackDir,
 	stateFilePath,
 } from "../layout";
@@ -21,16 +22,26 @@ const paths: Paths = {
 
 describe("layout", () => {
 	test("derives well-known paths", () => {
-		expect(composeProjectName("sovr")).toBe("li-sovr");
+		expect(composeProjectName("shop")).toBe("li-shop");
 		expect(stateFilePath(paths)).toBe("/h/.locainfra/state.json");
-		expect(globalStackFilePath(paths)).toBe("/h/.locainfra/global.yaml");
 		expect(dashboardFilePath(paths)).toBe("/h/.locainfra/dashboard.json");
-		expect(stackDir(paths, "sovr")).toBe("/h/.locainfra/stacks/sovr");
-		expect(composeFilePath(paths, "sovr")).toBe(
-			"/h/.locainfra/stacks/sovr/docker-compose.yml",
+		expect(stackDir(paths, "shop")).toBe("/h/.locainfra/stacks/shop");
+		expect(composeFilePath(paths, "shop")).toBe(
+			"/h/.locainfra/stacks/shop/docker-compose.yml",
 		);
-		expect(secretsFilePath(paths, "sovr")).toBe(
-			"/h/.locainfra/secrets/sovr.env",
+		expect(secretsFilePath(paths, "shop")).toBe(
+			"/h/.locainfra/secrets/shop.env",
+		);
+	});
+
+	test("names containers and volumes per instance", () => {
+		expect(serviceContainerName("shop", "main-db")).toBe("li-shop-main-db");
+		expect(serviceVolumeName("shop", "main-db", "data")).toBe(
+			"li-shop-main-db-data",
+		);
+		// The documented collision: registration has to refuse one of these.
+		expect(serviceContainerName("shop", "api-db")).toBe(
+			serviceContainerName("shop-api", "db"),
 		);
 	});
 });

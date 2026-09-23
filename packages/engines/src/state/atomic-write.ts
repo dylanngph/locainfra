@@ -1,4 +1,4 @@
-import { chmod, mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, open, rename, rm } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 /** Options for {@link writeFileAtomic}. */
@@ -10,8 +10,10 @@ export interface AtomicWriteOptions {
 }
 
 /**
- * Writes `content` to `path` atomically: write a sibling temp file with `mode`,
- * then `rename` over the target. Readers never observe a partially written file.
+ * Writes `content` to `path` atomically: write a sibling temp file with `mode`
+ * (created exclusively, never readable by others when `mode` says so),
+ * `fsync` it, then `rename` over the target. Readers, and a crash at any
+ * point, never observe a partially written or empty file.
  *
  * @param path - Target file.
  * @param content - UTF-8 text.
@@ -28,8 +30,14 @@ export async function writeFileAtomic(
 	const suffix = `${process.pid}.${crypto.randomUUID().slice(0, 8)}.tmp`;
 	const temp = join(dir, `.${basename(path)}.${suffix}`);
 	try {
-		await writeFile(temp, content, { mode, flag: "wx" });
-		await chmod(temp, mode);
+		const handle = await open(temp, "wx", mode);
+		try {
+			await handle.writeFile(content, "utf8");
+			await handle.chmod(mode);
+			await handle.sync();
+		} finally {
+			await handle.close();
+		}
 		await rename(temp, path);
 	} catch (error) {
 		await rm(temp, { force: true });

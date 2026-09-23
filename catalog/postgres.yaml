@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../schema/service.v1.json
 id: postgres
 name: PostgreSQL
-description: Relational SQL database.
+description: Relational database with extensions like pgvector.
 category: database          # database | cache | queue | storage | mail | search | auth | observability | other
 tags: [sql, relational]
 icon: postgres              # from a bundled icon set; registry entries may give an iconUrl
@@ -11,6 +11,9 @@ versions: ["17", "16", "15"]
 defaultVersion: "17"
 port: { container: 5432, default: 5432, range: [5432, 5499] }
 secrets: [POSTGRES_PASSWORD]
+secretOptions:
+  # Written into the data volume on first init: rotating it needs a volume wipe.
+  POSTGRES_PASSWORD: { bakedIntoVolume: true }
 config:
   # Patterns keep values safe inside the healthcheck argv and DATABASE_URL.
   POSTGRES_USER: { default: postgres, pattern: "^[A-Za-z0-9_][A-Za-z0-9_.-]*$" }
@@ -29,5 +32,33 @@ exports:
   DATABASE_URL: "postgres://{{config.POSTGRES_USER}}:{{secrets.POSTGRES_PASSWORD}}@127.0.0.1:{{port}}/{{config.POSTGRES_DB}}"
   PGHOST: "127.0.0.1"
   PGPORT: "{{port}}"
+primaryExport: DATABASE_URL  # the connection URL (Copy URL, KEY in snippets)
+snippets:                    # KEY is replaced by the primary export's final name
+  node: |-
+    import pg from "pg";
+    const pool = new pg.Pool({ connectionString: process.env.KEY });
+  python: |-
+    import os, psycopg
+    conn = psycopg.connect(os.environ["KEY"])
+  go: |-
+    conn, err := pgx.Connect(ctx, os.Getenv("KEY"))
 connect: ["psql", "-U", "{{config.POSTGRES_USER}}", "-d", "{{config.POSTGRES_DB}}"]
 studio: { panel: sql }      # sql | redis | iframe | link | none
+data:                        # Data tab: docker exec in the running container, no shell
+  kind: sql                  # {{query}} is ONE argv item; local socket auth needs no password
+  label: Tables
+  # The server bounds each statement (conninfo `options`): the 15 s exec
+  # deadline only kills psql, and a backend busy in a statement would keep
+  # running (and holding its locks) after its client died. statement_timeout
+  # fires first (14 s), client_connection_check_interval (PG 14+) stops
+  # work for a killed psql.
+  listObjects: ["psql", "-X", "-U", "{{config.POSTGRES_USER}}", "-d", "dbname={{config.POSTGRES_DB}} options='-c statement_timeout=14000 -c idle_in_transaction_session_timeout=14000 -c client_connection_check_interval=1000'", "-A", "-t", "-c", "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename"]
+  runQuery: ["psql", "-X", "-U", "{{config.POSTGRES_USER}}", "-d", "dbname={{config.POSTGRES_DB}} options='-c statement_timeout=14000 -c idle_in_transaction_session_timeout=14000 -c client_connection_check_interval=1000'", "--csv", "-v", "ON_ERROR_STOP=1", "-c", "{{query}}"]
+  defaultQuery: "SELECT *\nFROM \"{{object}}\"\nLIMIT 100;"
+seed:                        # stack entry `seed: db/seed.sql` → mounted read-only, run on first init
+  mountPath: /docker-entrypoint-initdb.d
+  fileName: seed.sql
+  # Same server-side bound as data (seed deadline 120 s, so 115 s per statement).
+  run: ["psql", "-X", "-q", "-U", "{{config.POSTGRES_USER}}", "-d", "dbname={{config.POSTGRES_DB}} options='-c statement_timeout=115000 -c idle_in_transaction_session_timeout=115000 -c client_connection_check_interval=1000'", "-v", "ON_ERROR_STOP=1", "-f", "-"]
+import:                      # docker-compose.yml import: POSTGRES_DB/USER → config, POSTGRES_PASSWORD → secret (same names)
+  images: [postgres, postgis/postgis, pgvector/pgvector]

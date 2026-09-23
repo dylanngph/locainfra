@@ -64,11 +64,18 @@ export class UnixSocketTransport implements DockerTransport {
 	 */
 	async request(path: string, init: DockerRequestInit = {}): Promise<Response> {
 		const version = await this.apiVersion();
-		const socket = await this.#socketPath();
+		const socket = await this.socketPath();
 		return this.#send(socket, `/v${version}${path}`, init);
 	}
 
-	#socketPath(): Promise<string> {
+	/**
+	 * Resolves (once) the socket the daemon listens on. Used by
+	 * `UnixSocketHijacker`, which needs a raw connection for `docker exec -i`.
+	 *
+	 * @returns Absolute socket path.
+	 * @throws {OpError} `DOCKER_UNREACHABLE` when no socket is found.
+	 */
+	socketPath(): Promise<string> {
 		this.#socket ??= this.#locate().catch((error: unknown) => {
 			this.#socket = undefined;
 			throw error;
@@ -92,7 +99,7 @@ export class UnixSocketTransport implements DockerTransport {
 
 	async #negotiate(): Promise<string> {
 		const preferred = this.#options.apiVersion ?? PREFERRED_DOCKER_API_VERSION;
-		const socket = await this.#socketPath();
+		const socket = await this.socketPath();
 		const response = await this.#send(socket, "/version", {});
 		if (!response.ok) {
 			await response.body?.cancel();

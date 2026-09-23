@@ -33,8 +33,15 @@ export function createProgram(
 	registerDownCommand(program, ctx);
 	registerEnvCommand(program, ctx);
 	registerDoctorCommand(program, ctx);
-	program.action(async (_opts, cmd) => {
-		io.setExitCode(await runDashboard(ctx, { json: cmd.opts().json === true }));
+	program.action(async (opts) => {
+		io.setExitCode(
+			await runDashboard(ctx, {
+				json: opts.json === true,
+				open: opts.open,
+				...(opts.port === undefined ? {} : { port: opts.port }),
+				...(opts.project === undefined ? {} : { project: opts.project }),
+			}),
+		);
 	});
 	return program;
 }

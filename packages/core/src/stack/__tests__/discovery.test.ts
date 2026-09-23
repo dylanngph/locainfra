@@ -1,10 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { MemoryFiles } from "../../catalog/__tests__/memory-files";
 import { emptyStackFile, findProjectStackFile } from "../discovery";
-import { GLOBAL_STACK_NAME } from "../stack.model";
 
 const project = (name: string) =>
-	`version: 1\nname: ${name}\nservices:\n  postgres: { version: "17" }\n`;
+	`version: 1\nname: ${name}\nservices:\n  db: { type: postgres, version: "17" }\n`;
 
 describe("findProjectStackFile", () => {
 	test("walks up to the nearest locainfra.yaml", async () => {
@@ -35,12 +34,11 @@ describe("findProjectStackFile", () => {
 });
 
 describe("emptyStackFile", () => {
-	test("defaults to an empty global stack", () => {
-		expect(emptyStackFile()).toEqual({
+	test("is an empty stack named after the project", () => {
+		expect(emptyStackFile("app")).toEqual({
 			version: 1,
-			name: GLOBAL_STACK_NAME,
+			name: "app",
 			services: {},
 		});
-		expect(emptyStackFile("app").name).toBe("app");
 	});
 });

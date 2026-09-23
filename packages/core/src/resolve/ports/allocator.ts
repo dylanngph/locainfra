@@ -4,9 +4,9 @@ import type {
 	StateReader,
 	StateWriter,
 } from "../../ports/state.port";
-import { OpError } from "../../shared/op-error";
+import { isOpError, OpError } from "../../shared/op-error";
 import { err, ok, type Result } from "../../shared/result";
-import { GLOBAL_STACK_NAME, type Stack } from "../../stack/stack.model";
+import type { Stack } from "../../stack/stack.model";
 import type { PlannedService } from "../plan";
 import {
 	type PortOwner,
@@ -38,14 +38,13 @@ export const MAX_PORT_ALLOCATION_ATTEMPTS = 5;
 /**
  * Picks and pins a host port for every service of a stack.
  *
- * - A fixed `port:` (and, for the global stack, the definition's canonical
- *   `port.default`) is used as is. It is probed unless it is already this
+ * - A fixed `port:` is used as is. It is probed unless it is already this
  *   service's pinned port (the stack may be running), and it must not be
  *   pinned by another stack or claimed twice in this stack.
- * - `port: auto` (or no port) in a project stack keeps the pinned port from
+ * - `port: auto` (or no port) keeps the pinned port from
  *   state when there is one; otherwise it takes the lowest port in
  *   `port.range` that is free on 127.0.0.1, not pinned by any stack, and not
- *   the definition's canonical default (kept for the global stack).
+ *   the definition's canonical default.
  *
  * The result replaces the stack's `ports` in state (services no longer in
  * the stack release their pins).
@@ -107,6 +106,8 @@ export async function allocatePorts(
 			),
 		);
 	} catch (cause) {
+		// The state store's own UNIQUE(port) guard: keep its typed conflict.
+		if (isOpError(cause) && cause.code === "PORT_CONFLICT") return err(cause);
 		return err(
 			new OpError("IO", "Could not allocate host ports", {
 				cause,
@@ -153,12 +154,9 @@ async function allocate(
 	const reserved = portsReservedByOtherStacks(state, stack.name);
 	const claimed = new Map<number, string>();
 	const ports: Record<string, number> = {};
-	const isGlobal = stack.kind === "global";
-
 	const fixedPort = (service: PlannedService): number | undefined => {
 		const requested = service.entry.port;
-		if (typeof requested === "number") return requested;
-		return isGlobal ? service.definition.port.default : undefined;
+		return typeof requested === "number" ? requested : undefined;
 	};
 
 	for (const service of services) {
@@ -167,35 +165,35 @@ async function allocate(
 		const owner = claimed.get(port);
 		if (owner !== undefined) {
 			return err(
-				conflict(stack, service.id, port, {
+				conflict(stack, service.name, port, {
 					stack: stack.name,
 					service: owner,
 				}),
 			);
 		}
 		const holder = reserved.get(port);
-		if (holder) return err(conflict(stack, service.id, port, holder));
-		if (pinned[service.id] !== port && !(await deps.probe.isFree(port))) {
-			return err(conflict(stack, service.id, port));
+		if (holder) return err(conflict(stack, service.name, port, holder));
+		if (pinned[service.name] !== port && !(await deps.probe.isFree(port))) {
+			return err(conflict(stack, service.name, port));
 		}
-		claimed.set(port, service.id);
-		ports[service.id] = port;
+		claimed.set(port, service.name);
+		ports[service.name] = port;
 	}
 
 	const autoServices = services.filter((s) => fixedPort(s) === undefined);
 	const keptPins = new Set<number>();
 	for (const service of autoServices) {
-		const pin = pinned[service.id];
+		const pin = pinned[service.name];
 		if (pin !== undefined && !claimed.has(pin) && !reserved.has(pin)) {
 			keptPins.add(pin);
 		}
 	}
 
 	for (const service of autoServices) {
-		const pin = pinned[service.id];
+		const pin = pinned[service.name];
 		if (pin !== undefined && keptPins.has(pin) && !claimed.has(pin)) {
-			claimed.set(pin, service.id);
-			ports[service.id] = pin;
+			claimed.set(pin, service.name);
+			ports[service.name] = pin;
 			continue;
 		}
 		const { range, default: canonical } = service.definition.port;
@@ -218,20 +216,20 @@ async function allocate(
 			return err(
 				new OpError(
 					"PORT_CONFLICT",
-					`No free host port for "${service.id}" in ${range[0]}-${range[1]}`,
+					`No free host port for "${service.name}" in ${range[0]}-${range[1]}`,
 					{
 						details: {
 							stack: stack.name,
-							service: service.id,
+							service: service.name,
 							range: [range[0], range[1]],
-							fix: `Free a port in ${range[0]}-${range[1]} or set a fixed "port:" for ${service.id} in ${stack.filePath}.`,
+							fix: `Free a port in ${range[0]}-${range[1]} or set a fixed "port:" for ${service.name} in ${stack.filePath}.`,
 						},
 					},
 				),
 			);
 		}
-		claimed.set(picked, service.id);
-		ports[service.id] = picked;
+		claimed.set(picked, service.name);
+		ports[service.name] = picked;
 	}
 
 	return ok(ports);
@@ -246,10 +244,7 @@ function conflict(
 	const by = owner
 		? ` (reserved by ${owner.stack === stack.name ? "" : `stack "${owner.stack}", `}service "${owner.service}")`
 		: "";
-	const fix =
-		stack.kind === "global" || stack.name === GLOBAL_STACK_NAME
-			? `Stop whatever uses 127.0.0.1:${port}, or set a different "port:" for ${service} in ${stack.filePath}.`
-			: `Stop whatever uses 127.0.0.1:${port}, set a different "port:" for ${service}, or use "port: auto" in ${stack.filePath}.`;
+	const fix = `Stop whatever uses 127.0.0.1:${port}, set a different "port:" for ${service}, or use "port: auto" in ${stack.filePath}.`;
 	return new OpError(
 		"PORT_CONFLICT",
 		`Port ${port} for "${service}" is already in use${by}`,

@@ -4,6 +4,13 @@ export const OP_ERROR_CODES = [
 	"COMPOSE_MISSING",
 	"COMPOSE_TOO_OLD",
 	"STACK_NOT_FOUND",
+	"PROJECT_NOT_FOUND",
+	"PROJECT_EXISTS",
+	"SERVICE_NOT_FOUND",
+	"SERVICE_EXISTS",
+	"SERVICE_NOT_RUNNING",
+	"SNAPSHOT_NOT_FOUND",
+	"INVALID_INPUT",
 	"INVALID_STACK",
 	"INVALID_CATALOG",
 	"PORT_CONFLICT",
@@ -61,4 +68,32 @@ export class OpError extends Error {
  */
 export function isOpError(value: unknown): value is OpError {
 	return value instanceof OpError;
+}
+
+/**
+ * Wraps a port failure (state store, secrets…) as an `IO` {@link OpError}.
+ * A cause that already is an `OpError` is user-facing (e.g. the state store's
+ * "created by a newer LocaInfra; update LocaInfra" with its `fix`), so its
+ * code and message are kept and `details` are only added to.
+ *
+ * @param message - Message for an unexpected (non-`OpError`) cause.
+ * @param cause - What the port threw.
+ * @param details - Context added to the error's details.
+ * @returns The error to return.
+ */
+export function ioErrorFrom(
+	message: string,
+	cause: unknown,
+	details?: Readonly<Record<string, unknown>>,
+): OpError {
+	if (isOpError(cause)) {
+		return new OpError(cause.code, cause.message, {
+			cause,
+			details: { ...details, ...cause.details },
+		});
+	}
+	return new OpError("IO", message, {
+		cause,
+		...(details === undefined ? {} : { details }),
+	});
 }

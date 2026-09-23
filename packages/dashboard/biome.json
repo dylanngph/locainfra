@@ -1,0 +1,44 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+	"root": false,
+	"extends": "//",
+	"files": {
+		"includes": ["**", "!public", "!dist"]
+	},
+	"overrides": [
+		{
+			"includes": ["src/shared/lib/utils.ts"],
+			"linter": {
+				"rules": {
+					"performance": {
+						"noBarrelFile": "off",
+						"noReExportAll": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/shared/ui/**"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"noLabelWithoutControl": "off",
+						"useKeyWithClickEvents": "off",
+						"useFocusableInteractive": "off",
+						"useSemanticElements": "off"
+					},
+					"correctness": {
+						"useExhaustiveDependencies": "off"
+					},
+					"security": {
+						"noDangerouslySetInnerHtml": "off"
+					},
+					"suspicious": {
+						"noArrayIndexKey": "off",
+						"noDocumentCookie": "off"
+					}
+				}
+			}
+		}
+	]
+}

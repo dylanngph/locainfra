@@ -38,3 +38,15 @@ dist/
 coverage/
 packages/dashboard/src/routeTree.gen.ts
 .locainfra/
+
+# Playwright output
+test-results/
+playwright-report/
+
+# internal design process (prototype, brief, screenshots) — never published; docs/brand/ is the public logo
+docs/design/
+# planning notes contain machine-specific details
+docs/PLAN.md
+
+# e2e smoke screenshots
+packages/dashboard/e2e/.screenshots/

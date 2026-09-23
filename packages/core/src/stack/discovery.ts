@@ -1,10 +1,6 @@
 import { dirname, join, resolve } from "node:path";
 import type { FileStore } from "../ports/files.port";
-import {
-	GLOBAL_STACK_NAME,
-	PROJECT_STACK_FILE_NAME,
-	type StackFile,
-} from "./stack.model";
+import { PROJECT_STACK_FILE_NAME, type StackFile } from "./stack.model";
 
 /**
  * Walks up from `cwd` to the filesystem root looking for `locainfra.yaml`.
@@ -28,11 +24,11 @@ export async function findProjectStackFile(
 }
 
 /**
- * The stack file an absent `global.yaml` is equivalent to.
+ * The stack file a new project starts with.
  *
- * @param name - Stack name (default `global`).
+ * @param name - Project name.
  * @returns `{ version: 1, name, services: {} }`.
  */
-export function emptyStackFile(name: string = GLOBAL_STACK_NAME): StackFile {
+export function emptyStackFile(name: string): StackFile {
 	return { version: 1, name, services: {} };
 }

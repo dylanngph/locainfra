@@ -1,4 +1,8 @@
-import type { DirectoryLister, FileStore } from "../../ports/files.port";
+import type {
+	DirectoryLister,
+	FileInfo,
+	FileStore,
+} from "../../ports/files.port";
 
 /** In-memory FileStore + DirectoryLister for catalog tests. */
 export class MemoryFiles implements FileStore, DirectoryLister {
@@ -23,7 +27,26 @@ export class MemoryFiles implements FileStore, DirectoryLister {
 		return [...this.store.keys()].some((key) => key.startsWith(prefix));
 	}
 
+	async isDirectory(path: string): Promise<boolean> {
+		const prefix = path.endsWith("/") ? path : `${path}/`;
+		return [...this.store.keys()].some((key) => key.startsWith(prefix));
+	}
+
 	async mkdirp(): Promise<void> {}
+
+	async fileInfo(path: string): Promise<FileInfo | null> {
+		const text = this.store.get(path);
+		if (text !== undefined) {
+			return {
+				realPath: path,
+				kind: "file",
+				sizeBytes: Buffer.byteLength(text, "utf8"),
+			};
+		}
+		return (await this.isDirectory(path))
+			? { realPath: path, kind: "directory", sizeBytes: 0 }
+			: null;
+	}
 
 	async list(dir: string): Promise<string[]> {
 		const prefix = dir.endsWith("/") ? dir : `${dir}/`;
@@ -48,5 +71,28 @@ export const diskFiles: FileStore = {
 	async exists(path) {
 		return Bun.file(path).exists();
 	},
+	async isDirectory(path) {
+		try {
+			return (await Bun.file(path).stat()).isDirectory();
+		} catch {
+			return false;
+		}
+	},
 	async mkdirp() {},
+	async fileInfo(path) {
+		try {
+			const info = await Bun.file(path).stat();
+			return {
+				realPath: path,
+				kind: info.isFile()
+					? "file"
+					: info.isDirectory()
+						? "directory"
+						: "other",
+				sizeBytes: info.size,
+			};
+		} catch {
+			return null;
+		}
+	},
 };

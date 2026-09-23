@@ -1,6 +1,5 @@
 export {
 	builtinTestDefinitions,
-	createGlobalStack,
 	createProjectStack,
 	postgresDefinition,
 	redisDefinition,
@@ -8,10 +7,25 @@ export {
 } from "./catalog-fixtures";
 export { collect } from "./collect";
 export {
+	type ArchiverCall,
+	type ArchiverScript,
+	type ExecCall,
+	type ExecScript,
+	FakeContainerExec,
+	FakeSnapshotIndex,
+	FakeVolumeArchiver,
+	InMemoryOpJournal,
+	type JournalRow,
+} from "./data-fakes";
+export {
 	createTestPaths,
+	FakeBrowserOpener,
 	FakeComposeInfo,
+	FakeContainerInspector,
 	FakeContainerReader,
+	FakeContainerStreams,
 	FakeDockerInfo,
+	FakeFolderPicker,
 	FakeLifecycleRunner,
 	FakePortProbe,
 	FakeSocketLocator,
@@ -20,6 +34,7 @@ export {
 	InMemorySecretStore,
 	InMemoryStateStore,
 	type LifecycleScript,
+	type LogsCall,
 	SequentialSecretGenerator,
 	StaticCatalogSource,
 } from "./fakes";

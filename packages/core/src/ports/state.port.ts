@@ -29,17 +29,17 @@ export const RegistryState = Type.Object({
 /** Registry cache metadata. */
 export type RegistryState = Static<typeof RegistryState>;
 
-/** Shape of `~/.locainfra/state.json`. Missing collections default to empty on parse. */
+/** Machine-local state (stored in `locainfra.db`; also the legacy `state.json` shape). Missing collections default to empty on parse. */
 export const StateFile = Type.Object({
 	projects: Type.Array(ProjectEntry, { default: [] }),
 	stacks: Type.Record(Type.String(), StackState, { default: {} }),
 	registry: Type.Optional(RegistryState),
 });
-/** Shape of `~/.locainfra/state.json`. */
+/** Machine-local state (projects, pinned ports), persisted in `~/.locainfra/locainfra.db`. */
 export type StateFile = Static<typeof StateFile>;
 
 /**
- * Creates an empty {@link StateFile} (what a missing `state.json` reads as).
+ * Creates an empty {@link StateFile} (what a fresh state store reads as).
  *
  * @returns A fresh, empty state object.
  */
@@ -53,10 +53,10 @@ export interface StateReader {
 	read(): Promise<StateFile>;
 }
 
-/** Atomically updates persisted state (lock + temp file + rename). */
+/** Atomically updates persisted state (one serialized transaction). */
 export interface StateWriter {
 	/**
-	 * Applies `mutate` to the current state under a lock and persists the result.
+	 * Applies `mutate` to the current state inside one transaction and persists the result.
 	 *
 	 * @param mutate - Pure function from old state to new state.
 	 * @returns The state as written.

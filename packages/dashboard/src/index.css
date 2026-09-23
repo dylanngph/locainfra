@@ -1,13 +1,35 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
 	--font-heading: var(--font-sans);
-	--font-sans: "Geist Variable", sans-serif;
+	--font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+	--color-status-running: var(--status-running);
+	--color-status-running-bg: var(--status-running-bg);
+	--color-status-running-border: var(--status-running-border);
+	--color-status-running-fg: var(--status-running-fg);
+	--color-status-starting: var(--status-starting);
+	--color-status-starting-bg: var(--status-starting-bg);
+	--color-status-starting-border: var(--status-starting-border);
+	--color-status-starting-fg: var(--status-starting-fg);
+	--color-status-error: var(--status-error);
+	--color-status-error-bg: var(--status-error-bg);
+	--color-status-error-border: var(--status-error-border);
+	--color-status-error-fg: var(--status-error-fg);
+	--color-status-stopped: var(--status-stopped);
+	--color-status-stopped-bg: var(--status-stopped-bg);
+	--color-status-stopped-border: var(--status-stopped-border);
+	--color-status-stopped-fg: var(--status-stopped-fg);
+	--color-subtle: var(--subtle);
+	--color-hairline: var(--hairline);
+	--radius-card: 10px;
+	--text-sm: 0.8125rem;
+	--text-sm--line-height: 1.45;
+	--radius-control: 6px;
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -72,7 +94,26 @@
 	--chart-3: oklch(0.439 0 0);
 	--chart-4: oklch(0.371 0 0);
 	--chart-5: oklch(0.269 0 0);
-	--radius: 0.625rem;
+	--radius: 0.375rem;
+	/* LocaInfra status colors (design brief). */
+	--status-running: #16a34a;
+	--status-running-bg: #f0fdf4;
+	--status-running-border: #bbf7d0;
+	--status-running-fg: #15803d;
+	--status-starting: #f59e0b;
+	--status-starting-bg: #fffbeb;
+	--status-starting-border: #fde68a;
+	--status-starting-fg: #b45309;
+	--status-error: #dc2626;
+	--status-error-bg: #fef2f2;
+	--status-error-border: #fecaca;
+	--status-error-fg: #b91c1c;
+	--status-stopped: #a3a3a3;
+	--status-stopped-bg: #fafafa;
+	--status-stopped-border: #e5e5e5;
+	--status-stopped-fg: #525252;
+	--subtle: #fafafa;
+	--hairline: #f0f0f0;
 	--sidebar: oklch(0.985 0 0);
 	--sidebar-foreground: oklch(0.145 0 0);
 	--sidebar-primary: oklch(0.205 0 0);
@@ -122,9 +163,23 @@
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-background text-foreground;
+		@apply bg-background text-foreground antialiased;
+		font-size: 13px;
+		line-height: 1.45;
+	}
+	::selection {
+		background: #e5e5e5;
 	}
 	html {
 		@apply font-sans;
+	}
+}
+
+@keyframes li-indeterminate {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(300%);
 	}
 }

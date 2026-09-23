@@ -1,4 +1,5 @@
 import type {
+	ContainerDetails,
 	ContainerFilter,
 	ContainerHealth,
 	ContainerSummary,
@@ -128,4 +129,91 @@ export function buildContainerListQuery(filter: ContainerFilter): string {
 		params.set("filters", JSON.stringify({ label: labels }));
 	}
 	return params.toString();
+}
+
+const HEALTH_VALUES: readonly ContainerHealth[] = [
+	"healthy",
+	"unhealthy",
+	"starting",
+	"none",
+];
+
+/**
+ * Maps inspect's `NetworkSettings.Ports` (`{"5432/tcp": [{HostIp, HostPort}]}`)
+ * to published host mappings. Unpublished ports are skipped and IPv4/IPv6
+ * duplicates collapsed.
+ *
+ * @param raw - `NetworkSettings.Ports` from `GET /containers/{id}/json`.
+ * @returns Unique host → container mappings, ordered by host port.
+ */
+export function mapInspectPorts(raw: unknown): PortMapping[] {
+	if (!isObject(raw)) return [];
+	const seen = new Map<string, PortMapping>();
+	for (const [key, bindings] of Object.entries(raw)) {
+		const container = Number.parseInt(key, 10);
+		if (!Number.isInteger(container) || !Array.isArray(bindings)) continue;
+		for (const binding of bindings) {
+			if (!isObject(binding)) continue;
+			const host = Number(stringField(binding, "HostPort") ?? Number.NaN);
+			if (!Number.isInteger(host) || host <= 0) continue;
+			seen.set(`${host}:${container}`, { host, container });
+		}
+	}
+	return [...seen.values()].sort(
+		(a, b) => a.host - b.host || a.container - b.container,
+	);
+}
+
+/**
+ * Maps `GET /containers/{id}/json` to {@link ContainerDetails}.
+ *
+ * `startedAt` is omitted for Docker's zero time (never started), `error` for
+ * an empty `State.Error`, and `health` is `none` without a healthcheck.
+ *
+ * @param raw - Untrusted JSON body.
+ * @returns The details, or `null` when required fields are missing.
+ */
+export function toContainerDetails(raw: unknown): ContainerDetails | null {
+	if (!isObject(raw)) return null;
+	const id = stringField(raw, "Id");
+	const state = isObject(raw.State) ? raw.State : undefined;
+	const status = state === undefined ? undefined : stringField(state, "Status");
+	const config = isObject(raw.Config) ? raw.Config : {};
+	const image = stringField(config, "Image") ?? stringField(raw, "Image");
+	if (id === undefined || state === undefined || status === undefined) {
+		return null;
+	}
+	const labels: Record<string, string> = {};
+	if (isObject(config.Labels)) {
+		for (const [key, value] of Object.entries(config.Labels)) {
+			if (typeof value === "string") labels[key] = value;
+		}
+	}
+	const healthStatus = isObject(state.Health)
+		? stringField(state.Health, "Status")
+		: undefined;
+	const health = HEALTH_VALUES.find((h) => h === healthStatus) ?? "none";
+	const details: ContainerDetails = {
+		id,
+		name: (stringField(raw, "Name") ?? id.slice(0, 12)).replace(/^\//, ""),
+		image: image ?? "",
+		state: status,
+		health,
+		labels,
+		ports: mapInspectPorts(
+			isObject(raw.NetworkSettings) ? raw.NetworkSettings.Ports : undefined,
+		),
+	};
+	const startedAt = stringField(state, "StartedAt");
+	if (startedAt !== undefined && !startedAt.startsWith("0001-01-01")) {
+		const ms = Date.parse(startedAt);
+		if (!Number.isNaN(ms)) details.startedAt = new Date(ms).toISOString();
+	}
+	const exitCode = state.ExitCode;
+	if (typeof exitCode === "number" && Number.isInteger(exitCode)) {
+		details.exitCode = exitCode;
+	}
+	const error = stringField(state, "Error");
+	if (error !== undefined && error !== "") details.error = error;
+	return details;
 }

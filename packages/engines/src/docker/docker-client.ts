@@ -1,5 +1,7 @@
 import {
+	type ContainerDetails,
 	type ContainerFilter,
+	type ContainerInspector,
 	type ContainerReader,
 	type ContainerSummary,
 	type DockerInfo,
@@ -8,16 +10,21 @@ import {
 } from "@locainfra/core";
 import {
 	buildContainerListQuery,
+	toContainerDetails,
 	toContainerSummary,
 	toDockerInfo,
 } from "./container-mapper";
+import { dockerApiError } from "./docker-errors";
 import type { DockerTransport } from "./transport";
 
 /**
- * Read-only Engine API client: implements {@link DockerInfoPort} and {@link ContainerReader}.
+ * Read-only Engine API client: implements {@link DockerInfoPort},
+ * {@link ContainerReader} and {@link ContainerInspector}.
  * Lifecycle writes go through the compose runner, never through this client.
  */
-export class DockerClient implements DockerInfoPort, ContainerReader {
+export class DockerClient
+	implements DockerInfoPort, ContainerReader, ContainerInspector
+{
 	readonly #transport: DockerTransport;
 
 	/** @param transport - How requests reach the daemon. */
@@ -62,16 +69,36 @@ export class DockerClient implements DockerInfoPort, ContainerReader {
 			.filter((c): c is ContainerSummary => c !== null);
 	}
 
-	async #getJson(path: string): Promise<unknown> {
+	/**
+	 * `GET /containers/{id}/json`.
+	 *
+	 * @param id - Container id or name.
+	 * @returns The details, or `null` when no such container exists.
+	 * @throws {OpError} `DOCKER_UNREACHABLE` when the daemon cannot be reached; `UNKNOWN` on a bad response.
+	 */
+	async inspect(id: string): Promise<ContainerDetails | null> {
+		const path = `/containers/${encodeURIComponent(id)}/json`;
 		const response = await this.#transport.request(path);
-		if (!response.ok) {
-			const message = await readDockerErrorMessage(response);
+		if (response.status === 404) {
+			await response.body?.cancel();
+			return null;
+		}
+		const details = toContainerDetails(await this.#parse(path, response));
+		if (details === null) {
 			throw new OpError(
 				"UNKNOWN",
-				`Docker API ${path.split("?")[0]} failed with ${response.status}: ${message}`,
-				{ details: { status: response.status } },
+				"Unexpected /containers/{id}/json response from Docker",
 			);
 		}
+		return details;
+	}
+
+	async #getJson(path: string): Promise<unknown> {
+		return this.#parse(path, await this.#transport.request(path));
+	}
+
+	async #parse(path: string, response: Response): Promise<unknown> {
+		if (!response.ok) throw await dockerApiError(response, path);
 		try {
 			return await response.json();
 		} catch (cause) {
@@ -80,22 +107,4 @@ export class DockerClient implements DockerInfoPort, ContainerReader {
 			});
 		}
 	}
-}
-
-async function readDockerErrorMessage(response: Response): Promise<string> {
-	const text = await response.text().catch(() => "");
-	try {
-		const parsed: unknown = JSON.parse(text);
-		if (
-			typeof parsed === "object" &&
-			parsed !== null &&
-			"message" in parsed &&
-			typeof parsed.message === "string"
-		) {
-			return parsed.message;
-		}
-	} catch {
-		// Not JSON: fall through to the raw text.
-	}
-	return text.slice(0, 200) || response.statusText;
 }

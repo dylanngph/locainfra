@@ -1,14 +1,11 @@
 import type { ServiceDefinition } from "../catalog/catalog.model";
-import {
-	GLOBAL_STACK_NAME,
-	type Stack,
-	type StackFile,
-} from "../stack/stack.model";
+import type { Stack, StackFile } from "../stack/stack.model";
 
 /** Test definition of PostgreSQL (the plan's §2 example). */
 export const postgresDefinition: ServiceDefinition = {
 	id: "postgres",
 	name: "PostgreSQL",
+	description: "Relational SQL database.",
 	category: "database",
 	tags: ["sql", "relational"],
 	icon: "postgres",
@@ -52,6 +49,12 @@ export const postgresDefinition: ServiceDefinition = {
 		PGHOST: "127.0.0.1",
 		PGPORT: "{{port}}",
 	},
+	primaryExport: "DATABASE_URL",
+	snippets: {
+		node: 'import pg from "pg";\nconst pool = new pg.Pool({ connectionString: process.env.KEY });',
+		python: 'import os, psycopg\nconn = psycopg.connect(os.environ["KEY"])',
+		go: 'conn, err := pgx.Connect(ctx, os.Getenv("KEY"))',
+	},
 	connect: [
 		"psql",
 		"-U",
@@ -60,6 +63,55 @@ export const postgresDefinition: ServiceDefinition = {
 		"{{config.POSTGRES_DB}}",
 	],
 	studio: { panel: "sql" },
+	data: {
+		kind: "sql",
+		label: "Tables",
+		listObjects: [
+			"psql",
+			"-X",
+			"-U",
+			"{{config.POSTGRES_USER}}",
+			"-d",
+			"{{config.POSTGRES_DB}}",
+			"-A",
+			"-t",
+			"-c",
+			"SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename",
+		],
+		runQuery: [
+			"psql",
+			"-X",
+			"-U",
+			"{{config.POSTGRES_USER}}",
+			"-d",
+			"{{config.POSTGRES_DB}}",
+			"--csv",
+			"-v",
+			"ON_ERROR_STOP=1",
+			"-c",
+			"{{query}}",
+		],
+		defaultQuery: 'SELECT *\nFROM "{{object}}"\nLIMIT 100;',
+	},
+	seed: {
+		mountPath: "/docker-entrypoint-initdb.d",
+		fileName: "seed.sql",
+		run: [
+			"psql",
+			"-X",
+			"-q",
+			"-U",
+			"{{config.POSTGRES_USER}}",
+			"-d",
+			"{{config.POSTGRES_DB}}",
+			"-v",
+			"ON_ERROR_STOP=1",
+			"-f",
+			"-",
+		],
+	},
+	secretOptions: { POSTGRES_PASSWORD: { bakedIntoVolume: true } },
+	import: { images: ["postgres", "postgis/postgis", "pgvector/pgvector"] },
 };
 
 /** Test definition of Redis (password via `command`). */
@@ -67,6 +119,7 @@ export const redisDefinition: ServiceDefinition = {
 	id: "redis",
 	name: "Redis",
 	category: "cache",
+	categoryLabel: "Redis",
 	tags: ["key-value"],
 	icon: "redis",
 	image: "redis:{{version}}-alpine",
@@ -99,7 +152,16 @@ export const redisDefinition: ServiceDefinition = {
 	exports: {
 		REDIS_URL: "redis://:{{secrets.REDIS_PASSWORD}}@127.0.0.1:{{port}}",
 	},
+	primaryExport: "REDIS_URL",
 	studio: { panel: "redis" },
+	data: {
+		kind: "redis",
+		label: "Key patterns",
+		objects: ["*"],
+		runQuery: ["redis-cli", "--csv", "{{query}}"],
+		defaultQuery: "SCAN 0 MATCH {{object}} COUNT 100",
+	},
+	import: { images: ["redis", "valkey/valkey"] },
 };
 
 /** Test definition of the Upstash-compatible REST proxy (depends on redis). */
@@ -107,6 +169,7 @@ export const upstashRedisDefinition: ServiceDefinition = {
 	id: "upstash-redis",
 	name: "Upstash Redis (REST)",
 	category: "cache",
+	categoryLabel: "Redis",
 	tags: ["serverless", "rest"],
 	image: "hiett/serverless-redis-http:{{version}}",
 	versions: ["latest"],
@@ -118,7 +181,7 @@ export const upstashRedisDefinition: ServiceDefinition = {
 		SRH_MODE: "env",
 		SRH_TOKEN: "{{secrets.SRH_TOKEN}}",
 		SRH_CONNECTION_STRING:
-			"redis://:{{services.redis.secrets.REDIS_PASSWORD}}@redis:6379",
+			"redis://:{{services.redis.secrets.REDIS_PASSWORD}}@{{services.redis.host}}:6379",
 	},
 	volumes: [],
 	healthcheck: {
@@ -133,7 +196,12 @@ export const upstashRedisDefinition: ServiceDefinition = {
 		UPSTASH_REDIS_REST_URL: "http://127.0.0.1:{{port}}",
 		UPSTASH_REDIS_REST_TOKEN: "{{secrets.SRH_TOKEN}}",
 	},
+	primaryExport: "UPSTASH_REDIS_REST_URL",
 	dependsOn: ["redis"],
+	data: { kind: "none" },
+	import: {
+		images: ["hiett/serverless-redis-http", "upstash/redis-http"],
+	},
 };
 
 /** The three built-in v0.1 definitions. */
@@ -146,8 +214,8 @@ export const builtinTestDefinitions: readonly ServiceDefinition[] = [
 /**
  * Builds a project {@link Stack} for tests.
  *
- * @param name - Stack name.
- * @param services - Stack file `services`.
+ * @param name - Project name.
+ * @param services - Stack file `services` (instance name → entry with `type`).
  * @param extra - Extra stack file fields (e.g. `link`).
  * @returns A project stack rooted at `/work/<name>`.
  */
@@ -157,29 +225,9 @@ export function createProjectStack(
 	extra: Partial<Omit<StackFile, "version" | "name" | "services">> = {},
 ): Stack {
 	return {
-		kind: "project",
 		name,
 		root: `/work/${name}`,
 		filePath: `/work/${name}/locainfra.yaml`,
 		file: { version: 1, name, services, ...extra },
-	};
-}
-
-/**
- * Builds the global {@link Stack} for tests.
- *
- * @param services - Stack file `services`.
- * @param stateDir - State directory holding `global.yaml`.
- * @returns The global stack.
- */
-export function createGlobalStack(
-	services: StackFile["services"],
-	stateDir = "/home/test/.locainfra",
-): Stack {
-	return {
-		kind: "global",
-		name: GLOBAL_STACK_NAME,
-		filePath: `${stateDir}/global.yaml`,
-		file: { version: 1, name: GLOBAL_STACK_NAME, services },
 	};
 }

@@ -12,6 +12,10 @@
 	},
 	"dependencies": {
 		"@locainfra/core": "workspace:*",
-		"@sinclair/typebox": "^0.34.52"
+		"@sinclair/typebox": "^0.34.52",
+		"drizzle-orm": "^0.45.3"
+	},
+	"devDependencies": {
+		"drizzle-kit": "^0.31.11"
 	}
 }

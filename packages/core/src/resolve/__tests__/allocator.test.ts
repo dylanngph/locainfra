@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { ServiceDefinition } from "../../catalog/catalog.model";
 import type { StateFile } from "../../ports/state.port";
+import { OpError } from "../../shared/op-error";
 import type { Stack } from "../../stack/stack.model";
 import {
 	builtinTestDefinitions,
-	createGlobalStack,
 	createProjectStack,
 	redisDefinition,
 } from "../../testing/catalog-fixtures";
@@ -45,8 +45,11 @@ describe("allocatePorts", () => {
 				other: { ports: { postgres: 5434 }, createdAt: "2026-01-01T00:00:00Z" },
 			},
 		});
-		const result = await run(deps, createProjectStack("app", { postgres: {} }));
-		// 5432 is the global canonical port, 5433/5435 busy, 5434 reserved by "other".
+		const result = await run(
+			deps,
+			createProjectStack("app", { postgres: { type: "postgres" } }),
+		);
+		// 5432 is the canonical port (never auto-picked), 5433/5435 busy, 5434 reserved by "other".
 		expect(result).toEqual({ ok: true, value: { postgres: 5436 } });
 		expect(deps.state.state.stacks.app).toEqual({
 			ports: { postgres: 5436 },
@@ -62,7 +65,10 @@ describe("allocatePorts", () => {
 				app: { ports: { postgres: 5440 }, createdAt: "2026-01-01T00:00:00Z" },
 			},
 		});
-		const result = await run(deps, createProjectStack("app", { postgres: {} }));
+		const result = await run(
+			deps,
+			createProjectStack("app", { postgres: { type: "postgres" } }),
+		);
 		expect(result).toEqual({ ok: true, value: { postgres: 5440 } });
 		expect(deps.probe.probed).toEqual([]);
 		expect(deps.state.state.stacks.app?.createdAt).toBe("2026-01-01T00:00:00Z");
@@ -72,7 +78,10 @@ describe("allocatePorts", () => {
 		const cacheA = { ...redisDefinition, id: "cache-a" };
 		const cacheB = { ...redisDefinition, id: "cache-b" };
 		const deps = setup([6381]);
-		const stack = createProjectStack("app", { "cache-a": {}, "cache-b": {} });
+		const stack = createProjectStack("app", {
+			"cache-a": { type: "cache-a" },
+			"cache-b": { type: "cache-b" },
+		});
 		const result = await run(deps, stack, [cacheA, cacheB]);
 		expect(result).toEqual({
 			ok: true,
@@ -84,7 +93,7 @@ describe("allocatePorts", () => {
 		const deps = setup([6380]);
 		const result = await run(
 			deps,
-			createProjectStack("app", { redis: { port: 6380 } }),
+			createProjectStack("app", { redis: { type: "redis", port: 6380 } }),
 		);
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
@@ -104,7 +113,7 @@ describe("allocatePorts", () => {
 		});
 		const result = await run(
 			deps,
-			createProjectStack("app", { redis: { port: 6390 } }),
+			createProjectStack("app", { redis: { type: "redis", port: 6390 } }),
 		);
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
@@ -125,37 +134,46 @@ describe("allocatePorts", () => {
 		});
 		const result = await run(
 			deps,
-			createProjectStack("app", { redis: { port: 6390 } }),
+			createProjectStack("app", { redis: { type: "redis", port: 6390 } }),
 		);
 		expect(result).toEqual({ ok: true, value: { redis: 6390 } });
 	});
 
-	test("global stack uses canonical default ports", async () => {
-		const deps = setup();
+	test("two instances of one type get distinct ports pinned by instance name", async () => {
+		const deps = setup([5433]);
 		const result = await run(
 			deps,
-			createGlobalStack({ postgres: {}, redis: { port: "auto" } }),
+			createProjectStack("shop", {
+				"main-db": { type: "postgres" },
+				events: { type: "postgres" },
+			}),
 		);
 		expect(result).toEqual({
 			ok: true,
-			value: { postgres: 5432, redis: 6379 },
+			value: { "main-db": 5434, events: 5435 },
 		});
-		expect(deps.state.state.stacks.global?.ports).toEqual({
-			postgres: 5432,
-			redis: 6379,
+		expect(deps.state.state.stacks.shop?.ports).toEqual({
+			"main-db": 5434,
+			events: 5435,
 		});
 	});
 
-	test("global canonical port in use is a PORT_CONFLICT", async () => {
-		const deps = setup([5432]);
-		const result = await run(deps, createGlobalStack({ postgres: {} }));
-		expect(result.ok).toBe(false);
-		if (!result.ok) expect(result.error.code).toBe("PORT_CONFLICT");
+	test("auto never takes the canonical default port", async () => {
+		const deps = setup();
+		const result = await run(
+			deps,
+			createProjectStack("app", { cache: { type: "redis", port: "auto" } }),
+		);
+		expect(result).toEqual({ ok: true, value: { cache: 6380 } });
+		expect(deps.probe.probed).not.toContain(6379);
 	});
 
 	test("an exhausted range is a PORT_CONFLICT", async () => {
 		const deps = setup(portsInRange([5432, 5499]));
-		const result = await run(deps, createProjectStack("app", { postgres: {} }));
+		const result = await run(
+			deps,
+			createProjectStack("app", { postgres: { type: "postgres" } }),
+		);
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
 			expect(result.error.code).toBe("PORT_CONFLICT");
@@ -168,16 +186,38 @@ describe("allocatePorts", () => {
 		deps.probe.isFree = async () => {
 			throw new Error("boom");
 		};
-		const result = await run(deps, createProjectStack("app", { postgres: {} }));
+		const result = await run(
+			deps,
+			createProjectStack("app", { postgres: { type: "postgres" } }),
+		);
 		expect(result.ok).toBe(false);
 		if (!result.ok) expect(result.error.code).toBe("IO");
+	});
+
+	test("a PORT_CONFLICT thrown by the state store passes through unchanged", async () => {
+		const deps = setup();
+		const conflict = new OpError("PORT_CONFLICT", "Port 5433 is pinned twice", {
+			details: { port: 5433 },
+		});
+		deps.state.update = async () => {
+			throw conflict;
+		};
+		const result = await run(
+			deps,
+			createProjectStack("app", { postgres: { type: "postgres" } }),
+		);
+		expect(result.ok).toBe(false);
+		if (!result.ok) expect(result.error).toBe(conflict);
 	});
 
 	test("concurrent allocations for two stacks never pin the same port", async () => {
 		const deps = setup();
 		const [alpha, beta] = await Promise.all([
-			run(deps, createProjectStack("alpha", { postgres: {} })),
-			run(deps, createProjectStack("beta", { postgres: {} })),
+			run(
+				deps,
+				createProjectStack("alpha", { postgres: { type: "postgres" } }),
+			),
+			run(deps, createProjectStack("beta", { postgres: { type: "postgres" } })),
 		]);
 		if (!alpha.ok) throw alpha.error;
 		if (!beta.ok) throw beta.error;
@@ -211,7 +251,10 @@ describe("allocatePorts", () => {
 			}
 			return update(mutate);
 		};
-		const result = await run(deps, createProjectStack("app", { postgres: {} }));
+		const result = await run(
+			deps,
+			createProjectStack("app", { postgres: { type: "postgres" } }),
+		);
 		expect(result).toEqual({ ok: true, value: { postgres: 5434 } });
 		expect(deps.state.state.stacks.other?.ports.postgres).toBe(5433);
 		expect(deps.state.state.stacks.app?.ports.postgres).toBe(5434);
@@ -234,7 +277,10 @@ describe("allocatePorts", () => {
 			}
 			return update(mutate);
 		};
-		const result = await run(deps, createProjectStack("app", { postgres: {} }));
+		const result = await run(
+			deps,
+			createProjectStack("app", { postgres: { type: "postgres" } }),
+		);
 		expect(result).toEqual({ ok: true, value: { postgres: 5440 } });
 		expect(deps.state.state.stacks.app).toEqual({
 			ports: { postgres: 5440 },
@@ -259,7 +305,10 @@ describe("allocatePorts", () => {
 			}));
 			return update(mutate);
 		};
-		const result = await run(deps, createProjectStack("app", { postgres: {} }));
+		const result = await run(
+			deps,
+			createProjectStack("app", { postgres: { type: "postgres" } }),
+		);
 		expect(attempts).toBe(MAX_PORT_ALLOCATION_ATTEMPTS);
 		expect(result.ok).toBe(false);
 		if (!result.ok) expect(result.error.code).toBe("PORT_CONFLICT");

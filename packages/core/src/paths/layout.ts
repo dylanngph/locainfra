@@ -1,6 +1,5 @@
 import { join } from "node:path";
 import type { Paths } from "../ports/paths.port";
-import { GLOBAL_STACK_FILE_NAME } from "../stack/stack.model";
 
 /** Prefix of every compose project and network created by LocaInfra. */
 export const COMPOSE_PREFIX = "li-";
@@ -14,19 +13,43 @@ export function composeProjectName(stackName: string): string {
 }
 
 /**
- * @param paths - Resolved paths.
- * @returns `~/.locainfra/state.json`.
+ * Docker container name of a service instance. Registration must reject a
+ * project/instance pair whose name equals one in another registered project
+ * (`li-shop` + `api-db` and `li-shop-api` + `db` both give `li-shop-api-db`).
+ *
+ * @param stackName - Project name.
+ * @param instanceName - Service instance name.
+ * @returns `li-<stack>-<instance>`.
  */
-export function stateFilePath(paths: Paths): string {
-	return join(paths.stateDir, "state.json");
+export function serviceContainerName(
+	stackName: string,
+	instanceName: string,
+): string {
+	return `${COMPOSE_PREFIX}${stackName}-${instanceName}`;
+}
+
+/**
+ * Docker volume name of one catalog volume of a service instance.
+ *
+ * @param stackName - Project name.
+ * @param instanceName - Service instance name.
+ * @param volume - Catalog volume name (e.g. `data`).
+ * @returns `li-<stack>-<instance>-<volume>`.
+ */
+export function serviceVolumeName(
+	stackName: string,
+	instanceName: string,
+	volume: string,
+): string {
+	return `${COMPOSE_PREFIX}${stackName}-${instanceName}-${volume}`;
 }
 
 /**
  * @param paths - Resolved paths.
- * @returns `~/.locainfra/global.yaml`.
+ * @returns `~/.locainfra/state.json`, the legacy (M1/M2) state file that the SQLite store imports once.
  */
-export function globalStackFilePath(paths: Paths): string {
-	return join(paths.stateDir, GLOBAL_STACK_FILE_NAME);
+export function stateFilePath(paths: Paths): string {
+	return join(paths.stateDir, "state.json");
 }
 
 /**

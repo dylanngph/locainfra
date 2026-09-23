@@ -3,6 +3,20 @@ import type { SecretStore } from "../../ports/secrets.port";
 import { OpError } from "../../shared/op-error";
 import { err, ok, type Result } from "../../shared/result";
 
+/**
+ * Key of one instance's secret in the stack's {@link SecretStore} file (and,
+ * prefixed with `LI_SECRET_`, in the compose `.env`): the instance name
+ * upper-cased with dashes as `_`, then `__`, then the secret name. Two
+ * instances of one type thus never share a password.
+ *
+ * @param instance - Service instance name, e.g. `main-db`.
+ * @param name - Secret name from the definition, e.g. `POSTGRES_PASSWORD`.
+ * @returns e.g. `MAIN_DB__POSTGRES_PASSWORD`.
+ */
+export function instanceSecretKey(instance: string, name: string): string {
+	return `${instance.toUpperCase().replaceAll("-", "_")}__${name}`;
+}
+
 /** Random bytes per generated secret. */
 export const SECRET_BYTES = 32;
 
@@ -18,7 +32,7 @@ export interface SecretEnsurerDeps {
 export interface SecretEnsurerInput {
 	/** Stack name (one secrets file per stack). */
 	readonly stack: string;
-	/** Secret names the stack's services declare. */
+	/** Secret keys to ensure (see {@link instanceSecretKey}). */
 	readonly names: readonly string[];
 }
 

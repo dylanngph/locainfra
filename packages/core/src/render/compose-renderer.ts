@@ -1,10 +1,17 @@
 import { stringify } from "yaml";
 import { dotenvFormatter } from "../env/formats/dotenv";
-import type { ResolvedService, ResolvedStack } from "../resolve/resolved.model";
+import { serviceContainerName } from "../paths/layout";
+import type {
+	ResolvedSeedMount,
+	ResolvedService,
+	ResolvedStack,
+} from "../resolve/resolved.model";
 import {
 	LABEL_CATALOG_ID,
+	LABEL_INSTANCE,
 	LABEL_SERVICE,
 	LABEL_STACK,
+	LABEL_TYPE,
 	LABEL_VERSION,
 } from "./labels";
 import {
@@ -28,6 +35,20 @@ export interface ComposeHealthcheck {
 	start_period?: string;
 }
 
+/** Long-syntax bind mount (the read-only seed file). */
+export interface ComposeBindMount {
+	/** Always `bind`. */
+	type: "bind";
+	/** Absolute host path (`$` escaped as `$$` for compose interpolation). */
+	source: string;
+	/** Absolute container path. */
+	target: string;
+	/** Always true: the container cannot change the file. */
+	read_only: true;
+	/** Never create a missing source: compose fails instead of making a directory. */
+	bind: { create_host_path: false };
+}
+
 /** Compose `depends_on` entry. */
 export interface ComposeDependency {
 	/** When the dependency counts as ready. */
@@ -48,8 +69,8 @@ export interface ComposeService {
 	environment?: Record<string, string>;
 	/** `127.0.0.1:<host>:<container>` bindings. */
 	ports: string[];
-	/** `<volume>:<path>` mounts. */
-	volumes?: string[];
+	/** `<volume>:<path>` named volumes, then the seed file bind mount. */
+	volumes?: Array<string | ComposeBindMount>;
 	/** Healthcheck. */
 	healthcheck?: ComposeHealthcheck;
 	/** Start-order dependencies. */
@@ -86,7 +107,17 @@ export interface ComposeDocument {
  * @returns The container name, `li-<stack>-<service>`.
  */
 export function containerName(stack: string, service: string): string {
-	return `li-${stack}-${service}`;
+	return serviceContainerName(stack, service);
+}
+
+function seedMount(seed: ResolvedSeedMount): ComposeBindMount {
+	return {
+		type: "bind",
+		source: seed.source.replaceAll("$", () => "$$"),
+		target: seed.target,
+		read_only: true,
+		bind: { create_host_path: false },
+	};
 }
 
 function renderService(
@@ -111,15 +142,18 @@ function renderService(
 	const hc = service.healthcheck;
 	return {
 		image: service.image,
-		container_name: containerName(stack.name, service.id),
+		container_name: service.containerName,
 		restart: "unless-stopped",
 		...(service.command && {
 			command: service.command.map((part) => escaper.escape(part)),
 		}),
 		...(Object.keys(environment).length > 0 && { environment }),
 		ports: [`127.0.0.1:${service.hostPort}:${service.containerPort}`],
-		...(service.volumes.length > 0 && {
-			volumes: service.volumes.map((v) => `${v.name}:${v.path}`),
+		...((service.volumes.length > 0 || service.seed !== undefined) && {
+			volumes: [
+				...service.volumes.map((v) => `${v.name}:${v.path}`),
+				...(service.seed === undefined ? [] : [seedMount(service.seed)]),
+			],
 		}),
 		...(hc && {
 			healthcheck: {
@@ -133,8 +167,10 @@ function renderService(
 		...(service.dependsOn.length > 0 && { depends_on: dependsOn }),
 		labels: {
 			[LABEL_STACK]: stack.name,
-			[LABEL_SERVICE]: service.id,
-			[LABEL_CATALOG_ID]: service.catalogId,
+			[LABEL_SERVICE]: service.name,
+			[LABEL_INSTANCE]: service.name,
+			[LABEL_TYPE]: service.type,
+			[LABEL_CATALOG_ID]: service.type,
 			[LABEL_VERSION]: service.version,
 		},
 		networks: [stack.network],
@@ -142,8 +178,10 @@ function renderService(
 }
 
 /**
- * Builds the compose document for a resolved stack. Ports bind to
- * 127.0.0.1 only; secret values are replaced by `${LI_SECRET_<NAME>}`
+ * Builds the compose document for a resolved stack. Each instance becomes
+ * the compose service `<instance>` with container `li-<project>-<instance>`;
+ * ports bind to 127.0.0.1 only; `ephemeral` instances get no named volume.
+ * Secret values are replaced by `${LI_SECRET_<INSTANCE>__<NAME>}`
  * references resolved from the `.env` next to the compose file
  * ({@link renderComposeEnvFile}).
  *
@@ -152,16 +190,21 @@ function renderService(
  */
 export function toComposeDocument(stack: ResolvedStack): ComposeDocument {
 	const escaper = createComposeEscaper(collectStackSecrets(stack));
-	const byId = new Map(stack.services.map((s) => [s.id, s]));
+	const byId = new Map(stack.services.map((s) => [s.name, s]));
 	const services: Record<string, ComposeService> = {};
 	const volumes: Record<string, ComposeNamedResource> = {};
 
 	for (const service of stack.services) {
-		services[service.id] = renderService(stack, service, byId, escaper);
+		services[service.name] = renderService(stack, service, byId, escaper);
 		for (const volume of service.volumes) {
 			volumes[volume.name] = {
 				name: volume.name,
-				labels: { [LABEL_STACK]: stack.name, [LABEL_SERVICE]: service.id },
+				labels: {
+					[LABEL_STACK]: stack.name,
+					[LABEL_SERVICE]: service.name,
+					[LABEL_INSTANCE]: service.name,
+					[LABEL_TYPE]: service.type,
+				},
 			};
 		}
 	}

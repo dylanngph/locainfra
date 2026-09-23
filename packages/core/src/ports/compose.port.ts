@@ -52,6 +52,30 @@ export interface ComposeDownInput extends ComposeTarget {
 	readonly volumes?: boolean;
 }
 
+/** Input for {@link LifecycleRunner.start}, {@link LifecycleRunner.stop} and {@link LifecycleRunner.restart}. */
+export interface ComposeServicesInput extends ComposeTarget {
+	/** Compose service keys (instance names) to act on; at least one. */
+	readonly services: readonly string[];
+}
+
+/** Input for {@link LifecycleRunner.remove}. */
+export interface ComposeRemoveInput extends ComposeServicesInput {
+	/**
+	 * Docker volume names to delete after the containers are removed
+	 * (destructive; callers confirm first). Omitted or empty keeps all data.
+	 */
+	readonly volumes?: readonly string[];
+	/**
+	 * Docker networks to delete after the containers and volumes, e.g. the
+	 * project network `li-<project>` when its last service is removed
+	 * (`docker compose down` finds nothing to remove once no service is
+	 * left). Missing networks are ignored. Best effort: a network that is
+	 * still in use is reported as a `log` event and the run still ends with
+	 * `done`, so the caller can finish removing the service.
+	 */
+	readonly networks?: readonly string[];
+}
+
 /** Input for {@link LifecycleRunner.ps}. */
 export type ComposePsInput = ComposeTarget;
 
@@ -69,6 +93,32 @@ export interface LifecycleRunner {
 	 * @param input - Project, file and options.
 	 */
 	down(input: ComposeDownInput): AsyncIterable<Progress>;
+	/**
+	 * `docker compose start <services>` (existing containers only), streaming
+	 * progress. Ends with a `done` or `error` event.
+	 *
+	 * @param input - Project, file and services.
+	 */
+	start(input: ComposeServicesInput): AsyncIterable<Progress>;
+	/**
+	 * `docker compose stop <services>`, streaming progress. Ends with a `done` or `error` event.
+	 *
+	 * @param input - Project, file and services.
+	 */
+	stop(input: ComposeServicesInput): AsyncIterable<Progress>;
+	/**
+	 * `docker compose restart <services>`, streaming progress. Ends with a `done` or `error` event.
+	 *
+	 * @param input - Project, file and services.
+	 */
+	restart(input: ComposeServicesInput): AsyncIterable<Progress>;
+	/**
+	 * `docker compose rm --stop --force <services>`, then deletes the listed
+	 * Docker volumes. Ends with a `done` or `error` event.
+	 *
+	 * @param input - Project, file, services and volumes to delete.
+	 */
+	remove(input: ComposeRemoveInput): AsyncIterable<Progress>;
 	/**
 	 * `docker compose ps --all --format json`.
 	 *

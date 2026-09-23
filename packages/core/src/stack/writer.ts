@@ -4,14 +4,28 @@ import { OpError } from "../shared/op-error";
 import { err, ok, type Result } from "../shared/result";
 import { decodeWithSchema, readYamlSource } from "../shared/yaml-schema";
 import { parseStackFile, stackErrorToOpError } from "./loader";
-import { StackError, type StackFile, StackServiceEntry } from "./stack.model";
+import {
+	NAME_PATTERN,
+	StackError,
+	type StackFile,
+	StackServiceEntry,
+} from "./stack.model";
 
 /** First line of every stack file LocaInfra creates (editor schema hint). */
 export const STACK_SCHEMA_COMMENT =
 	"# yaml-language-server: $schema=https://locainfra.dev/schema/v1.json";
 
-const SERVICE_ID = /^[a-z0-9][a-z0-9-]*$/;
-const ENTRY_FIELDS = ["version", "port", "config"] as const;
+const INSTANCE_NAME = new RegExp(NAME_PATTERN);
+/** Entry fields in the order they are written. */
+const ENTRY_FIELDS = [
+	"type",
+	"version",
+	"port",
+	"persist",
+	"config",
+	"seed",
+	"uses",
+] as const;
 
 /** Serialisation options: never re-fold long scalars the user wrote. */
 const TO_STRING = { lineWidth: 0 } as const;
@@ -59,9 +73,9 @@ function validateEntry(
 	filePath: string,
 ): Result<StackServiceEntry, StackError> {
 	const issues: string[] = [];
-	if (!SERVICE_ID.test(id)) {
+	if (!INSTANCE_NAME.test(id)) {
 		issues.push(
-			`${filePath}: /services/${id}: service id must match ${SERVICE_ID.source}`,
+			`${filePath}: /services/${id}: service name must match ${NAME_PATTERN}`,
 		);
 	}
 	const decoded = decodeWithSchema(StackServiceEntry, compactEntry(entry));
@@ -81,6 +95,14 @@ function validateEntry(
 		);
 	}
 	return ok(decoded.value);
+}
+
+/** Whether an existing scalar node value already equals `value` (keeps its quoting and comments). */
+function sameScalar(current: unknown, value: unknown): boolean {
+	return (
+		(typeof value === "string" || typeof value === "number") &&
+		current === value
+	);
 }
 
 type Mutation = (
@@ -121,11 +143,12 @@ function edit(
 }
 
 /**
- * Adds a service entry, keeping every comment and the formatting of untouched
- * entries. The new entry is written in flow style (`id: { version: "17" }`).
+ * Adds a service instance, keeping every comment and the formatting of
+ * untouched entries. The new entry is written in flow style
+ * (`main-db: { type: postgres, version: "17" }`).
  *
  * @param text - Current stack file text.
- * @param id - Catalog id (the `services` key).
+ * @param id - Instance name (the `services` key).
  * @param entry - Entry fields; omitted fields fall back to catalog defaults.
  * @param filePath - Path used in messages.
  * @returns New text, or a {@link StackError} if the id exists or the result is invalid.
@@ -151,11 +174,13 @@ export function addStackService(
 }
 
 /**
- * Adds or updates a service entry. An existing entry is updated field by field
- * (fields absent from `entry` are removed), so comments around it survive.
+ * Adds or updates a service instance. An existing one-line (flow) entry is
+ * rewritten in canonical field order, keeping its comments; a block entry is
+ * updated field by field (fields absent from `entry` are removed, new ones
+ * appended), so comments around and inside it survive.
  *
  * @param text - Current stack file text.
- * @param id - Catalog id.
+ * @param id - Instance name.
  * @param entry - Complete desired entry.
  * @param filePath - Path used in messages.
  * @returns New text, or a {@link StackError} if the result is invalid.
@@ -174,21 +199,32 @@ export function setStackService(
 			services.set(id, entryNode(document, valid.value));
 			return undefined;
 		}
+		if (existing.flow) {
+			// A one-line entry is rewritten whole (canonical field order); the
+			// comments attached to it are carried over.
+			const replacement = entryNode(document, valid.value);
+			replacement.comment = existing.comment;
+			replacement.commentBefore = existing.commentBefore;
+			services.set(id, replacement);
+			return undefined;
+		}
 		for (const field of ENTRY_FIELDS) {
 			const value = valid.value[field];
 			if (value === undefined) existing.delete(field);
-			else existing.set(field, document.createNode(value));
+			else if (!sameScalar(existing.get(field), value)) {
+				existing.set(field, document.createNode(value));
+			}
 		}
 		return undefined;
 	});
 }
 
 /**
- * Removes a service entry (and the comments attached to it); everything else
- * is kept verbatim.
+ * Removes a service instance (and the comments attached to it); everything
+ * else is kept verbatim.
  *
  * @param text - Current stack file text.
- * @param id - Catalog id.
+ * @param id - Instance name.
  * @param filePath - Path used in messages.
  * @returns New text, or a {@link StackError} if the id is not present.
  */
@@ -218,7 +254,7 @@ export function removeStackService(
  *
  * @param files - File access.
  * @param filePath - Stack file path.
- * @param change - Pure edit, e.g. `(text) => addStackService(text, "redis", {}, filePath)`.
+ * @param change - Pure edit, e.g. `(text) => addStackService(text, "cache", { type: "redis" }, filePath)`.
  * @param initial - Contents to start from when the file does not exist yet
  *   (e.g. {@link renderStackFile} of an empty stack); without it a missing file
  *   is `STACK_NOT_FOUND`.

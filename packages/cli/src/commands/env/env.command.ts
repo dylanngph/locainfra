@@ -15,8 +15,6 @@ export const ENV_FORMATS = [
 
 /** Parsed flags of `locainfra env`. */
 export interface EnvCommandOptions {
-	/** Use the global stack. */
-	readonly global: boolean;
 	/** Explicit `--format`; when omitted, `json` under `--json`, else `dotenv`. */
 	readonly format?: EnvFormat;
 	/** Machine-readable output. */
@@ -35,7 +33,7 @@ export function effectiveEnvFormat(options: EnvCommandOptions): EnvFormat {
 }
 
 /**
- * `locainfra env`: print the stack's connection variables on stdout, e.g.
+ * `locainfra env`: print the cwd project's connection variables on stdout, e.g.
  * `eval "$(locainfra env --format shell)"`. The output intentionally contains
  * credentials; nothing is logged elsewhere.
  *
@@ -64,7 +62,7 @@ export async function runEnv(
 }
 
 /**
- * Registers `env [--global] [--format dotenv|shell|json]` on the root program.
+ * Registers `env [--format dotenv|shell|json]` on the root program.
  *
  * @param program - Root program.
  * @param ctx - IO and deps loader.
@@ -75,8 +73,9 @@ export function registerEnvCommand(
 ): void {
 	program
 		.command("env")
-		.description("print connection variables for the stack")
-		.option("-g, --global", "use the global stack (~/.locainfra/global.yaml)")
+		.description(
+			"print connection variables of the project in this folder (nearest locainfra.yaml)",
+		)
 		.addOption(
 			new Option("-f, --format <format>", "output format").choices(ENV_FORMATS),
 		)
@@ -84,7 +83,6 @@ export function registerEnvCommand(
 			const { json } = cmd.optsWithGlobals();
 			ctx.io.setExitCode(
 				await runEnv(ctx, {
-					global: opts.global === true,
 					json: json === true,
 					...(opts.format ? { format: opts.format } : {}),
 				}),

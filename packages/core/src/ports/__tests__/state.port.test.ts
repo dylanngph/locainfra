@@ -13,9 +13,9 @@ describe("port data schemas", () => {
 	test("state with a pinned stack validates", () => {
 		expect(
 			Value.Check(StateFile, {
-				projects: [{ name: "sovr", root: "/work/sovr", envFile: ".env.local" }],
+				projects: [{ name: "shop", root: "/work/shop", envFile: ".env.local" }],
 				stacks: {
-					sovr: {
+					shop: {
 						ports: { postgres: 5433 },
 						createdAt: "2026-09-23T00:00:00Z",
 					},
@@ -29,18 +29,18 @@ describe("port data schemas", () => {
 		expect(
 			Value.Check(ContainerSummary, {
 				id: "abc",
-				name: "li-sovr-postgres-1",
+				name: "li-shop-postgres-1",
 				image: "postgres:17-alpine",
 				state: "running",
 				health: "healthy",
-				labels: { "locainfra.stack": "sovr" },
+				labels: { "locainfra.stack": "shop" },
 				ports: [{ host: 5433, container: 5432 }],
 			}),
 		).toBe(true);
 		expect(
 			Value.Check(ComposeServiceStatus, {
 				service: "postgres",
-				name: "li-sovr-postgres-1",
+				name: "li-shop-postgres-1",
 				state: "running",
 				image: "postgres:17-alpine",
 				publishers: [{ publishedPort: 5433, targetPort: 5432 }],

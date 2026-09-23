@@ -1,8 +1,9 @@
 # yaml-language-server: $schema=../schema/service.v1.json
 id: upstash-redis
 name: Upstash Redis (REST)
-description: Upstash-compatible REST API (serverless-redis-http) in front of the stack's Redis.
+description: REST-compatible Redis that matches serverless prod.
 category: cache
+categoryLabel: Redis
 tags: [redis, rest, upstash, serverless]
 icon: upstash
 homepage: https://github.com/hiett/serverless-redis-http
@@ -15,8 +16,8 @@ secrets: [SRH_TOKEN]
 env:
   SRH_MODE: env
   SRH_TOKEN: "{{secrets.SRH_TOKEN}}"
-  # `redis` is the compose service name on the stack network; 6379 is its container port.
-  SRH_CONNECTION_STRING: "redis://:{{services.redis.secrets.REDIS_PASSWORD}}@redis:6379"
+  # services.redis.host is the Redis instance's name on the stack network; 6379 is its container port.
+  SRH_CONNECTION_STRING: "redis://:{{services.redis.secrets.REDIS_PASSWORD}}@{{services.redis.host}}:6379"
 healthcheck:
   # Erlang/Alpine image: no curl, but busybox nc is available.
   test: ["CMD", "nc", "-z", "127.0.0.1", "80"]
@@ -26,3 +27,16 @@ healthcheck:
 exports:
   UPSTASH_REDIS_REST_URL: "http://127.0.0.1:{{port}}"
   UPSTASH_REDIS_REST_TOKEN: "{{secrets.SRH_TOKEN}}"
+primaryExport: UPSTASH_REDIS_REST_URL
+snippets:
+  node: |-
+    import { Redis } from "@upstash/redis";
+    const redis = Redis.fromEnv(); // reads KEY + token
+  python: |-
+    from upstash_redis import Redis
+    redis = Redis.from_env()
+  go: |-
+    // POST to os.Getenv("KEY") with Authorization: Bearer <token>
+data: { kind: none }         # data lives in the redis instance it fronts
+import:
+  images: [hiett/serverless-redis-http, upstash/redis-http]

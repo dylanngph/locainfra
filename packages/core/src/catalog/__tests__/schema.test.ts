@@ -51,6 +51,7 @@ describe("published JSON Schemas", () => {
 			"defaultVersion",
 			"port",
 			"healthcheck",
+			"primaryExport",
 		]);
 		expect(service.properties.command).toBeDefined();
 		expect(

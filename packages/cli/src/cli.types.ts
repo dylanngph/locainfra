@@ -1,11 +1,14 @@
 import type { Writable } from "node:stream";
 import type {
+	CreateProject,
 	DiscoverStack,
 	DiscoverStackDeps,
 	DownStack,
 	DownStackDeps,
 	EnvForStack,
 	EnvForStackDeps,
+	ProjectWriteDeps,
+	RegisterProject,
 	RunDoctor,
 	RunDoctorDeps,
 	UpStack,
@@ -35,8 +38,12 @@ export interface CliOps {
 	readonly downStack: DownStack;
 	/** Prints a stack's connection variables. */
 	readonly envForStack: EnvForStack;
-	/** Finds the stack for the current directory, or the global one. */
+	/** Finds the project stack for the current directory (walk-up). */
 	readonly discoverStack: DiscoverStack;
+	/** Registers an existing project folder (`--project <dir>`). */
+	readonly registerProject: RegisterProject;
+	/** Creates `locainfra.yaml` in a folder and registers it (`--project <dir>`). */
+	readonly createProject: CreateProject;
 }
 
 /**
@@ -56,6 +63,63 @@ export interface CliDeps {
 	readonly env: EnvForStackDeps;
 	/** Deps for {@link CliOps.discoverStack}. */
 	readonly discover: DiscoverStackDeps;
+	/** Deps for {@link CliOps.registerProject} and {@link CliOps.createProject}. */
+	readonly projects: ProjectWriteDeps;
+	/** What bare `locainfra` needs to find, start and open the dashboard. */
+	readonly dashboard: DashboardLauncher;
+}
+
+/** A dashboard server this process started. */
+export interface StartedDashboard {
+	/** Bound port on 127.0.0.1. */
+	readonly port: number;
+	/** URL that opens the dashboard with its session token. */
+	readonly url: string;
+	/** Whether the SPA is served (false in a dev checkout without a build). */
+	readonly servesSpa: boolean;
+	/** Stops the server (containers keep running) and removes `dashboard.json`. */
+	stop(): Promise<void>;
+}
+
+/** A dashboard another `locainfra` process is already serving. */
+export interface RunningDashboardInfo {
+	/** Server process id. */
+	readonly pid: number;
+	/** Port on 127.0.0.1. */
+	readonly port: number;
+	/** URL that opens it with its session token. */
+	readonly url: string;
+}
+
+/**
+ * Side effects of bare `locainfra`, injectable so tests never bind ports,
+ * spawn browsers or wait for signals. The real one loads the server lazily.
+ */
+export interface DashboardLauncher {
+	/** @returns The live instance from `~/.locainfra/dashboard.json` (pid alive and `/api/health` ok), or `null`. */
+	findRunning(): Promise<RunningDashboardInfo | null>;
+	/**
+	 * @param from - First candidate port.
+	 * @returns The first port ≥ `from` free on 127.0.0.1, or `undefined` when none is found nearby.
+	 */
+	findFreePort(from: number): Promise<number | undefined>;
+	/** @returns A fresh random session token. */
+	createToken(): string;
+	/**
+	 * Starts the dashboard server on 127.0.0.1.
+	 *
+	 * @param options - Port and session token.
+	 * @returns The running server.
+	 */
+	start(options: { port: number; token: string }): Promise<StartedDashboard>;
+	/**
+	 * Opens a URL in the default browser.
+	 *
+	 * @param url - Dashboard URL.
+	 */
+	openBrowser(url: string): Promise<void>;
+	/** Resolves on Ctrl+C / SIGTERM (the command then stops only the server). */
+	waitForShutdown(): Promise<void>;
 }
 
 /**

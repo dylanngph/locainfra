@@ -7,6 +7,7 @@
 		"types": ["vite/client"],
 		"allowArbitraryExtensions": true,
 		"skipLibCheck": true,
+		"strict": true,
 		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true,
 		"verbatimModuleSyntax": true,
@@ -15,7 +16,7 @@
 		"jsx": "react-jsx",
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"erasableSyntaxOnly": true,
+		"erasableSyntaxOnly": false,
 		"noFallthroughCasesInSwitch": true,
 		"paths": {
 			"@/*": ["./src/*"]

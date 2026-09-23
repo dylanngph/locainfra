@@ -1,0 +1,27 @@
+{
+	"version": "7",
+	"dialect": "sqlite",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "6",
+			"when": 1790160288291,
+			"tag": "0000_init",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1790160292391,
+			"tag": "0001_ops_retention",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1790173584875,
+			"tag": "0002_snapshot_provenance",
+			"breakpoints": true
+		}
+	]
+}

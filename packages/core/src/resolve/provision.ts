@@ -9,7 +9,7 @@ import { planStack } from "./plan";
 import { allocatePorts } from "./ports/allocator";
 import type { ResolvedStack } from "./resolved.model";
 import { resolveStack } from "./resolver";
-import { ensureSecrets, uniqueSecretNames } from "./secrets/generator";
+import { ensureSecrets, instanceSecretKey } from "./secrets/generator";
 
 /** Ports needed by {@link provisionStack}. */
 export interface ProvisionDeps {
@@ -49,7 +49,9 @@ export async function provisionStack(
 		{ store: deps.secrets, gen: deps.gen },
 		{
 			stack: stack.name,
-			names: uniqueSecretNames(plan.value.map((s) => s.definition.secrets)),
+			names: plan.value.flatMap((s) =>
+				s.definition.secrets.map((name) => instanceSecretKey(s.name, name)),
+			),
 		},
 	);
 	if (!secrets.ok) return secrets;

@@ -1,7 +1,11 @@
 import { posix } from "node:path";
 import type { SchemaIssue } from "../shared/yaml-schema";
 import { templatePaths } from "../template/template";
-import type { ServiceDefinition } from "./catalog.model";
+import {
+	DATA_OBJECT_PLACEHOLDER,
+	DATA_QUERY_PLACEHOLDER,
+	type ServiceDefinition,
+} from "./catalog.model";
 
 /** Registries definitions may pull from unless the caller configures others. */
 export const DEFAULT_ALLOWED_REGISTRIES: readonly string[] = [
@@ -261,7 +265,7 @@ export function checkDefinitionSafety(
 type PathRule = (definition: ServiceDefinition, path: string) => string | null;
 
 const ROOTS =
-	"version, port, stack.name, config.*, secrets.*, services.<dependsOn id>.{port,secrets.*,config.*}";
+	"version, port, name, stack.name, config.*, secrets.*, services.<dependsOn id>.{host,port,secrets.*,config.*}, byType.<dependsOn id>.*";
 
 const checkPath: PathRule = (definition, path) => {
 	const segments = path.split(".");
@@ -269,6 +273,7 @@ const checkPath: PathRule = (definition, path) => {
 	switch (root) {
 		case "version":
 		case "port":
+		case "name":
 			return segments.length === 1 ? null : `"${path}" is not a known path`;
 		case "stack":
 			return key === "name" && rest.length === 0
@@ -286,12 +291,15 @@ const checkPath: PathRule = (definition, path) => {
 				definition.secrets.includes(key)
 				? null
 				: `"${path}" does not name an entry of \`secrets\``;
-		case "services": {
+		case "services":
+		case "byType": {
 			if (key === undefined || !(definition.dependsOn ?? []).includes(key)) {
 				return `"${path}" references a service not listed in \`dependsOn\``;
 			}
 			const [field, name, ...extra] = rest;
-			if (field === "port" && name === undefined) return null;
+			if ((field === "port" || field === "host") && name === undefined) {
+				return null;
+			}
 			if (
 				(field === "secrets" || field === "config") &&
 				name !== undefined &&
@@ -299,7 +307,7 @@ const checkPath: PathRule = (definition, path) => {
 			) {
 				return null;
 			}
-			return `"${path}" is not a known path of a dependency (port, secrets.*, config.*)`;
+			return `"${path}" is not a known path of a dependency (host, port, secrets.*, config.*)`;
 		}
 		default:
 			return `"${path}" is not a known path (allowed: ${ROOTS})`;
@@ -335,7 +343,108 @@ function templateFields(
 	if (definition.studio?.url !== undefined) {
 		fields.push(["/studio/url", definition.studio.url]);
 	}
+	const { data, seed } = definition;
+	for (const [section, list] of [
+		["/data/listObjects", data?.listObjects ?? []],
+		["/data/runQuery", data?.runQuery ?? []],
+		["/seed/run", seed?.run ?? []],
+	] as const) {
+		list.forEach((value, index) => {
+			// The exact `{{query}}` item is the query slot, not a template path.
+			if (section === "/data/runQuery" && value === DATA_QUERY_PLACEHOLDER) {
+				return;
+			}
+			fields.push([pointer(section, index), value]);
+		});
+	}
+	if (data?.defaultQuery !== undefined) {
+		// `{{object}}` is the selected object, filled in by listDataObjects.
+		fields.push([
+			"/data/defaultQuery",
+			data.defaultQuery.split(DATA_OBJECT_PLACEHOLDER).join(""),
+		]);
+	}
 	return fields;
+}
+
+const DATA_FIELDS = [
+	"label",
+	"listObjects",
+	"objects",
+	"runQuery",
+	"defaultQuery",
+] as const;
+
+function checkData(definition: ServiceDefinition, issues: SchemaIssue[]): void {
+	const { data } = definition;
+	if (data === undefined) return;
+	if (data.kind === "none") {
+		for (const field of DATA_FIELDS) {
+			if (data[field] !== undefined) {
+				issues.push({
+					path: pointer("/data", field),
+					message: "must be omitted when data.kind is none",
+				});
+			}
+		}
+		return;
+	}
+	for (const field of ["label", "runQuery", "defaultQuery"] as const) {
+		if (data[field] === undefined) {
+			issues.push({
+				path: pointer("/data", field),
+				message: `is required when data.kind is ${data.kind}`,
+			});
+		}
+	}
+	if ((data.listObjects === undefined) === (data.objects === undefined)) {
+		issues.push({
+			path: "/data",
+			message: "set exactly one of listObjects and objects",
+		});
+	}
+	const slots = (data.runQuery ?? []).filter(
+		(item) => item === DATA_QUERY_PLACEHOLDER,
+	).length;
+	if (data.runQuery !== undefined && slots !== 1) {
+		issues.push({
+			path: "/data/runQuery",
+			message: `must contain exactly one item that is exactly ${DATA_QUERY_PLACEHOLDER} (found ${slots})`,
+		});
+	}
+}
+
+function checkSecretOptions(
+	definition: ServiceDefinition,
+	issues: SchemaIssue[],
+): void {
+	for (const name of Object.keys(definition.secretOptions ?? {})) {
+		if (!definition.secrets.includes(name)) {
+			issues.push({
+				path: pointer("/secretOptions", name),
+				message: "must name an entry of `secrets`",
+			});
+		}
+	}
+}
+
+function checkImport(
+	definition: ServiceDefinition,
+	issues: SchemaIssue[],
+): void {
+	for (const [key, target] of Object.entries(definition.import?.env ?? {})) {
+		const [root, name = ""] = target.split(".");
+		const known =
+			root === "config"
+				? Object.hasOwn(definition.config, name)
+				: definition.secrets.includes(name);
+		if (!known) {
+			issues.push({
+				path: pointer("/import/env", key),
+				message: `"${target}" does not name ${root === "config" ? "a key of `config`" : "an entry of `secrets`"}`,
+			});
+		}
+	}
 }
 
 /**
@@ -345,7 +454,16 @@ function templateFields(
  * - `port.range` is ordered and contains `port.default`;
  * - `dependsOn` has no duplicates and not the definition itself;
  * - every `{{path}}` names something that exists (`config`/`secrets` keys,
- *   `dependsOn` services); config defaults may not reference other config.
+ *   `dependsOn` services as `services.<id>` or `byType.<id>`); config
+ *   defaults may not reference other config;
+ * - `data`: kind `none` has no other field; otherwise `label`, `runQuery`
+ *   and `defaultQuery` are set, exactly one of `listObjects` / `objects`,
+ *   and `runQuery` has exactly one item that is exactly `{{query}}`.
+ *   `{{query}}` is valid only there and `{{object}}` only in
+ *   `defaultQuery` (anywhere else they are unknown paths); `data` argv
+ *   items, `defaultQuery` and `seed.run` are template-checked;
+ * - `secretOptions` keys are entries of `secrets`;
+ * - `import.env` targets name a `config` key or a `secrets` entry.
  *
  * @param definition - A definition that already passed the schema.
  * @returns Pointer-located issues; empty when consistent.
@@ -369,6 +487,12 @@ export function checkDefinitionConsistency(
 			message: `must lie within port.range [${low}, ${high}]`,
 		});
 	}
+	if (!Object.hasOwn(definition.exports, definition.primaryExport)) {
+		issues.push({
+			path: "/primaryExport",
+			message: "must name a key of `exports`",
+		});
+	}
 	const deps = definition.dependsOn ?? [];
 	if (deps.includes(definition.id)) {
 		issues.push({
@@ -390,6 +514,9 @@ export function checkDefinitionConsistency(
 			});
 		}
 	}
+	checkData(definition, issues);
+	checkSecretOptions(definition, issues);
+	checkImport(definition, issues);
 	for (const [at, template] of templateFields(definition)) {
 		for (const path of templatePaths(template)) {
 			const problem =
@@ -406,7 +533,8 @@ export function checkDefinitionConsistency(
 
 /**
  * Cross-definition rules over a merged catalog: every `dependsOn` id exists and
- * every `{{services.<id>.secrets.X}}` / `config.X` names a key the dependency declares.
+ * every `{{services.<id>.secrets.X}}` / `{{byType.<id>.config.X}}` names a key
+ * the dependency declares.
  *
  * @param definitions - The merged catalog.
  * @returns Issues prefixed with the offending definition id.
@@ -429,7 +557,11 @@ export function checkCatalogReferences(
 		for (const [at, template] of templateFields(definition)) {
 			for (const path of templatePaths(template)) {
 				const [root, id, field, name] = path.split(".");
-				if (root !== "services" || id === undefined || name === undefined)
+				if (
+					(root !== "services" && root !== "byType") ||
+					id === undefined ||
+					name === undefined
+				)
 					continue;
 				const dep = byId.get(id);
 				if (dep === undefined) continue;

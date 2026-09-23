@@ -17,6 +17,14 @@
 		"test": "bun run --filter '*' test",
 		"typecheck": "bun run --filter '*' typecheck",
 		"lint": "biome check .",
-		"format": "biome format --write ."
+		"format": "biome format --write .",
+		"dev": "bun --env-file=.env.development run --filter '*' dev",
+		"dev:ui": "bun run --filter @locainfra/dashboard dev:mock",
+		"cli": "bun packages/cli/src/index.ts",
+		"build": "bun run build:dashboard && bun run build:bin --outfile=dist/locainfra",
+		"build:targets": "bun run build:dashboard && bun run build:bin --target=bun-darwin-arm64 --outfile=dist/bun-darwin-arm64/locainfra && bun run build:bin --target=bun-darwin-x64 --outfile=dist/bun-darwin-x64/locainfra && bun run build:bin --target=bun-linux-x64 --outfile=dist/bun-linux-x64/locainfra && bun run build:bin --target=bun-linux-arm64 --outfile=dist/bun-linux-arm64/locainfra && bun run build:bin --target=bun-linux-x64-musl --outfile=dist/bun-linux-x64-musl/locainfra && bun run build:bin --target=bun-linux-arm64-musl --outfile=dist/bun-linux-arm64-musl/locainfra && bun run build:bin --target=bun-windows-x64 --outfile=dist/bun-windows-x64/locainfra",
+		"build:dashboard": "bun run --filter @locainfra/dashboard build",
+		"build:bin": "bun build packages/cli/src/index.ts --compile --asset packages/dashboard/dist --asset catalog --asset packages/engines/drizzle --minify-whitespace --minify-syntax --define process.env.NODE_ENV='\"production\"' --no-compile-autoload-dotenv --no-compile-autoload-bunfig",
+		"e2e": "bun run --filter @locainfra/dashboard e2e"
 	}
 }

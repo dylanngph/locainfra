@@ -28,12 +28,14 @@ export function extractConflictPort(text: string): number | undefined {
  * @param output - Captured output lines (stderr and stdout).
  * @param exitCode - Process exit code.
  * @param action - Compose subcommand, for the message (e.g. `up`).
+ * @param command - Command prefix for the message (default `docker compose`).
  * @returns `PORT_CONFLICT`, `DOCKER_UNREACHABLE`, `COMPOSE_MISSING` or `UNKNOWN`.
  */
 export function classifyComposeFailure(
 	output: readonly string[],
 	exitCode: number,
 	action: string,
+	command = "docker compose",
 ): OpError {
 	const text = output.join("\n");
 	if (PORT_PATTERNS.some((p) => p.test(text))) {
@@ -74,7 +76,7 @@ export function classifyComposeFailure(
 	const lastLine = [...output].reverse().find((line) => line.trim() !== "");
 	return new OpError(
 		"UNKNOWN",
-		`docker compose ${action} failed (exit ${exitCode})${lastLine ? `: ${lastLine.trim()}` : ""}`,
+		`${command} ${action} failed (exit ${exitCode})${lastLine ? `: ${lastLine.trim()}` : ""}`,
 		{ details: { exitCode } },
 	);
 }

@@ -2,6 +2,7 @@ import { Writable } from "node:stream";
 import {
 	type DoctorReport,
 	err,
+	type FileStore,
 	OpError,
 	ok,
 	type Progress,
@@ -12,7 +13,9 @@ import type {
 	CliDepsLoader,
 	CliIo,
 	CliOps,
+	DashboardLauncher,
 	ExitCode,
+	RunningDashboardInfo,
 } from "../../cli.types";
 
 /** Writable that records everything written to it (test-only). */
@@ -97,11 +100,10 @@ export function unusedPort<T extends object>(name: string): T {
 
 /** A sample project stack. */
 export const sampleStack: Stack = {
-	kind: "project",
 	name: "acme",
 	root: "/work/acme",
 	filePath: "/work/acme/locainfra.yaml",
-	file: { version: 1, name: "acme", services: { postgres: {} } },
+	file: { version: 1, name: "acme", services: { db: { type: "postgres" } } },
 };
 
 /** A healthy doctor report with one warning. */
@@ -134,7 +136,15 @@ export interface OpCalls {
 	/** `envForStack` formats. */
 	readonly env: string[];
 	/** `discoverStack` inputs. */
-	readonly discover: { cwd: string; global?: boolean }[];
+	readonly discover: { cwd: string }[];
+	/** `registerProject` / `createProject` inputs. */
+	readonly projects: {
+		op: "register" | "create";
+		name: string;
+		root: string;
+	}[];
+	/** Dashboard launcher calls, in order (`find`, `port:<from>`, `start:<port>`, `open:<url>`, `wait`, `stop`). */
+	readonly dashboard: string[];
 	/** `runDoctor` call count. */
 	doctor: number;
 }
@@ -149,6 +159,12 @@ export interface FakeDepsOptions {
 	readonly noStack?: boolean;
 	/** Make `envForStack` fail. */
 	readonly envFails?: boolean;
+	/** A dashboard that is already running (reused instead of started). */
+	readonly running?: RunningDashboardInfo;
+	/** Folders (absolute) that contain a `locainfra.yaml`, with its text. */
+	readonly stackFiles?: Readonly<Record<string, string>>;
+	/** Make `launcher.start` throw. */
+	readonly startFails?: boolean;
 }
 
 /**
@@ -161,7 +177,15 @@ export function createFakeDeps(options: FakeDepsOptions = {}): {
 	loadDeps: CliDepsLoader;
 	calls: OpCalls;
 } {
-	const calls: OpCalls = { up: [], down: [], env: [], discover: [], doctor: 0 };
+	const calls: OpCalls = {
+		up: [],
+		down: [],
+		env: [],
+		discover: [],
+		projects: [],
+		dashboard: [],
+		doctor: 0,
+	};
 	const events = options.events ?? [
 		{ kind: "step", message: "Rendering compose file" },
 		{
@@ -209,6 +233,55 @@ export function createFakeDeps(options: FakeDepsOptions = {}): {
 			}
 			return ok(sampleStack);
 		},
+		registerProject: async (_deps, input) => {
+			calls.projects.push({ op: "register", ...input });
+			return ok({ name: input.name, root: input.root });
+		},
+		createProject: async (_deps, input) => {
+			calls.projects.push({ op: "create", name: input.name, root: input.root });
+			return ok({
+				name: input.name,
+				root: input.root,
+				filePath: `${input.root}/locainfra.yaml`,
+				file: { version: 1, name: input.name, services: {} },
+			});
+		},
+	};
+	const stackFiles = options.stackFiles ?? {};
+	const files = {
+		exists: async (path: string) =>
+			Object.hasOwn(stackFiles, path.replace(/\/locainfra\.yaml$/, "")),
+		readText: async (path: string) =>
+			stackFiles[path.replace(/\/locainfra\.yaml$/, "")] ?? null,
+	} as unknown as FileStore;
+	const dashboard: DashboardLauncher = {
+		findRunning: async () => {
+			calls.dashboard.push("find");
+			return options.running ?? null;
+		},
+		findFreePort: async (from) => {
+			calls.dashboard.push(`port:${from}`);
+			return from + 1;
+		},
+		createToken: () => "tok",
+		start: async ({ port, token }) => {
+			calls.dashboard.push(`start:${port}`);
+			if (options.startFails) throw new Error("EADDRINUSE");
+			return {
+				port,
+				url: `http://127.0.0.1:${port}/?t=${token}`,
+				servesSpa: true,
+				stop: async () => {
+					calls.dashboard.push("stop");
+				},
+			};
+		},
+		openBrowser: async (url) => {
+			calls.dashboard.push(`open:${url}`);
+		},
+		waitForShutdown: async () => {
+			calls.dashboard.push("wait");
+		},
 	};
 	const deps: CliDeps = {
 		ops,
@@ -217,6 +290,8 @@ export function createFakeDeps(options: FakeDepsOptions = {}): {
 		down: unusedPort("down"),
 		env: unusedPort("env"),
 		discover: unusedPort("discover"),
+		projects: { files, state: unusedPort("state") },
+		dashboard,
 	};
 	return { loadDeps: async () => deps, calls };
 }

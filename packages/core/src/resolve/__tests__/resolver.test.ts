@@ -3,9 +3,9 @@ import type { StateFile } from "../../ports/state.port";
 import { createEmptyState } from "../../ports/state.port";
 import {
 	builtinTestDefinitions,
-	createGlobalStack,
 	createProjectStack,
 	postgresDefinition,
+	redisDefinition,
 } from "../../testing/catalog-fixtures";
 import {
 	FakePortProbe,
@@ -15,12 +15,23 @@ import {
 	SequentialSecretGenerator,
 } from "../../testing/fakes";
 import { provisionStack } from "../provision";
-import { resolveStack } from "../resolver";
+import {
+	resolveStack,
+	UNPROVISIONED_PORT,
+	UNPROVISIONED_SECRET,
+} from "../resolver";
 
-const secrets = {
+const values = {
 	POSTGRES_PASSWORD: "pg-secret-value-123",
 	REDIS_PASSWORD: "redis-secret-value-456",
 	SRH_TOKEN: "srh-token-value-789",
+};
+
+/** Stored secrets keyed per instance (`<INSTANCE>__<SECRET>`). */
+const secrets = {
+	POSTGRES__POSTGRES_PASSWORD: values.POSTGRES_PASSWORD,
+	REDIS__REDIS_PASSWORD: values.REDIS_PASSWORD,
+	UPSTASH_REDIS__SRH_TOKEN: values.SRH_TOKEN,
 };
 
 function pinned(stack: string, ports: Record<string, number>): StateFile {
@@ -32,44 +43,54 @@ function pinned(stack: string, ports: Record<string, number>): StateFile {
 
 describe("resolveStack", () => {
 	test("evaluates templates, config defaults and user overrides", () => {
-		const stack = createProjectStack("sovr", {
-			postgres: { version: "16", config: { POSTGRES_USER: "app" } },
+		const stack = createProjectStack("shop", {
+			postgres: {
+				type: "postgres",
+				version: "16",
+				config: { POSTGRES_USER: "app" },
+			},
 		});
 		const result = resolveStack({
 			stack,
 			definitions: builtinTestDefinitions,
-			state: pinned("sovr", { postgres: 5433 }),
+			state: pinned("shop", { postgres: 5433 }),
 			secrets,
 		});
 		if (!result.ok) throw result.error;
 		const [pg] = result.value.services;
-		expect(result.value.projectName).toBe("li-sovr");
-		expect(result.value.network).toBe("li-sovr");
+		expect(result.value.projectName).toBe("li-shop");
+		expect(result.value.network).toBe("li-shop");
 		expect(pg).toMatchObject({
-			id: "postgres",
-			catalogId: "postgres",
+			name: "postgres",
+			type: "postgres",
+			containerName: "li-shop-postgres",
+			persist: "volume",
 			version: "16",
 			image: "postgres:16-alpine",
 			hostPort: 5433,
 			containerPort: 5432,
-			config: { POSTGRES_USER: "app", POSTGRES_DB: "sovr" },
-			secrets: { POSTGRES_PASSWORD: secrets.POSTGRES_PASSWORD },
+			config: { POSTGRES_USER: "app", POSTGRES_DB: "shop" },
+			secrets: { POSTGRES_PASSWORD: values.POSTGRES_PASSWORD },
 			env: {
 				POSTGRES_USER: "app",
-				POSTGRES_PASSWORD: secrets.POSTGRES_PASSWORD,
-				POSTGRES_DB: "sovr",
+				POSTGRES_PASSWORD: values.POSTGRES_PASSWORD,
+				POSTGRES_DB: "shop",
 			},
 			exports: {
-				DATABASE_URL: `postgres://app:${secrets.POSTGRES_PASSWORD}@127.0.0.1:5433/sovr`,
+				DATABASE_URL: `postgres://app:${values.POSTGRES_PASSWORD}@127.0.0.1:5433/shop`,
 				PGHOST: "127.0.0.1",
 				PGPORT: "5433",
 			},
 			volumes: [
-				{ name: "li-sovr-postgres-data", path: "/var/lib/postgresql/data" },
+				{
+					name: "li-shop-postgres-data",
+					source: "data",
+					path: "/var/lib/postgresql/data",
+				},
 			],
 			dependsOn: [],
 			healthcheck: {
-				test: ["CMD", "pg_isready", "-U", "app", "-d", "sovr"],
+				test: ["CMD", "pg_isready", "-U", "app", "-d", "shop"],
 				interval: "5s",
 				retries: 10,
 			},
@@ -78,7 +99,10 @@ describe("resolveStack", () => {
 	});
 
 	test("dependency context exposes port, config and secrets of dependsOn", () => {
-		const stack = createProjectStack("app", { "upstash-redis": {}, redis: {} });
+		const stack = createProjectStack("app", {
+			"upstash-redis": { type: "upstash-redis" },
+			redis: { type: "redis" },
+		});
 		const result = resolveStack({
 			stack,
 			definitions: builtinTestDefinitions,
@@ -86,7 +110,7 @@ describe("resolveStack", () => {
 			secrets,
 		});
 		if (!result.ok) throw result.error;
-		expect(result.value.services.map((s) => s.id)).toEqual([
+		expect(result.value.services.map((s) => s.name)).toEqual([
 			"redis",
 			"upstash-redis",
 		]);
@@ -94,31 +118,19 @@ describe("resolveStack", () => {
 		expect(redis?.command).toEqual([
 			"redis-server",
 			"--requirepass",
-			secrets.REDIS_PASSWORD,
+			values.REDIS_PASSWORD,
 			"--appendonly",
 			"yes",
 		]);
 		expect(upstash?.env.SRH_CONNECTION_STRING).toBe(
-			`redis://:${secrets.REDIS_PASSWORD}@redis:6379`,
+			`redis://:${values.REDIS_PASSWORD}@redis:6379`,
 		);
 		expect(upstash?.dependsOn).toEqual(["redis"]);
 	});
 
-	test("global stack falls back to canonical ports without state", () => {
-		const result = resolveStack({
-			stack: createGlobalStack({ postgres: {} }),
-			definitions: builtinTestDefinitions,
-			state: createEmptyState(),
-			secrets,
-		});
-		if (!result.ok) throw result.error;
-		expect(result.value.services[0]?.hostPort).toBe(5432);
-		expect(result.value.kind).toBe("global");
-	});
-
 	test("unprovisioned port or secret is INVALID_STACK with a fix hint", () => {
 		const noPort = resolveStack({
-			stack: createProjectStack("app", { postgres: {} }),
+			stack: createProjectStack("app", { postgres: { type: "postgres" } }),
 			definitions: builtinTestDefinitions,
 			state: createEmptyState(),
 			secrets,
@@ -129,7 +141,9 @@ describe("resolveStack", () => {
 			expect(noPort.error.details.reason).toBe("unprovisioned");
 		}
 		const noSecret = resolveStack({
-			stack: createProjectStack("app", { postgres: { port: 5500 } }),
+			stack: createProjectStack("app", {
+				postgres: { type: "postgres", port: 5500 },
+			}),
 			definitions: builtinTestDefinitions,
 			state: createEmptyState(),
 			secrets: {},
@@ -149,13 +163,17 @@ describe("resolveStack", () => {
 		};
 		const badConfig = resolveStack({
 			...base,
-			stack: createProjectStack("app", { postgres: { config: { NOPE: "x" } } }),
+			stack: createProjectStack("app", {
+				postgres: { type: "postgres", config: { NOPE: "x" } },
+			}),
 		});
 		expect(badConfig.ok).toBe(false);
 		if (!badConfig.ok) expect(badConfig.error.code).toBe("INVALID_STACK");
 		const badVersion = resolveStack({
 			...base,
-			stack: createProjectStack("app", { postgres: { version: "17; rm -rf" } }),
+			stack: createProjectStack("app", {
+				postgres: { type: "postgres", version: "17; rm -rf" },
+			}),
 		});
 		expect(badVersion.ok).toBe(false);
 		if (!badVersion.ok) expect(badVersion.error.code).toBe("INVALID_STACK");
@@ -167,7 +185,7 @@ describe("resolveStack", () => {
 			exports: { URL: "{{secrets.POSTGRES_PASSWORD}}{{config.MISSING}}" },
 		};
 		const result = resolveStack({
-			stack: createProjectStack("app", { postgres: {} }),
+			stack: createProjectStack("app", { postgres: { type: "postgres" } }),
 			definitions: [broken],
 			state: pinned("app", { postgres: 5433 }),
 			secrets,
@@ -176,7 +194,7 @@ describe("resolveStack", () => {
 		if (!result.ok) {
 			expect(result.error.code).toBe("INVALID_CATALOG");
 			expect(result.error.details.paths).toEqual(["config.MISSING"]);
-			expect(result.error.message).not.toContain(secrets.POSTGRES_PASSWORD);
+			expect(result.error.message).not.toContain(values.POSTGRES_PASSWORD);
 		}
 	});
 });
@@ -185,7 +203,7 @@ describe("provisionStack", () => {
 	test("allocates, generates and resolves in one pass", async () => {
 		const state = new InMemoryStateStore();
 		const store = new InMemorySecretStore({
-			app: { REDIS_PASSWORD: "kept-redis-secret" },
+			app: { REDIS__REDIS_PASSWORD: "kept-redis-secret" },
 		});
 		const gen = new SequentialSecretGenerator();
 		const result = await provisionStack(
@@ -196,7 +214,10 @@ describe("provisionStack", () => {
 				gen,
 				clock: new FixedClock(),
 			},
-			createProjectStack("app", { redis: {}, "upstash-redis": {} }),
+			createProjectStack("app", {
+				redis: { type: "redis" },
+				"upstash-redis": { type: "upstash-redis" },
+			}),
 			builtinTestDefinitions,
 		);
 		if (!result.ok) throw result.error;
@@ -216,9 +237,11 @@ describe("provisionStack", () => {
 describe("resolveStack config patterns", () => {
 	const resolveWith = (config: Record<string, string>) =>
 		resolveStack({
-			stack: createProjectStack("sovr", { postgres: { config } }),
+			stack: createProjectStack("shop", {
+				postgres: { type: "postgres", config },
+			}),
 			definitions: builtinTestDefinitions,
-			state: pinned("sovr", { postgres: 5433 }),
+			state: pinned("shop", { postgres: 5433 }),
 			secrets,
 		});
 
@@ -253,5 +276,126 @@ describe("resolveStack config patterns", () => {
 			"-d",
 			"my-db",
 		]);
+	});
+});
+
+describe("resolveStack with named instances", () => {
+	const shopSecrets = {
+		MAIN_DB__POSTGRES_PASSWORD: "main-db-password-1",
+		EVENTS__POSTGRES_PASSWORD: "events-password-22",
+		SESSIONS__REDIS_PASSWORD: "sessions-password-3",
+		CACHE__REDIS_PASSWORD: "cache-password-4444",
+		REST__SRH_TOKEN: "rest-token-55555",
+	};
+	const shop = createProjectStack("shop", {
+		"main-db": { type: "postgres", config: { POSTGRES_DB: "shop" } },
+		events: { type: "postgres", persist: "ephemeral" },
+		sessions: { type: "redis" },
+		cache: { type: "redis" },
+		rest: { type: "upstash-redis", uses: { redis: "cache" } },
+	});
+	const state = pinned("shop", {
+		"main-db": 5433,
+		events: 5434,
+		sessions: 6380,
+		cache: 6381,
+		rest: 8080,
+	});
+
+	test("each instance gets its own name, container, port, secrets and volumes", () => {
+		const result = resolveStack({
+			stack: shop,
+			definitions: builtinTestDefinitions,
+			state,
+			secrets: shopSecrets,
+		});
+		if (!result.ok) throw result.error;
+		const byName = new Map(result.value.services.map((s) => [s.name, s]));
+		const main = byName.get("main-db");
+		const events = byName.get("events");
+		expect(main).toMatchObject({
+			type: "postgres",
+			containerName: "li-shop-main-db",
+			hostPort: 5433,
+			persist: "volume",
+			secrets: { POSTGRES_PASSWORD: "main-db-password-1" },
+			config: { POSTGRES_DB: "shop" },
+			volumes: [
+				{
+					name: "li-shop-main-db-data",
+					source: "data",
+					path: "/var/lib/postgresql/data",
+				},
+			],
+		});
+		expect(events).toMatchObject({
+			type: "postgres",
+			containerName: "li-shop-events",
+			hostPort: 5434,
+			persist: "ephemeral",
+			secrets: { POSTGRES_PASSWORD: "events-password-22" },
+			volumes: [],
+		});
+	});
+
+	test("dependsOn resolves to the instance named by uses (host = instance name)", () => {
+		const result = resolveStack({
+			stack: shop,
+			definitions: builtinTestDefinitions,
+			state,
+			secrets: shopSecrets,
+		});
+		if (!result.ok) throw result.error;
+		const rest = result.value.services.find((s) => s.name === "rest");
+		expect(rest?.dependsOn).toEqual(["cache"]);
+		expect(rest?.env.SRH_CONNECTION_STRING).toBe(
+			"redis://:cache-password-4444@cache:6379",
+		);
+	});
+
+	test("templates see name, services.<instance> and byType.<type>", () => {
+		const probe = {
+			...redisDefinition,
+			id: "probe",
+			dependsOn: ["redis"],
+			secrets: [],
+			command: undefined,
+			healthcheck: { test: ["CMD", "true"] },
+			exports: {
+				PROBE_URL:
+					"{{name}}|{{byType.redis.host}}:{{byType.redis.port}}|{{services.cache.port}}",
+			},
+			primaryExport: "PROBE_URL",
+		};
+		const result = resolveStack({
+			stack: createProjectStack("shop", {
+				cache: { type: "redis" },
+				watcher: { type: "probe" },
+			}),
+			definitions: [redisDefinition, probe],
+			state: pinned("shop", { cache: 6381, watcher: 9000 }),
+			secrets: shopSecrets,
+		});
+		if (!result.ok) throw result.error;
+		expect(result.value.services[1]?.exports.PROBE_URL).toBe(
+			"watcher|cache:6381|6381",
+		);
+	});
+
+	test("placeholder mode resolves never-started services with port 0 and masked secrets", () => {
+		const result = resolveStack({
+			stack: createProjectStack("shop", { "main-db": { type: "postgres" } }),
+			definitions: builtinTestDefinitions,
+			state: createEmptyState(),
+			secrets: {},
+			unprovisioned: "placeholder",
+		});
+		if (!result.ok) throw result.error;
+		const [main] = result.value.services;
+		expect(main?.hostPort).toBe(UNPROVISIONED_PORT);
+		expect(main?.secrets.POSTGRES_PASSWORD).toBe(UNPROVISIONED_SECRET);
+		expect(main?.exports.DATABASE_URL).toBe(
+			`postgres://postgres:${UNPROVISIONED_SECRET}@127.0.0.1:0/shop`,
+		);
 	});
 });

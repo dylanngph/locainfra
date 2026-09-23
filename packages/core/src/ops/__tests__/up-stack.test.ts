@@ -5,7 +5,6 @@ import { toProgressError } from "../../shared/progress.model";
 import { MIN_COMPOSE_VERSION } from "../../shared/version";
 import {
 	builtinTestDefinitions,
-	createGlobalStack,
 	createProjectStack,
 } from "../../testing/catalog-fixtures";
 import { collect } from "../../testing/collect";
@@ -22,7 +21,8 @@ import {
 	StaticCatalogSource,
 } from "../../testing/fakes";
 import type { UpStackDeps } from "../ops.contract";
-import { SECRET_FILE_MODE, UP_WAIT_TIMEOUT_SEC, upStack } from "../up-stack.op";
+import { SECRET_FILE_MODE, UP_WAIT_TIMEOUT_SEC } from "../support/compose";
+import { upStack } from "../up-stack.op";
 
 function setup() {
 	const deps = {
@@ -40,9 +40,12 @@ function setup() {
 	return deps;
 }
 
-const stack = createProjectStack("sovr", { postgres: {}, redis: {} });
-const composePath = "/home/test/.locainfra/stacks/sovr/docker-compose.yml";
-const envPath = "/home/test/.locainfra/stacks/sovr/.env";
+const stack = createProjectStack("shop", {
+	postgres: { type: "postgres" },
+	redis: { type: "redis" },
+});
+const composePath = "/home/test/.locainfra/stacks/shop/docker-compose.yml";
+const envPath = "/home/test/.locainfra/stacks/shop/.env";
 
 describe("upStack", () => {
 	test("writes compose + .env, then runs compose up --wait", async () => {
@@ -52,13 +55,13 @@ describe("upStack", () => {
 		const compose = deps.files.files.get(composePath);
 		expect(compose).toBeDefined();
 		const doc = parse(compose ?? "");
-		expect(doc.name).toBe("li-sovr");
+		expect(doc.name).toBe("li-shop");
 		expect(doc.services.postgres.ports).toEqual(["127.0.0.1:5434:5432"]);
 
-		const secrets = deps.secrets.stacks.get("sovr") ?? {};
+		const secrets = deps.secrets.stacks.get("shop") ?? {};
 		expect(Object.keys(secrets).sort()).toEqual([
-			"POSTGRES_PASSWORD",
-			"REDIS_PASSWORD",
+			"POSTGRES__POSTGRES_PASSWORD",
+			"REDIS__REDIS_PASSWORD",
 		]);
 		const env = deps.files.files.get(envPath) ?? "";
 		for (const value of Object.values(secrets)) {
@@ -67,17 +70,17 @@ describe("upStack", () => {
 		}
 		expect(deps.files.modes.get(envPath)).toBe(SECRET_FILE_MODE);
 		expect(deps.files.modes.has(composePath)).toBe(false);
-		expect(deps.files.dirs.has("/home/test/.locainfra/stacks/sovr")).toBe(true);
+		expect(deps.files.dirs.has("/home/test/.locainfra/stacks/shop")).toBe(true);
 
 		expect(deps.lifecycle.upCalls).toEqual([
 			{
-				projectName: "li-sovr",
+				projectName: "li-shop",
 				composeFile: composePath,
 				wait: true,
 				waitTimeoutSec: UP_WAIT_TIMEOUT_SEC,
 			},
 		]);
-		expect(deps.state.state.stacks.sovr?.ports).toEqual({
+		expect(deps.state.state.stacks.shop?.ports).toEqual({
 			postgres: 5434,
 			redis: 6380,
 		});
@@ -92,7 +95,7 @@ describe("upStack", () => {
 			{ kind: "log", message: "Pulling postgres" },
 			{
 				kind: "step",
-				message: "Container li-sovr-postgres Healthy",
+				message: "Container li-shop-postgres Healthy",
 				service: "postgres",
 			},
 			{ kind: "done", message: "All healthy" },
@@ -105,7 +108,7 @@ describe("upStack", () => {
 			{ kind: "log", message: "Pulling postgres" },
 			{
 				kind: "step",
-				message: "Container li-sovr-postgres Healthy",
+				message: "Container li-shop-postgres Healthy",
 				service: "postgres",
 			},
 			{ kind: "done", message: "All healthy" },
@@ -167,7 +170,9 @@ describe("upStack", () => {
 	test("port conflict: error event, nothing written, compose not run", async () => {
 		const deps = setup();
 		deps.probe.busy.add(6380);
-		const conflicting = createProjectStack("sovr", { redis: { port: 6380 } });
+		const conflicting = createProjectStack("shop", {
+			redis: { type: "redis", port: 6380 },
+		});
 		const events = await collect(upStack(deps, { stack: conflicting }));
 		expect(events.map((e) => e.kind)).toEqual(["step", "error"]);
 		expect(events[1]?.message).toContain("6380");
@@ -202,12 +207,12 @@ describe("upStack", () => {
 	test("second run keeps ports and secrets", async () => {
 		const deps = setup();
 		await collect(upStack(deps, { stack }));
-		const before = { ...(deps.secrets.stacks.get("sovr") ?? {}) };
+		const before = { ...(deps.secrets.stacks.get("shop") ?? {}) };
 		const compose = deps.files.files.get(composePath);
 		deps.probe.busy.add(5434);
 		deps.probe.busy.add(6380);
 		await collect(upStack(deps, { stack }));
-		expect(deps.secrets.stacks.get("sovr")).toEqual(before);
+		expect(deps.secrets.stacks.get("shop")).toEqual(before);
 		expect(deps.files.files.get(composePath)).toBe(compose);
 		expect(deps.gen.count).toBe(2);
 	});
@@ -251,7 +256,7 @@ describe("upStack", () => {
 		const deps = setup();
 		await collect(upStack(deps, { stack }));
 		expect(deps.state.state.projects).toEqual([
-			{ name: "sovr", root: "/work/sovr" },
+			{ name: "shop", root: "/work/shop" },
 		]);
 		await collect(upStack(deps, { stack }));
 		expect(deps.state.state.projects).toHaveLength(1);
@@ -260,60 +265,70 @@ describe("upStack", () => {
 	test("same name from another folder is INVALID_STACK; the first project is untouched", async () => {
 		const deps = setup();
 		deps.files.files.set(
-			"/work/sovr/locainfra.yaml",
-			"version: 1\nname: sovr\n",
+			"/work/shop/locainfra.yaml",
+			"version: 1\nname: shop\n",
 		);
 		await collect(upStack(deps, { stack }));
 		const compose = deps.files.files.get(composePath);
-		const secrets = { ...(deps.secrets.stacks.get("sovr") ?? {}) };
+		const secrets = { ...(deps.secrets.stacks.get("shop") ?? {}) };
 		const upCalls = deps.lifecycle.upCalls.length;
 
 		const clone: typeof stack = {
 			...stack,
-			root: "/work/sovr-worktree",
-			filePath: "/work/sovr-worktree/locainfra.yaml",
+			root: "/work/shop-worktree",
+			filePath: "/work/shop-worktree/locainfra.yaml",
 		};
 		const events = await collect(upStack(deps, { stack: clone }));
 		const last = events.at(-1);
 		expect(last?.kind).toBe("error");
 		expect(last?.error).toMatchObject({
 			code: "INVALID_STACK",
-			details: { registeredRoot: "/work/sovr", stack: "sovr" },
+			details: { registeredRoot: "/work/shop", stack: "shop" },
 		});
 		expect(String(last?.error?.details?.fix)).toContain("name:");
 		expect(deps.files.files.get(composePath)).toBe(compose);
-		expect(deps.secrets.stacks.get("sovr")).toEqual(secrets);
+		expect(deps.secrets.stacks.get("shop")).toEqual(secrets);
 		expect(deps.lifecycle.upCalls).toHaveLength(upCalls);
 		expect(deps.state.state.projects).toEqual([
-			{ name: "sovr", root: "/work/sovr" },
+			{ name: "shop", root: "/work/shop" },
 		]);
 	});
 
 	test("a claim whose folder no longer declares the name is taken over", async () => {
 		const deps = setup();
-		deps.state.state.projects = [{ name: "sovr", root: "/old/sovr" }];
+		deps.state.state.projects = [{ name: "shop", root: "/old/shop" }];
 		deps.files.files.set(
-			"/old/sovr/locainfra.yaml",
+			"/old/shop/locainfra.yaml",
 			"version: 1\nname: renamed\n",
 		);
 		const events = await collect(upStack(deps, { stack }));
 		expect(events.at(-1)?.kind).toBe("done");
 		expect(deps.state.state.projects).toEqual([
-			{ name: "sovr", root: "/work/sovr" },
+			{ name: "shop", root: "/work/shop" },
 		]);
 
 		const moved = setup();
-		moved.state.state.projects = [{ name: "sovr", root: "/gone/sovr" }];
+		moved.state.state.projects = [{ name: "shop", root: "/gone/shop" }];
 		const again = await collect(upStack(moved, { stack }));
 		expect(again.at(-1)?.kind).toBe("done");
-		expect(moved.state.state.projects[0]?.root).toBe("/work/sovr");
+		expect(moved.state.state.projects[0]?.root).toBe("/work/shop");
 	});
 
-	test("the global stack never touches the project registry", async () => {
+	test("a new project whose container name clashes with another project's is refused", async () => {
 		const deps = setup();
-		await collect(
-			upStack(deps, { stack: createGlobalStack({ postgres: {} }) }),
+		deps.state.state.projects = [{ name: "shop", root: "/work/shop" }];
+		deps.files.files.set(
+			"/work/shop/locainfra.yaml",
+			"version: 1\nname: shop\nservices:\n  api-db: { type: postgres }\n",
 		);
-		expect(deps.state.state.projects).toEqual([]);
+		const shopApi = createProjectStack("shop-api", {
+			db: { type: "postgres" },
+		});
+		const events = await collect(upStack(deps, { stack: shopApi }));
+		expect(events.at(-1)?.error).toMatchObject({
+			code: "INVALID_STACK",
+			details: { reason: "container-name", containerName: "li-shop-api-db" },
+		});
+		expect(deps.lifecycle.upCalls).toHaveLength(0);
 	});
 });

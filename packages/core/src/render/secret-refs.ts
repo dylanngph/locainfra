@@ -1,4 +1,5 @@
 import type { ResolvedStack } from "../resolve/resolved.model";
+import { instanceSecretKey } from "../resolve/secrets/generator";
 
 /** Prefix of the compose interpolation variables that carry secrets. */
 export const SECRET_VAR_PREFIX = "LI_SECRET_";
@@ -7,18 +8,18 @@ export const SECRET_VAR_PREFIX = "LI_SECRET_";
 export const MIN_REFERENCED_SECRET_LENGTH = 8;
 
 /**
- * @param name - Secret name, e.g. `POSTGRES_PASSWORD`.
- * @returns The compose interpolation variable, e.g. `LI_SECRET_POSTGRES_PASSWORD`.
+ * @param name - Secret key, e.g. `MAIN_DB__POSTGRES_PASSWORD`.
+ * @returns The compose interpolation variable, e.g. `LI_SECRET_MAIN_DB__POSTGRES_PASSWORD`.
  */
 export function secretVarName(name: string): string {
 	return `${SECRET_VAR_PREFIX}${name}`;
 }
 
 /**
- * Collects every secret of every service (first definition of a name wins).
+ * Collects every secret of every service, keyed by `instanceSecretKey`.
  *
  * @param stack - The resolved stack.
- * @returns Secret name → value.
+ * @returns Secret key → value.
  */
 export function collectStackSecrets(
 	stack: ResolvedStack,
@@ -26,7 +27,7 @@ export function collectStackSecrets(
 	const secrets: Record<string, string> = {};
 	for (const service of stack.services) {
 		for (const [name, value] of Object.entries(service.secrets)) {
-			secrets[name] ??= value;
+			secrets[instanceSecretKey(service.name, name)] = value;
 		}
 	}
 	return secrets;

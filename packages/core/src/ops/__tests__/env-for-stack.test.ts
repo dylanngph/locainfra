@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
 	builtinTestDefinitions,
-	createGlobalStack,
 	createProjectStack,
 } from "../../testing/catalog-fixtures";
 import {
@@ -21,8 +20,8 @@ function deps(provisioned = true) {
 				? {
 						projects: [],
 						stacks: {
-							sovr: {
-								ports: { postgres: 5433, redis: 6380 },
+							shop: {
+								ports: { postgres: 5433, redis: 6380, events: 5434 },
 								createdAt: "2026-01-01T00:00:00Z",
 							},
 						},
@@ -31,7 +30,13 @@ function deps(provisioned = true) {
 		),
 		secrets: new InMemorySecretStore(
 			provisioned
-				? { sovr: { POSTGRES_PASSWORD: "pgpw", REDIS_PASSWORD: "rpw" } }
+				? {
+						shop: {
+							POSTGRES__POSTGRES_PASSWORD: "pgpw",
+							REDIS__REDIS_PASSWORD: "rpw",
+							EVENTS__POSTGRES_PASSWORD: "evpw",
+						},
+					}
 				: {},
 		),
 		paths: createTestPaths(),
@@ -40,8 +45,8 @@ function deps(provisioned = true) {
 }
 
 const stack = createProjectStack(
-	"sovr",
-	{ postgres: {}, redis: {} },
+	"shop",
+	{ postgres: { type: "postgres" }, redis: { type: "redis" } },
 	{ link: { file: ".env.local", names: { redis: "CACHE_URL" } } },
 );
 
@@ -51,7 +56,7 @@ describe("envForStack", () => {
 		expect(result).toEqual({
 			ok: true,
 			value:
-				"DATABASE_URL=postgres://postgres:pgpw@127.0.0.1:5433/sovr\nPGHOST=127.0.0.1\nPGPORT=5433\nCACHE_URL=redis://:rpw@127.0.0.1:6380\n",
+				"DATABASE_URL=postgres://postgres:pgpw@127.0.0.1:5433/shop\nPGHOST=127.0.0.1\nPGPORT=5433\nCACHE_URL=redis://:rpw@127.0.0.1:6380\n",
 		});
 	});
 
@@ -78,15 +83,20 @@ describe("envForStack", () => {
 		expect(d.secrets.writes).toBe(0);
 	});
 
-	test("global stack uses canonical ports", async () => {
-		const d = deps(false);
-		d.secrets.stacks.set("global", { POSTGRES_PASSWORD: "g" });
-		const result = await envForStack(d, {
-			stack: createGlobalStack({ postgres: {} }),
+	test("a second instance of a type gets its keys prefixed", async () => {
+		const twoDbs = createProjectStack("shop", {
+			postgres: { type: "postgres" },
+			events: { type: "postgres" },
+		});
+		const result = await envForStack(deps(), {
+			stack: twoDbs,
 			format: "dotenv",
 		});
 		if (!result.ok) throw result.error;
-		expect(result.value).toContain("PGPORT=5432\n");
+		expect(result.value).toContain(
+			"EVENTS_DATABASE_URL=postgres://postgres:evpw@127.0.0.1:5434/shop\nEVENTS_PGHOST=127.0.0.1\nEVENTS_PGPORT=5434\n",
+		);
+		expect(result.value).toContain("\nPGPORT=5433\n");
 	});
 
 	test("catalog failure is INVALID_CATALOG", async () => {
@@ -101,10 +111,10 @@ describe("envForStack", () => {
 
 	test("refuses a stack whose name belongs to another project folder", async () => {
 		const d = deps();
-		d.state.state.projects = [{ name: "sovr", root: "/work/elsewhere" }];
+		d.state.state.projects = [{ name: "shop", root: "/work/elsewhere" }];
 		d.files.files.set(
 			"/work/elsewhere/locainfra.yaml",
-			"version: 1\nname: sovr\n",
+			"version: 1\nname: shop\n",
 		);
 		const result = await envForStack(d, { stack, format: "dotenv" });
 		expect(result.ok).toBe(false);
@@ -117,7 +127,7 @@ describe("envForStack", () => {
 
 	test("prints for the registered folder", async () => {
 		const d = deps();
-		d.state.state.projects = [{ name: "sovr", root: "/work/sovr" }];
+		d.state.state.projects = [{ name: "shop", root: "/work/shop" }];
 		const result = await envForStack(d, { stack, format: "dotenv" });
 		expect(result.ok).toBe(true);
 	});

@@ -7,11 +7,25 @@ export interface WriteTextOptions {
 	readonly mode?: number;
 }
 
+/** What {@link FileStore.fileInfo} reports about a path (symlinks followed). */
+export interface FileInfo {
+	/** Canonical absolute path with every symlink resolved. */
+	readonly realPath: string;
+	/** `file`, `directory`, or `other` (FIFO, socket, device, …). */
+	readonly kind: "file" | "directory" | "other";
+	/** Size in bytes (meaningful for files only). */
+	readonly sizeBytes: number;
+}
+
 /** Minimal text-file access used by ops (stack files, rendered compose, env links). */
 export interface FileStore {
 	/** @returns File contents, or `null` when the file does not exist. */
 	readText(path: string): Promise<string | null>;
-	/** Writes `content`, creating parent directories as needed. */
+	/**
+	 * Writes `content` atomically (temp file, then rename: a reader or a crash
+	 * never sees a partial or empty file), creating parent directories as
+	 * needed.
+	 */
 	writeText(
 		path: string,
 		content: string,
@@ -19,8 +33,16 @@ export interface FileStore {
 	): Promise<void>;
 	/** @returns Whether a file or directory exists at `path`. */
 	exists(path: string): Promise<boolean>;
+	/** @returns Whether `path` exists and is a directory (symlinks followed). */
+	isDirectory(path: string): Promise<boolean>;
 	/** Creates a directory and any missing parents. */
 	mkdirp(path: string): Promise<void>;
+	/**
+	 * @param path - Any path.
+	 * @returns Its canonical path, kind and size with symlinks followed, or
+	 *   `null` when nothing exists there (or a symlink dangles).
+	 */
+	fileInfo(path: string): Promise<FileInfo | null>;
 }
 
 /** Lists the files in a directory (catalog overrides, registry cache). */

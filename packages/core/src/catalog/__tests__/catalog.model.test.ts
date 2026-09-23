@@ -40,6 +40,7 @@ const postgresExample = {
 		PGHOST: "127.0.0.1",
 		PGPORT: "{{port}}",
 	},
+	primaryExport: "DATABASE_URL",
 	connect: [
 		"psql",
 		"-U",

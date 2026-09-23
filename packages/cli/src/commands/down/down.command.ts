@@ -8,8 +8,6 @@ import { resolveStackTarget } from "../shared/stack-target";
 
 /** Parsed flags of `locainfra down`. */
 export interface DownCommandOptions {
-	/** Stop the global stack. */
-	readonly global: boolean;
 	/** Also delete named volumes (data loss). */
 	readonly volumes: boolean;
 	/** Skip the confirmation for `--volumes`. */
@@ -61,7 +59,7 @@ export async function runDown(
 }
 
 /**
- * Registers `down [--global] [--volumes] [--yes]` on the root program.
+ * Registers `down [--volumes] [--yes]` on the root program.
  *
  * @param program - Root program.
  * @param ctx - IO and deps loader.
@@ -72,15 +70,15 @@ export function registerDownCommand(
 ): void {
 	program
 		.command("down")
-		.description("stop the current project's stack (or the global one)")
-		.option("-g, --global", "use the global stack (~/.locainfra/global.yaml)")
-		.option("--volumes", "also delete the stack's volumes (data loss)")
+		.description(
+			"stop the services of the project in this folder (nearest locainfra.yaml)",
+		)
+		.option("--volumes", "also delete the project's volumes (data loss)")
 		.option("-y, --yes", "confirm destructive actions without prompting")
 		.action(async (opts, cmd) => {
 			const { json } = cmd.optsWithGlobals();
 			ctx.io.setExitCode(
 				await runDown(ctx, {
-					global: opts.global === true,
 					volumes: opts.volumes === true,
 					yes: opts.yes === true,
 					json: json === true,

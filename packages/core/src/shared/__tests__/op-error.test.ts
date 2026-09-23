@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Value } from "@sinclair/typebox/value";
 import { DoctorReport } from "../../ops/doctor/doctor.model";
-import { isOpError, OpError } from "../op-error";
+import { ioErrorFrom, isOpError, OpError } from "../op-error";
 import { Progress } from "../progress.model";
 import { err, ok } from "../result";
 
@@ -51,5 +51,40 @@ describe("Progress and Doctor schemas", () => {
 				generatedAt: "2026-09-23T00:00:00.000Z",
 			}),
 		).toBe(true);
+	});
+});
+
+describe("ioErrorFrom", () => {
+	test("keeps a user-facing OpError from a port and adds context", () => {
+		const cause = new OpError(
+			"IO",
+			"/h/locainfra.db was created by a newer LocaInfra; update LocaInfra",
+			{
+				details: {
+					path: "/h/locainfra.db",
+					fix: "Install the newer LocaInfra",
+				},
+			},
+		);
+		const error = ioErrorFrom("Could not read the registry", cause, {
+			stack: "shop",
+		});
+		expect(error.code).toBe("IO");
+		expect(error.message).toBe(cause.message);
+		expect(error.details).toEqual({
+			stack: "shop",
+			path: "/h/locainfra.db",
+			fix: "Install the newer LocaInfra",
+		});
+		expect(error.cause).toBe(cause);
+	});
+
+	test("wraps anything else as IO with the given message", () => {
+		const cause = new Error("EACCES");
+		const error = ioErrorFrom("Could not read the registry", cause);
+		expect(error.code).toBe("IO");
+		expect(error.message).toBe("Could not read the registry");
+		expect(error.details).toEqual({});
+		expect(error.cause).toBe(cause);
 	});
 });

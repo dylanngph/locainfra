@@ -9,8 +9,8 @@
 			"type": "number"
 		},
 		"name": {
-			"pattern": "^[a-z0-9][a-z0-9_-]*$",
-			"description": "Stack name; compose project becomes li-<name>",
+			"pattern": "^[a-z][a-z0-9-]*$",
+			"description": "Project name; compose project and network become li-<name>",
 			"type": "string"
 		},
 		"services": {
@@ -18,13 +18,21 @@
 			"additionalProperties": false,
 			"type": "object",
 			"patternProperties": {
-				"^[a-z0-9][a-z0-9-]*$": {
+				"^[a-z][a-z0-9-]*$": {
 					"type": "object",
+					"required": ["type"],
 					"properties": {
+						"type": {
+							"pattern": "^[a-z0-9][a-z0-9-]*$",
+							"description": "Catalog definition id, e.g. postgres",
+							"type": "string"
+						},
 						"version": {
+							"description": "One of the definition's versions",
 							"type": "string"
 						},
 						"port": {
+							"description": "Host port bound on 127.0.0.1; auto (the default) allocates and pins a free one",
 							"anyOf": [
 								{
 									"minimum": 1,
@@ -37,10 +45,40 @@
 								}
 							]
 						},
+						"persist": {
+							"description": "volume: named Docker volumes li-<project>-<service>-<vol> survive restarts and `down`; ephemeral: no named volumes, data is lost when the container is removed",
+							"anyOf": [
+								{
+									"const": "volume",
+									"type": "string"
+								},
+								{
+									"const": "ephemeral",
+									"type": "string"
+								}
+							]
+						},
 						"config": {
+							"description": "Overrides of the definition's config values",
 							"type": "object",
 							"patternProperties": {
 								"^(.*)$": {
+									"type": "string"
+								}
+							}
+						},
+						"seed": {
+							"minLength": 1,
+							"maxLength": 1024,
+							"pattern": "^(?![/\\\\~])(?![A-Za-z]:)(?!(?:.*[/\\\\])?\\.\\.(?:[/\\\\]|$))[^\\u0000]+$",
+							"description": "Seed file relative to the project root, e.g. db/seed.sql; bind-mounted read-only where the catalog's seed.mountPath says. Absolute paths and .. escapes are rejected",
+							"type": "string"
+						},
+						"uses": {
+							"description": "Catalog id → instance name satisfying the definition's dependsOn; only needed when the stack holds several instances of that type",
+							"type": "object",
+							"patternProperties": {
+								"^[a-z0-9][a-z0-9-]*$": {
 									"type": "string"
 								}
 							}
@@ -57,7 +95,7 @@
 					"type": "string"
 				},
 				"names": {
-					"description": "Service id → variable name for its primary URL",
+					"description": "Service instance name → variable name for its primary URL",
 					"type": "object",
 					"patternProperties": {
 						"^(.*)$": {

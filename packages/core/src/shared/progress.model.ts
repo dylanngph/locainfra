@@ -34,7 +34,22 @@ export const Progress = Type.Object({
 	kind: ProgressKind,
 	message: Type.String(),
 	service: Type.Optional(
-		Type.String({ description: "Service id the event concerns, if any" }),
+		Type.String({
+			description: "Service instance name the event concerns, if any",
+		}),
+	),
+	opId: Type.Optional(
+		Type.String({
+			description:
+				"Operation id (the `op:<opId>` WebSocket channel); set by the server, ops may leave it unset",
+		}),
+	),
+	percent: Type.Optional(
+		Type.Number({
+			minimum: 0,
+			maximum: 100,
+			description: "Overall completion estimate, when known (e.g. image pull)",
+		}),
 	),
 	at: Type.Optional(
 		Type.String({ description: "ISO-8601 timestamp of the event" }),
