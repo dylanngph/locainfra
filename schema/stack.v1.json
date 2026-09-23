@@ -1,0 +1,71 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "https://locainfra.dev/schema/v1.json",
+	"type": "object",
+	"required": ["version", "name"],
+	"properties": {
+		"version": {
+			"const": 1,
+			"type": "number"
+		},
+		"name": {
+			"pattern": "^[a-z0-9][a-z0-9_-]*$",
+			"description": "Stack name; compose project becomes li-<name>",
+			"type": "string"
+		},
+		"services": {
+			"default": {},
+			"additionalProperties": false,
+			"type": "object",
+			"patternProperties": {
+				"^[a-z0-9][a-z0-9-]*$": {
+					"type": "object",
+					"properties": {
+						"version": {
+							"type": "string"
+						},
+						"port": {
+							"anyOf": [
+								{
+									"minimum": 1,
+									"maximum": 65535,
+									"type": "integer"
+								},
+								{
+									"const": "auto",
+									"type": "string"
+								}
+							]
+						},
+						"config": {
+							"type": "object",
+							"patternProperties": {
+								"^(.*)$": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"link": {
+			"type": "object",
+			"properties": {
+				"file": {
+					"description": "Env file relative to the project root, e.g. .env.local",
+					"type": "string"
+				},
+				"names": {
+					"description": "Service id → variable name for its primary URL",
+					"type": "object",
+					"patternProperties": {
+						"^(.*)$": {
+							"type": "string"
+						}
+					}
+				}
+			}
+		}
+	}
+}

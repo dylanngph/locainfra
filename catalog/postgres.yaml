@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../schema/service.v1.json
+id: postgres
+name: PostgreSQL
+description: Relational SQL database.
+category: database          # database | cache | queue | storage | mail | search | auth | observability | other
+tags: [sql, relational]
+icon: postgres              # from a bundled icon set; registry entries may give an iconUrl
+homepage: https://www.postgresql.org
+image: postgres:{{version}}-alpine
+versions: ["17", "16", "15"]
+defaultVersion: "17"
+port: { container: 5432, default: 5432, range: [5432, 5499] }
+secrets: [POSTGRES_PASSWORD]
+config:
+  # Patterns keep values safe inside the healthcheck argv and DATABASE_URL.
+  POSTGRES_USER: { default: postgres, pattern: "^[A-Za-z0-9_][A-Za-z0-9_.-]*$" }
+  POSTGRES_DB:   { default: "{{stack.name}}", pattern: "^[A-Za-z0-9_][A-Za-z0-9_-]*$" }
+env:
+  POSTGRES_USER: "{{config.POSTGRES_USER}}"
+  POSTGRES_PASSWORD: "{{secrets.POSTGRES_PASSWORD}}"
+  POSTGRES_DB: "{{config.POSTGRES_DB}}"
+volumes: [{ name: data, path: /var/lib/postgresql/data }]
+healthcheck:
+  # Exec form: config values are argv items, never parsed by a shell.
+  test: ["CMD", "pg_isready", "-U", "{{config.POSTGRES_USER}}", "-d", "{{config.POSTGRES_DB}}"]
+  interval: 5s
+  retries: 10
+exports:
+  DATABASE_URL: "postgres://{{config.POSTGRES_USER}}:{{secrets.POSTGRES_PASSWORD}}@127.0.0.1:{{port}}/{{config.POSTGRES_DB}}"
+  PGHOST: "127.0.0.1"
+  PGPORT: "{{port}}"
+connect: ["psql", "-U", "{{config.POSTGRES_USER}}", "-d", "{{config.POSTGRES_DB}}"]
+studio: { panel: sql }      # sql | redis | iframe | link | none

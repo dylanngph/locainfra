@@ -1,0 +1,17 @@
+{
+	"name": "@locainfra/engines",
+	"type": "module",
+	"private": true,
+	"version": "0.0.0",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"test": "bun test",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@locainfra/core": "workspace:*",
+		"@sinclair/typebox": "^0.34.52"
+	}
+}

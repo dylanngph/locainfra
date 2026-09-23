@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../schema/service.v1.json
+id: upstash-redis
+name: Upstash Redis (REST)
+description: Upstash-compatible REST API (serverless-redis-http) in front of the stack's Redis.
+category: cache
+tags: [redis, rest, upstash, serverless]
+icon: upstash
+homepage: https://github.com/hiett/serverless-redis-http
+image: hiett/serverless-redis-http:{{version}}
+versions: ["latest"]
+defaultVersion: latest
+port: { container: 80, default: 8079, range: [8079, 8149] }
+dependsOn: [redis]
+secrets: [SRH_TOKEN]
+env:
+  SRH_MODE: env
+  SRH_TOKEN: "{{secrets.SRH_TOKEN}}"
+  # `redis` is the compose service name on the stack network; 6379 is its container port.
+  SRH_CONNECTION_STRING: "redis://:{{services.redis.secrets.REDIS_PASSWORD}}@redis:6379"
+healthcheck:
+  # Erlang/Alpine image: no curl, but busybox nc is available.
+  test: ["CMD", "nc", "-z", "127.0.0.1", "80"]
+  interval: 5s
+  retries: 10
+  startPeriod: 5s
+exports:
+  UPSTASH_REDIS_REST_URL: "http://127.0.0.1:{{port}}"
+  UPSTASH_REDIS_REST_TOKEN: "{{secrets.SRH_TOKEN}}"

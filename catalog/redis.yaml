@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../schema/service.v1.json
+id: redis
+name: Redis
+description: In-memory key-value store, password protected with append-only persistence.
+category: cache
+tags: [key-value, cache, queue]
+icon: redis
+homepage: https://redis.io
+image: redis:{{version}}-alpine
+versions: ["8", "7"]
+defaultVersion: "7"
+port: { container: 6379, default: 6379, range: [6379, 6449] }
+secrets: [REDIS_PASSWORD]
+env:
+  # redis-cli reads the password from here, so the healthcheck and `connect` need no -a flag.
+  REDISCLI_AUTH: "{{secrets.REDIS_PASSWORD}}"
+command: ["redis-server", "--requirepass", "{{secrets.REDIS_PASSWORD}}", "--appendonly", "yes"]
+volumes: [{ name: data, path: /data }]
+healthcheck:
+  test: ["CMD", "redis-cli", "ping"]
+  interval: 5s
+  retries: 10
+exports:
+  REDIS_URL: "redis://:{{secrets.REDIS_PASSWORD}}@127.0.0.1:{{port}}"
+  REDIS_HOST: "127.0.0.1"
+  REDIS_PORT: "{{port}}"
+connect: ["redis-cli"]
+studio: { panel: redis }

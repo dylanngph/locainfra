@@ -1,0 +1,22 @@
+{
+	"name": "@locainfra/server",
+	"version": "0.0.0",
+	"scripts": {
+		"dev": "bun run --watch src/index.ts",
+		"test": "bun test",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@elysiajs/eden": "^1.4.9",
+		"@locainfra/core": "workspace:*",
+		"elysia": "^1.4.30"
+	},
+	"devDependencies": {
+		"@elysiajs/openapi": "^1.4.16"
+	},
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	}
+}

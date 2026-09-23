@@ -1,0 +1,295 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "https://locainfra.dev/schema/service.v1.json",
+	"type": "object",
+	"required": [
+		"id",
+		"name",
+		"category",
+		"image",
+		"versions",
+		"defaultVersion",
+		"port",
+		"healthcheck"
+	],
+	"properties": {
+		"id": {
+			"pattern": "^[a-z0-9][a-z0-9-]*$",
+			"type": "string"
+		},
+		"name": {
+			"minLength": 1,
+			"type": "string"
+		},
+		"description": {
+			"type": "string"
+		},
+		"category": {
+			"anyOf": [
+				{
+					"const": "database",
+					"type": "string"
+				},
+				{
+					"const": "cache",
+					"type": "string"
+				},
+				{
+					"const": "queue",
+					"type": "string"
+				},
+				{
+					"const": "storage",
+					"type": "string"
+				},
+				{
+					"const": "mail",
+					"type": "string"
+				},
+				{
+					"const": "search",
+					"type": "string"
+				},
+				{
+					"const": "auth",
+					"type": "string"
+				},
+				{
+					"const": "observability",
+					"type": "string"
+				},
+				{
+					"const": "other",
+					"type": "string"
+				}
+			]
+		},
+		"tags": {
+			"default": [],
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"icon": {
+			"type": "string"
+		},
+		"iconUrl": {
+			"type": "string"
+		},
+		"homepage": {
+			"type": "string"
+		},
+		"image": {
+			"minLength": 1,
+			"description": "Image reference template, e.g. postgres:{{version}}-alpine",
+			"type": "string"
+		},
+		"versions": {
+			"minItems": 1,
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"defaultVersion": {
+			"type": "string"
+		},
+		"port": {
+			"type": "object",
+			"required": ["container", "default", "range"],
+			"properties": {
+				"container": {
+					"minimum": 1,
+					"maximum": 65535,
+					"type": "integer"
+				},
+				"default": {
+					"minimum": 1,
+					"maximum": 65535,
+					"description": "Canonical host port (used by the global stack)",
+					"type": "integer"
+				},
+				"range": {
+					"description": "Inclusive host port range for auto allocation",
+					"type": "array",
+					"items": [
+						{
+							"minimum": 1,
+							"maximum": 65535,
+							"type": "integer"
+						},
+						{
+							"minimum": 1,
+							"maximum": 65535,
+							"type": "integer"
+						}
+					],
+					"additionalItems": false,
+					"minItems": 2,
+					"maxItems": 2
+				}
+			}
+		},
+		"secrets": {
+			"default": [],
+			"type": "array",
+			"items": {
+				"pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+				"type": "string"
+			}
+		},
+		"config": {
+			"default": {},
+			"additionalProperties": false,
+			"type": "object",
+			"patternProperties": {
+				"^[A-Za-z_][A-Za-z0-9_]*$": {
+					"type": "object",
+					"required": ["default"],
+					"properties": {
+						"default": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"pattern": {
+							"minLength": 1,
+							"description": "Regular expression the effective value must match (anchor it with ^…$). Use it for values interpolated into commands or URLs.",
+							"type": "string"
+						}
+					}
+				}
+			}
+		},
+		"env": {
+			"default": {},
+			"additionalProperties": false,
+			"type": "object",
+			"patternProperties": {
+				"^[A-Za-z_][A-Za-z0-9_]*$": {
+					"type": "string"
+				}
+			}
+		},
+		"volumes": {
+			"default": [],
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["name", "path"],
+				"properties": {
+					"name": {
+						"pattern": "^[a-z0-9][a-z0-9_-]*$",
+						"type": "string"
+					},
+					"path": {
+						"pattern": "^/",
+						"description": "Absolute path inside the container",
+						"type": "string"
+					}
+				}
+			}
+		},
+		"command": {
+			"minItems": 1,
+			"description": "Container command override (compose `command`, exec form); items may be templates, e.g. [redis-server, --requirepass, '{{secrets.REDIS_PASSWORD}}']",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"healthcheck": {
+			"type": "object",
+			"required": ["test"],
+			"properties": {
+				"test": {
+					"minItems": 1,
+					"description": "e.g. [\"CMD-SHELL\", \"pg_isready\"]; items may be templates",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"interval": {
+					"pattern": "^([0-9]+(ns|us|ms|s|m|h))+$",
+					"description": "Compose duration, e.g. 5s or 1m30s",
+					"type": "string"
+				},
+				"retries": {
+					"minimum": 0,
+					"type": "integer"
+				},
+				"timeout": {
+					"pattern": "^([0-9]+(ns|us|ms|s|m|h))+$",
+					"description": "Compose duration, e.g. 5s or 1m30s",
+					"type": "string"
+				},
+				"startPeriod": {
+					"pattern": "^([0-9]+(ns|us|ms|s|m|h))+$",
+					"description": "Compose duration, e.g. 5s or 1m30s",
+					"type": "string"
+				}
+			}
+		},
+		"exports": {
+			"default": {},
+			"additionalProperties": false,
+			"type": "object",
+			"patternProperties": {
+				"^[A-Za-z_][A-Za-z0-9_]*$": {
+					"type": "string"
+				}
+			}
+		},
+		"connect": {
+			"minItems": 1,
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"dependsOn": {
+			"type": "array",
+			"items": {
+				"pattern": "^[a-z0-9][a-z0-9-]*$",
+				"type": "string"
+			}
+		},
+		"studio": {
+			"type": "object",
+			"required": ["panel"],
+			"properties": {
+				"panel": {
+					"anyOf": [
+						{
+							"const": "sql",
+							"type": "string"
+						},
+						{
+							"const": "redis",
+							"type": "string"
+						},
+						{
+							"const": "iframe",
+							"type": "string"
+						},
+						{
+							"const": "link",
+							"type": "string"
+						},
+						{
+							"const": "none",
+							"type": "string"
+						}
+					]
+				},
+				"url": {
+					"description": "Template URL for iframe/link panels",
+					"type": "string"
+				}
+			}
+		}
+	}
+}
