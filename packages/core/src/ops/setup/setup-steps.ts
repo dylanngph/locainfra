@@ -25,6 +25,7 @@ export const MAC_RUNTIMES: readonly RuntimeProvider[] = [
 export const SETUP_STEP = {
 	brewDownload: "homebrew.download-installer",
 	brewInstall: "homebrew.run-installer",
+	intelBrewUninstall: "homebrew.uninstall-intel-formulae",
 	colimaInstall: "colima.install",
 	cliInstall: "docker-cli.install",
 	composeUpgrade: "compose.upgrade",
@@ -169,6 +170,7 @@ export function runtimeStartStep(
 					title: "Starting Colima now and at login",
 					argv: [brewBin(facts), "services", "start", "colima"],
 					...env,
+					tee: true,
 				};
 			}
 			return {
@@ -176,6 +178,9 @@ export function runtimeStartStep(
 				title: "Starting Colima (the first start downloads a VM image)",
 				argv: [fresh ? `${brewPrefixOf(facts)}/bin/colima` : "colima", "start"],
 				...env,
+				// Captured even in a terminal: `runSetupPlan` reads the output to
+				// recognise a Colima/Lima installed as x86_64 ("running under rosetta").
+				tee: true,
 			};
 		case "orbstack":
 			return {
@@ -209,6 +214,119 @@ export function runtimeStartStep(
 				),
 			};
 	}
+}
+
+/** Default prefix of the native Homebrew on Apple silicon. */
+export const NATIVE_BREW_PREFIX = "/opt/homebrew";
+
+/** Intel Homebrew formulae that must go before Colima is reinstalled natively, in uninstall order. */
+export const INTEL_COLIMA_FORMULAE: readonly string[] = [
+	"colima",
+	"lima",
+	"docker",
+	"docker-compose",
+];
+
+/**
+ * Whether the only usable Homebrew is the Intel build under Rosetta on an
+ * Apple silicon Mac (`brewNative: false`): Colima and Lima installed from it
+ * are x86_64 and `colima start` refuses to run.
+ *
+ * @param facts - Machine facts.
+ * @returns `true` on darwin arm64 with a non-native Homebrew.
+ */
+export function rosettaBrew(
+	facts: Pick<PlatformFacts, "os" | "arch" | "hasBrew" | "brewNative">,
+): boolean {
+	return (
+		facts.os === "darwin" &&
+		facts.arch === "arm64" &&
+		facts.hasBrew &&
+		facts.brewNative === false
+	);
+}
+
+/**
+ * The same facts with the native Homebrew as `brewPrefix` (installed by the
+ * plan, or already at `nativeBrewPrefix`), for the step builders.
+ *
+ * @param facts - Machine facts with an Intel Homebrew.
+ * @returns Facts whose brew is `<native prefix>/bin/brew`.
+ */
+export function withNativeBrew<T extends StepFacts>(
+	facts: T & Pick<PlatformFacts, "nativeBrewPrefix">,
+): T {
+	return {
+		...facts,
+		hasBrew: true,
+		brewPrefix: facts.nativeBrewPrefix ?? NATIVE_BREW_PREFIX,
+		brewOnPath: false,
+	};
+}
+
+/**
+ * `<intel prefix>/bin/brew uninstall …` for the Intel Colima, Lima, Docker
+ * CLI and Compose that Homebrew installed (only those present), so the
+ * native ones take over; `undefined` when none is installed.
+ *
+ * @param facts - Machine facts with an Intel Homebrew.
+ * @returns The step, or `undefined`.
+ */
+export function intelBrewUninstallStep(
+	facts: Pick<PlatformFacts, "brewPrefix" | "arch" | "intelBrewFormulae">,
+): CommandStep | undefined {
+	const present = INTEL_COLIMA_FORMULAE.filter((name) =>
+		(facts.intelBrewFormulae ?? []).includes(name),
+	);
+	if (present.length === 0) return undefined;
+	const prefix = brewPrefixOf(facts);
+	return {
+		id: SETUP_STEP.intelBrewUninstall,
+		title: `Removing the Intel ${present.join(", ")} installed by the Homebrew at ${prefix}`,
+		argv: [`${prefix}/bin/brew`, "uninstall", ...present],
+		note: "They were built for Intel and run under Rosetta, which Colima refuses; the native Homebrew reinstalls them next.",
+	};
+}
+
+/**
+ * Downloads the Homebrew installer, then runs it as arm64 (`arch -arm64`),
+ * attached, so it installs the native Homebrew at /opt/homebrew even when
+ * the shell or LocaStack itself runs under Rosetta.
+ *
+ * @param facts - Machine facts.
+ * @returns The download and install steps.
+ */
+export function nativeHomebrewSteps(facts: StepFacts): CommandStep[] {
+	const [download, install] = homebrewSteps(facts);
+	if (download === undefined || install === undefined) return [];
+	return [
+		download,
+		{
+			...install,
+			title: `Installing the native Homebrew at ${NATIVE_BREW_PREFIX}`,
+			argv: ["arch", "-arm64", ...install.argv],
+			note: `Runs the installer as arm64 so it installs Apple silicon Homebrew at ${NATIVE_BREW_PREFIX} (the Intel one at /usr/local stays). It asks for your password and a confirmation in this terminal.`,
+		},
+	];
+}
+
+/**
+ * Post note: put the native Homebrew before the Intel one on PATH.
+ *
+ * @param facts - Needs `shell`.
+ * @returns The note.
+ */
+export function nativeBrewPathNote(facts: Pick<StepFacts, "shell">): string {
+	return `Put the native Homebrew first on your PATH: echo 'eval "$(${NATIVE_BREW_PREFIX}/bin/brew shellenv)"' >> ${shellProfile(facts)} (below any line that adds /usr/local), then open a new terminal, so ${NATIVE_BREW_PREFIX}/bin comes before /usr/local/bin.`;
+}
+
+function shellProfile(facts: Pick<StepFacts, "shell">): string {
+	const shell = facts.shell.split("/").pop() ?? "";
+	return shell === "zsh"
+		? "~/.zprofile"
+		: shell === "bash"
+			? "~/.bash_profile"
+			: "your shell profile";
 }
 
 /** Downloads the Homebrew installer, then runs it attached. */
@@ -335,12 +453,6 @@ export function dockerGroupStep(facts: StepFacts): CommandStep {
 export function brewShellenvNote(facts: StepFacts): string | undefined {
 	const prefix = brewPrefixOf(facts);
 	if (prefix === "/usr/local") return undefined;
-	const shell = facts.shell.split("/").pop() ?? "";
-	const profile =
-		shell === "zsh"
-			? "~/.zprofile"
-			: shell === "bash"
-				? "~/.bash_profile"
-				: "your shell profile";
+	const profile = shellProfile(facts);
 	return `Add Homebrew to your PATH: echo 'eval "$(${prefix}/bin/brew shellenv)"' >> ${profile}, then open a new terminal.`;
 }

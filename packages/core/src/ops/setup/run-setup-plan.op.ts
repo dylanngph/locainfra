@@ -46,6 +46,26 @@ export function outputLines(output: string): string[] {
 	return lines.slice(-MAX_LOG_LINES);
 }
 
+/** Fix of a `colima start` that failed because Colima/Lima are x86_64 builds under Rosetta. */
+export const ROSETTA_COLIMA_FIX =
+	"Colima was installed with the Intel Homebrew at /usr/local and cannot run under Rosetta. Run `locastack setup` again: it will install the native Homebrew at /opt/homebrew and reinstall Colima from it (or use `locastack setup --runtime docker-desktop`).";
+
+/**
+ * Whether a failed Colima start printed Lima's Rosetta refusal
+ * ("limactl is running under rosetta, please reinstall lima with native arch").
+ * The start step sets `tee`, so its output is captured even in a terminal.
+ */
+function colimaUnderRosetta(
+	step: CommandStep,
+	result: ProcessRunResult | undefined,
+): boolean {
+	return (
+		(step.id === SETUP_STEP.colimaStart ||
+			step.id === SETUP_STEP.colimaStartAtLogin) &&
+		/running under rosetta/i.test(result?.output ?? "")
+	);
+}
+
 /** Manual remedy shown when a step fails. */
 export function stepFailureFix(
 	step: CommandStep,
@@ -56,6 +76,7 @@ export function stepFailureFix(
 	if (result?.exitCode === 127) {
 		return `\`${step.argv[0]}\` was not found. Install it (or fix PATH), ${retry}`;
 	}
+	if (colimaUnderRosetta(step, result)) return ROSETTA_COLIMA_FIX;
 	switch (step.id) {
 		case SETUP_STEP.brewDownload:
 		case SETUP_STEP.engineDownload:

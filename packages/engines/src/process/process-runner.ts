@@ -29,7 +29,29 @@ export interface BunProcessRunnerOptions {
 	readonly killGraceMs?: number;
 	/** Deadline of captured steps without one (default `SETUP_STEP_TIMEOUT_MS`). */
 	readonly capturedTimeoutMs?: number;
+	/**
+	 * Where an attached `tee` step's output is echoed (default this process's
+	 * stdout and stderr).
+	 */
+	readonly echo?: TeeEcho;
 }
+
+/** Terminal writers an attached `tee` step's output is echoed to. */
+export interface TeeEcho {
+	/** Receives the child's stdout chunks. */
+	readonly stdout: (chunk: Uint8Array) => void;
+	/** Receives the child's stderr chunks. */
+	readonly stderr: (chunk: Uint8Array) => void;
+}
+
+const PROCESS_ECHO: TeeEcho = {
+	stdout: (chunk) => {
+		process.stdout.write(chunk);
+	},
+	stderr: (chunk) => {
+		process.stderr.write(chunk);
+	},
+};
 
 /** Keeps the tail of interleaved output, at most {@link PROCESS_OUTPUT_MAX_BYTES} UTF-8 bytes. */
 class OutputTail {
@@ -51,10 +73,11 @@ class OutputTail {
 	}
 }
 
-/** Reads a pipe into `tail` until EOF or cancel. */
+/** Reads a pipe into `tail` (and `echo`, when teeing) until EOF or cancel. */
 function pump(
 	stream: ReadableStream<Uint8Array>,
 	tail: OutputTail,
+	echo?: (chunk: Uint8Array) => void,
 ): { done: Promise<void>; cancel: () => void } {
 	const reader = stream.getReader();
 	const decoder = new TextDecoder();
@@ -63,6 +86,7 @@ function pump(
 			for (;;) {
 				const { done: end, value } = await reader.read();
 				if (end) break;
+				echo?.(value);
 				tail.push(decoder.decode(value, { stream: true }));
 			}
 		} catch {
@@ -95,7 +119,10 @@ function errorCode(error: unknown): string | undefined {
  * the terminal; captured steps get no stdin and their interleaved
  * stdout+stderr tail is returned. `step.env` is merged over the environment.
  * Abort and deadline send SIGTERM, then SIGKILL after a grace period, and
- * report exit code `-1`. A missing binary reports `127`. For a download step
+ * report exit code `-1`. A missing binary reports `127`. An attached step
+ * with `tee` keeps stdin on the terminal but pipes stdout and stderr, echoing
+ * every chunk to the terminal as it arrives and returning the tail too, so
+ * a failure can be recognised from its output. For a download step
  * (`remoteScript`), the script's folder is created first (mode 0700) so
  * `curl -o` can write into the per-run temp folder.
  */
@@ -103,6 +130,7 @@ export class BunProcessRunner implements ProcessRunner {
 	readonly #env: Record<string, string | undefined>;
 	readonly #killGraceMs: number;
 	readonly #capturedTimeoutMs: number;
+	readonly #echo: TeeEcho;
 
 	/** @param options - Overrides for tests. */
 	constructor(options: BunProcessRunnerOptions = {}) {
@@ -110,6 +138,7 @@ export class BunProcessRunner implements ProcessRunner {
 		this.#killGraceMs = options.killGraceMs ?? PROCESS_KILL_GRACE_MS;
 		this.#capturedTimeoutMs =
 			options.capturedTimeoutMs ?? SETUP_STEP_TIMEOUT_MS;
+		this.#echo = options.echo ?? PROCESS_ECHO;
 	}
 
 	/**
@@ -137,8 +166,12 @@ export class BunProcessRunner implements ProcessRunner {
 		options: ProcessRunOptions,
 	): Promise<ProcessRunResult> {
 		const { attached, signal } = options;
+		// Attached steps inherit the terminal and keep no output, except `tee`
+		// steps (e.g. `colima start`): their output is still shown live but also
+		// piped through here, so runSetupPlan can match known failures in it.
+		const tee = attached && step.tee === true;
 		const captured = (output: string): ProcessRunResult["output"] =>
-			attached ? undefined : output;
+			attached && !tee ? undefined : output;
 		if (signal?.aborted) {
 			return { exitCode: -1, timedOut: false, output: captured("") };
 		}
@@ -152,7 +185,7 @@ export class BunProcessRunner implements ProcessRunner {
 			options.timeoutMs ??
 			step.timeoutMs ??
 			(attached ? undefined : this.#capturedTimeoutMs);
-		const stdio = attached ? "inherit" : "pipe";
+		const stdio = attached && !tee ? "inherit" : "pipe";
 		let child: Bun.Subprocess<"inherit" | "ignore", typeof stdio, typeof stdio>;
 		try {
 			child = Bun.spawn([...step.argv], {
@@ -197,7 +230,10 @@ export class BunProcessRunner implements ProcessRunner {
 		const pipes =
 			child.stdout instanceof ReadableStream &&
 			child.stderr instanceof ReadableStream
-				? [pump(child.stdout, tail), pump(child.stderr, tail)]
+				? [
+						pump(child.stdout, tail, tee ? this.#echo.stdout : undefined),
+						pump(child.stderr, tail, tee ? this.#echo.stderr : undefined),
+					]
 				: [];
 		try {
 			const exitCode = await child.exited;

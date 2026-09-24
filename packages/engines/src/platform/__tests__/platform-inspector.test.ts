@@ -106,6 +106,7 @@ describe("HostPlatformInspector (macOS)", () => {
 			arch: "arm64",
 			hasBrew: true,
 			brewOnPath: true,
+			brewNative: true,
 			brewPrefix: "/opt/homebrew",
 			hasSystemd: false,
 			installedRuntimes: ["docker-desktop"],
@@ -149,6 +150,77 @@ describe("HostPlatformInspector (macOS)", () => {
 		]);
 		expect(probe.calls).toContain("exists /opt/homebrew/bin/brew");
 		expect(probe.execs()).toEqual(["exec /usr/local/bin/brew --prefix"]);
+	});
+
+	test("Apple silicon with the Intel Homebrew at /usr/local: not native, its Colima formulae listed", async () => {
+		const probe = new RecordingProbe();
+		probe.onPath.set("brew", "/usr/local/bin/brew");
+		probe.onPath.set("colima", "/usr/local/bin/colima");
+		probe.commands.set("/usr/local/bin/brew --prefix", {
+			exitCode: 0,
+			stdout: "/usr/local\n",
+		});
+		probe.files.add("/usr/local/Cellar/colima");
+		probe.files.add("/usr/local/Cellar/lima");
+		probe.files.add("/usr/local/Cellar/docker-compose");
+		const facts = await inspector(probe).inspect();
+		expect(facts.brewPrefix).toBe("/usr/local");
+		expect(facts.brewNative).toBe(false);
+		expect(facts.intelBrewFormulae).toEqual([
+			"colima",
+			"lima",
+			"docker-compose",
+		]);
+		expect(facts.nativeBrewPrefix).toBeUndefined();
+		expect(facts.installedRuntimes).toEqual(["colima"]);
+		expect(Value.Check(PlatformFacts, facts)).toBe(true);
+		// The prefix alone tells: no `file` probe.
+		expect(probe.execs()).toEqual(["exec /usr/local/bin/brew --prefix"]);
+
+		probe.files.add("/opt/homebrew/bin/brew");
+		const both = await inspector(probe).inspect();
+		expect(both.brewPrefix).toBe("/usr/local");
+		expect(both.nativeBrewPrefix).toBe("/opt/homebrew");
+	});
+
+	test("a custom Homebrew prefix is Intel only when `file` says x86_64-only", async () => {
+		const probe = new RecordingProbe();
+		probe.onPath.set("brew", "/opt/brew/bin/brew");
+		probe.commands.set("/opt/brew/bin/brew --prefix", {
+			exitCode: 0,
+			stdout: "/opt/brew\n",
+		});
+		probe.commands.set("file -b /opt/brew/bin/brew", {
+			exitCode: 0,
+			stdout: "Mach-O 64-bit executable x86_64\n",
+		});
+		expect((await inspector(probe).inspect()).brewNative).toBe(false);
+		probe.commands.set("file -b /opt/brew/bin/brew", {
+			exitCode: 0,
+			stdout: "Bourne-Again shell script text executable, ASCII text\n",
+		});
+		const script = await inspector(probe).inspect();
+		expect(script.brewNative).toBe(true);
+		expect(script.intelBrewFormulae).toBeUndefined();
+	});
+
+	test("an Intel Mac's /usr/local Homebrew is native; Linux reports no nativity", async () => {
+		const probe = new RecordingProbe();
+		probe.onPath.set("brew", "/usr/local/bin/brew");
+		probe.commands.set("/usr/local/bin/brew --prefix", {
+			exitCode: 0,
+			stdout: "/usr/local\n",
+		});
+		const intelMac = await inspector(probe, { arch: "x64" }).inspect();
+		expect(intelMac.brewNative).toBe(true);
+		expect(intelMac.intelBrewFormulae).toBeUndefined();
+		expect(probe.calls).not.toContain("exists /opt/homebrew/bin/brew");
+
+		const linux = await inspector(probe, {
+			platform: "linux",
+			arch: "x64",
+		}).inspect();
+		expect("brewNative" in linux).toBe(false);
 	});
 
 	test("nothing installed: no brew, no docker CLI, no context lookup, nothing running", async () => {

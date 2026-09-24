@@ -194,16 +194,22 @@ export {
 } from "./ops/rotate-secret.op";
 export { COMMAND_TAG_COLUMN, runQuery } from "./ops/run-query.op";
 export { seedService } from "./ops/seed-service.op";
-export { buildSetupPlan } from "./ops/setup/build-setup-plan.op";
+export {
+	buildSetupPlan,
+	ROSETTA_BREW_REASON,
+} from "./ops/setup/build-setup-plan.op";
 export { planSetup } from "./ops/setup/plan-setup.op";
 export {
 	outputLines,
+	ROSETTA_COLIMA_FIX,
 	runSetupPlan,
 	stepFailureFix,
 } from "./ops/setup/run-setup-plan.op";
 export {
+	INTEL_COLIMA_FORMULAE,
 	MAC_RUNTIMES,
 	MANUAL_INSTALL_URLS,
+	NATIVE_BREW_PREFIX,
 	RUNTIME_LABELS,
 	SETUP_STEP,
 	type SetupStepId,

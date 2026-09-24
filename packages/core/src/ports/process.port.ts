@@ -54,6 +54,12 @@ export const CommandStep = Type.Object({
 				"Must run with the terminal attached even without sudo (e.g. the Homebrew installer asks questions). Implied by sudo",
 		}),
 	),
+	tee: Type.Optional(
+		Type.Boolean({
+			description:
+				"When run attached, still capture stdout+stderr (echoed to the terminal as it arrives) into `ProcessRunResult.output`, so a failure can be recognised from its output (e.g. `colima start` under Rosetta). The child then writes to pipes, not a TTY, so never set it on a step that asks questions",
+		}),
+	),
 	cwd: Type.Optional(
 		Type.String({ description: "Absolute working directory" }),
 	),
@@ -103,7 +109,7 @@ export interface ProcessRunResult {
 	readonly timedOut: boolean;
 	/**
 	 * Captured stdout+stderr (interleaved, ANSI kept, at most the last 64 KiB).
-	 * Absent when attached.
+	 * Absent when attached, unless the step sets `tee`.
 	 */
 	readonly output?: string;
 }
