@@ -27,7 +27,7 @@ describe("bare locastack without Docker", () => {
 		expect(code).toBe(ExitCode.OpError);
 		expect(calls.doctor).toBe(1);
 		expect(calls.dashboard).toEqual([]);
-		const text = Bun.stripANSI(io.stdout.text + io.stderr.text);
+		const text = Bun.stripANSI(io.out.text + io.err.text);
 		expect(text).toContain("Start Docker Desktop");
 		expect(text).toContain("run `locastack` again");
 	});
@@ -39,7 +39,7 @@ describe("bare locastack without Docker", () => {
 		expect(code).toBe(ExitCode.OpError);
 		expect(calls.dashboard).toEqual([]);
 		const parsed = JSON.parse(
-			io.stdout.text.trim().split("\n").at(-1) ?? "{}",
+			io.out.text.trim().split("\n").at(-1) ?? "{}",
 		) as {
 			ok: boolean;
 			doctor: { ok: boolean };
