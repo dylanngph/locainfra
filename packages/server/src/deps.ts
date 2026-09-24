@@ -10,6 +10,7 @@ import type {
 	ContainerStreams,
 	CreateProject,
 	CreateSnapshot,
+	DaemonWaiter,
 	DeleteSnapshot,
 	DockerInfoPort,
 	DownProject,
@@ -28,8 +29,11 @@ import type {
 	LoadProject,
 	OpJournal,
 	Paths,
+	PlanSetup,
+	PlatformInspector,
 	PortProbe,
 	PreviewImport,
+	ProcessRunner,
 	RegisterProject,
 	RemoveService,
 	RestartService,
@@ -42,6 +46,7 @@ import type {
 	SeedService,
 	SnapshotIndex,
 	SocketLocator,
+	StartDockerRuntime,
 	StartService,
 	StateReader,
 	StateWriter,
@@ -63,6 +68,10 @@ export interface ServerOps {
 	readonly runDoctor: RunDoctor;
 	/** Docker/compose versions (`GET /api/system`). */
 	readonly getSystemInfo: GetSystemInfo;
+	/** Setup plan for the Docker-unavailable screen (`GET /api/system/setup`); runs nothing. */
+	readonly planSetup: PlanSetup;
+	/** Starts an installed, stopped runtime (`POST /api/system/docker/start`). */
+	readonly startDockerRuntime: StartDockerRuntime;
 	/** Catalog listing (`GET /api/catalog`). */
 	readonly catalogList: CatalogList;
 	/** Project summaries (`GET /api/projects`). */
@@ -170,4 +179,10 @@ export interface ServerPorts {
 	readonly snapshots: SnapshotIndex;
 	/** Operation history (SQLite `ops` table); every `202 { opId }` op with a project is recorded. */
 	readonly journal: OpJournal;
+	/** Read-only machine facts (doctor's `docker.cli`/`docker.group`/`homebrew` checks, setup planning). */
+	readonly platform: PlatformInspector;
+	/** Runs the exact argv of a setup step (Start Docker only; never installs from the dashboard). */
+	readonly runner: ProcessRunner;
+	/** Waits for the Engine API to answer after a runtime start. */
+	readonly waiter: DaemonWaiter;
 }

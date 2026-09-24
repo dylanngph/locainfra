@@ -36,6 +36,7 @@ export class UnixSocketTransport implements DockerTransport {
 	readonly #options: UnixSocketTransportOptions;
 	readonly #fetch: UnixFetch;
 	#socket: Promise<string> | undefined;
+	#located: string | undefined;
 	#version: Promise<string> | undefined;
 
 	/** @param options - Socket source, API version and fetch override. */
@@ -76,11 +77,31 @@ export class UnixSocketTransport implements DockerTransport {
 	 * @throws {OpError} `DOCKER_UNREACHABLE` when no socket is found.
 	 */
 	socketPath(): Promise<string> {
-		this.#socket ??= this.#locate().catch((error: unknown) => {
-			this.#socket = undefined;
-			throw error;
-		});
+		this.#socket ??= this.#locate().then(
+			(path) => {
+				this.#located = path;
+				return path;
+			},
+			(error: unknown) => {
+				this.#socket = undefined;
+				throw error;
+			},
+		);
 		return this.#socket;
+	}
+
+	/**
+	 * After a connection failure, drops a socket found by the locator (and the
+	 * API version negotiated on it) so the next request locates again: the
+	 * runtime may have been restarted or switched (e.g. Docker Desktop stopped,
+	 * then Colima started with another context). A fixed `socketPath` is kept.
+	 */
+	#forgetLocatedSocket(socket: string): void {
+		if (this.#options.socketPath !== undefined) return;
+		if (this.#located !== socket) return;
+		this.#located = undefined;
+		this.#socket = undefined;
+		this.#version = undefined;
 	}
 
 	async #locate(): Promise<string> {
@@ -131,6 +152,7 @@ export class UnixSocketTransport implements DockerTransport {
 			});
 		} catch (cause) {
 			if (init.signal?.aborted) throw cause;
+			this.#forgetLocatedSocket(socket);
 			throw new OpError(
 				"DOCKER_UNREACHABLE",
 				`Cannot reach the Docker daemon at ${socket}`,

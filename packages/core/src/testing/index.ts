@@ -38,3 +38,12 @@ export {
 	SequentialSecretGenerator,
 	StaticCatalogSource,
 } from "./fakes";
+export {
+	createLinuxPlatformFacts,
+	createPlatformFacts,
+	FakeDaemonWaiter,
+	FakePlatformInspector,
+	FakeProcessRunner,
+	type ProcessCall,
+	type ProcessScript,
+} from "./setup-fakes";

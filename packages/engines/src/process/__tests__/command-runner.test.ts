@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { chmod, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
 	BunCommandRunner,
 	mergeAsync,
@@ -62,5 +65,24 @@ describe("BunCommandRunner", () => {
 		expect(() =>
 			new BunCommandRunner().spawn(["definitely-not-a-real-binary-li"]),
 		).toThrow();
+	});
+});
+
+describe("BunCommandRunner PATH", () => {
+	test("resolves argv[0] from the live process.env.PATH", async () => {
+		const dir = await mkdtemp(join(tmpdir(), "locastack-cmd-"));
+		const before = process.env.PATH;
+		try {
+			await Bun.write(join(dir, "zz-live-path"), "#!/bin/sh\necho live\n");
+			await chmod(join(dir, "zz-live-path"), 0o755);
+			process.env.PATH = `${dir}:${before ?? ""}`;
+			const out = await runToCompletion(new BunCommandRunner(), [
+				"zz-live-path",
+			]);
+			expect(out.stdout.trim()).toBe("live");
+		} finally {
+			process.env.PATH = before;
+			await rm(dir, { recursive: true, force: true });
+		}
 	});
 });

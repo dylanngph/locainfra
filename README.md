@@ -22,7 +22,9 @@ curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh
 
 Pin a version with `VERSION=0.1.0` before `sh`. A Homebrew tap (`brew install dylanngph/locastack/locastack`) is coming. Binaries for every release, with `SHA256SUMS` and build attestations, are on the [Releases](https://github.com/dylanngph/locastack/releases) page. The installer verifies the checksum and puts `locastack` in `~/.locastack/bin`.
 
-**Requirements:** a Docker daemon plus the `docker` CLI with the Compose plugin 2.24+. On macOS that is Docker Desktop, or an alternative such as OrbStack or Colima (with the compose plugin installed); on Linux, Docker Engine 24+ with your user in the `docker` group. LocaStack finds the daemon through `DOCKER_HOST`, then the active `docker context`, then the default socket. Without a running daemon, `locastack` stops with the doctor checks and how to fix them. macOS (Apple Silicon and Intel) and Linux (x64 and arm64, glibc or musl).
+If Docker is missing, `locastack` offers to install it; or run `locastack setup`. It shows the exact commands first and runs nothing until you say yes (Colima via Homebrew by default on macOS, with Docker Desktop and OrbStack as choices; Docker's official script on Linux). See [docs/setup.md](docs/setup.md).
+
+**Requirements:** a Docker daemon plus the `docker` CLI with the Compose plugin 2.24+. On macOS that is Docker Desktop, or an alternative such as OrbStack or Colima (with the compose plugin installed); on Linux, Docker Engine 24+ with your user in the `docker` group. LocaStack finds the daemon through `DOCKER_HOST`, then the active `docker context`, then the default socket. Without a running daemon, `locastack` shows the doctor checks and, in a terminal, offers to start or install Docker (`locastack setup`); if you decline it stops with the fixes. The dashboard's Docker-unavailable screen (with **Start Docker**) appears when Docker stops or is quit while the dashboard is already running. macOS (Apple Silicon and Intel) and Linux (x64 and arm64, glibc or musl).
 
 **macOS note:** the binaries are not code-signed yet. Installs through `curl` or `brew` run without prompts. If you download a tarball in a browser, macOS quarantines it: right-click the binary and choose Open once, or run `xattr -d com.apple.quarantine locastack`.
 
@@ -43,6 +45,7 @@ locastack up [--service main-db]   # start the services of the project in this f
 locastack down [--volumes] [--yes]
 locastack env --format shell       # eval "$(locastack env --format shell)"
 locastack doctor --json           # --json works on every command; locastack --version prints the version
+locastack setup [--dry-run]        # start or install Docker after showing the commands; --runtime colima|docker-desktop|orbstack, --yes for scripts
 ```
 
 A project is a folder with a `locastack.yaml` holding named service instances (`services: { main-db: { type: postgres, port: auto } }`, several per type allowed). Secrets live in `~/.locastack/secrets/` (mode 0600), never in the stack file. Machine-local state (registered projects, pinned ports) lives in `~/.locastack/locastack.db` (SQLite, mode 0600); an older `state.json` is imported once and renamed `state.json.migrated`. All services and the dashboard bind to `127.0.0.1`.

@@ -6,6 +6,7 @@ import { ExitCode as Exit } from "../../cli.types";
 import { renderOpError, writeJson, writeLine } from "../../ui/output";
 import { theme } from "../../ui/theme";
 import { formatDoctorSummary } from "../doctor/doctor.view";
+import { offerSetup, type SetupFlowOutcome } from "../setup/setup.flow";
 import { registerProjectDir } from "./project-dir";
 
 /** First port tried for the dashboard when `--port` is not given. */
@@ -38,7 +39,8 @@ export function withProject(url: string, project: string | undefined): string {
 }
 
 /**
- * Bare `locastack`: run doctor, register `--project` if given, then reuse a
+ * Bare `locastack`: run doctor (in a terminal, failing checks lead to the
+ * setup offer; on success it carries on), register `--project` if given, then reuse a
  * live dashboard (`~/.locastack/dashboard.json` + health probe) or start one
  * on 127.0.0.1 (first free port ≥ 4488, random session token), print its URL,
  * open the browser unless `--no-open`, and stay in the foreground. Ctrl+C
@@ -55,18 +57,21 @@ export async function runDashboard(
 ): Promise<ExitCode> {
 	const { io } = ctx;
 	const deps = await ctx.loadDeps();
-	const report = await deps.ops.runDoctor(deps.doctor);
+	let report = await deps.ops.runDoctor(deps.doctor);
 	if (!options.json) printDoctor(ctx, report);
+	let outcome: SetupFlowOutcome | undefined;
+	if (!report.ok && !options.json && io.isTTY) {
+		// Offer to start or install Docker (every command shown, explicit yes).
+		outcome = await offerSetup(io, deps, report);
+		if (outcome.status === "ready" && outcome.report !== undefined)
+			report = outcome.report;
+	}
 	if (!report.ok) {
 		// Without Docker (or Compose) the dashboard cannot manage anything:
 		// stop here with the fix hints instead of opening an empty UI.
 		if (options.json)
 			writeJson(io.stdout, { ok: false, doctor: report }, false);
-		else
-			writeLine(
-				io.stderr,
-				theme.fail("Fix the failing checks above, then run `locastack` again."),
-			);
+		else closingHint(ctx, outcome);
 		return Exit.OpError;
 	}
 
@@ -165,10 +170,54 @@ function printDoctor(ctx: CommandContext, report: DoctorReport): void {
 	log.message(`${theme.strong("LocaStack")}  ${formatDoctorSummary(report)}`, {
 		output,
 	});
+	printFailingChecks(ctx, report);
+}
+
+function printFailingChecks(ctx: CommandContext, report: DoctorReport): void {
+	const output = ctx.io.stdout;
 	for (const check of report.checks.filter((c) => c.status === "fail")) {
 		log.warn(check.fix ? `${check.label}: ${check.fix}` : check.label, {
 			output,
 		});
+	}
+}
+
+/**
+ * The one closing line when bare `locastack` stops because Docker is not
+ * usable, matching how the setup offer ended (none made: non-TTY or
+ * nothing automatable).
+ */
+function closingHint(
+	ctx: CommandContext,
+	outcome: SetupFlowOutcome | undefined,
+): void {
+	const { stderr } = ctx.io;
+	switch (outcome?.status) {
+		case "declined":
+			// The flow already said "Nothing else was run. Run `locastack setup` …".
+			return;
+		case "relogin":
+			writeLine(
+				stderr,
+				theme.warn(
+					"Log out and back in (or run `newgrp docker`), then run `locastack`.",
+				),
+			);
+			return;
+		case "failed":
+			if (outcome.report !== undefined) printFailingChecks(ctx, outcome.report);
+			writeLine(
+				stderr,
+				theme.fail(
+					"Setup did not make Docker usable: fix the checks above, then run `locastack` again.",
+				),
+			);
+			return;
+		default:
+			writeLine(
+				stderr,
+				theme.fail("Fix the failing checks above, then run `locastack` again."),
+			);
 	}
 }
 

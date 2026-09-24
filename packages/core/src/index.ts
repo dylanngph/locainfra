@@ -97,7 +97,7 @@ export { createSnapshot } from "./ops/create-snapshot.op";
 export { deleteSnapshot } from "./ops/delete-snapshot.op";
 export { discoverStack } from "./ops/discover-stack.op";
 export * from "./ops/doctor/doctor.model";
-export { DOCTOR_CHECK_IDS, runDoctor } from "./ops/doctor/run-doctor.op";
+export { runDoctor } from "./ops/doctor/run-doctor.op";
 export { downProject } from "./ops/down-project.op";
 export { downStack } from "./ops/down-stack.op";
 export { envForStack } from "./ops/env-for-stack.op";
@@ -136,6 +136,8 @@ export {
 	DataObjects,
 	DataQueryRequest,
 	DataQueryResult,
+	DEFAULT_MAC_RUNTIME,
+	DOCKER_START_TIMEOUT_MS,
 	EnvFormatModel,
 	EnvPair,
 	EnvPreview,
@@ -157,6 +159,8 @@ export {
 	SECRET_VALUE_PATTERN,
 	SEED_MAX_BYTES,
 	SEED_TIMEOUT_MS,
+	SETUP_INSTALLER_URLS,
+	SETUP_STEP_TIMEOUT_MS,
 	SecretValue,
 	SecretValues,
 	ServiceDetail,
@@ -165,6 +169,9 @@ export {
 	ServiceState,
 	ServiceStatus,
 	ServiceVolumeInfo,
+	SetupKind,
+	SetupOptions,
+	SetupPlan,
 	Snapshot,
 	SystemInfo,
 } from "./ops/ops.model";
@@ -187,6 +194,21 @@ export {
 } from "./ops/rotate-secret.op";
 export { COMMAND_TAG_COLUMN, runQuery } from "./ops/run-query.op";
 export { seedService } from "./ops/seed-service.op";
+export { buildSetupPlan } from "./ops/setup/build-setup-plan.op";
+export { planSetup } from "./ops/setup/plan-setup.op";
+export {
+	outputLines,
+	runSetupPlan,
+	stepFailureFix,
+} from "./ops/setup/run-setup-plan.op";
+export {
+	MAC_RUNTIMES,
+	MANUAL_INSTALL_URLS,
+	RUNTIME_LABELS,
+	SETUP_STEP,
+	type SetupStepId,
+} from "./ops/setup/setup-steps";
+export { startDockerRuntime } from "./ops/setup/start-docker-runtime.op";
 export { startService } from "./ops/start-service.op";
 export { statusForProject } from "./ops/status-for-project.op";
 export { stopService } from "./ops/stop-service.op";
@@ -241,6 +263,7 @@ export type {
 	ContainerInspector,
 	ContainerReader,
 	ContainerStreams,
+	DaemonWaiter,
 	DockerInfoPort,
 	EventFilter,
 	LogOptions,
@@ -274,6 +297,19 @@ export type {
 export type { OpJournal } from "./ports/op-journal.port";
 export { OpFinish, OpStart, OpStatus } from "./ports/op-journal.port";
 export type { Paths } from "./ports/paths.port";
+export type { PlatformInspector } from "./ports/platform.port";
+export {
+	PlatformFacts,
+	PlatformOs,
+	PlatformSummary,
+	RuntimeProvider,
+} from "./ports/platform.port";
+export type {
+	ProcessRunner,
+	ProcessRunOptions,
+	ProcessRunResult,
+} from "./ports/process.port";
+export { CommandStep, RemoteScript } from "./ports/process.port";
 export type { SecretStore } from "./ports/secrets.port";
 export type { SnapshotIndex, VolumeArchiver } from "./ports/snapshot.port";
 export {
@@ -358,6 +394,11 @@ export {
 	uniqueSecretNames,
 } from "./resolve/secrets/generator";
 export { serviceTemplateContext } from "./resolve/service-context";
+export {
+	formatCommand,
+	formatCommandStep,
+	quoteShellArg,
+} from "./shared/command-format";
 export { JSON_SCHEMA_DRAFT, publishedJsonSchema } from "./shared/json-schema";
 export {
 	ioErrorFrom,

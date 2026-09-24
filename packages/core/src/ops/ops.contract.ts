@@ -19,6 +19,7 @@ import type { ComposeInfoPort, LifecycleRunner } from "../ports/compose.port";
 import type {
 	ContainerInspector,
 	ContainerReader,
+	DaemonWaiter,
 	DockerInfoPort,
 	SocketLocator,
 } from "../ports/docker.port";
@@ -30,6 +31,12 @@ import type {
 	SecretGenerator,
 } from "../ports/files.port";
 import type { Paths } from "../ports/paths.port";
+import type {
+	PlatformFacts,
+	PlatformInspector,
+	RuntimeProvider,
+} from "../ports/platform.port";
+import type { CommandStep, ProcessRunner } from "../ports/process.port";
 import type { SecretStore } from "../ports/secrets.port";
 import type { SnapshotIndex, VolumeArchiver } from "../ports/snapshot.port";
 import type {
@@ -59,6 +66,8 @@ import type {
 	SecretValues,
 	ServiceDetail,
 	ServicePatch,
+	SetupOptions,
+	SetupPlan,
 	Snapshot,
 	SystemInfo,
 } from "./ops.model";
@@ -151,9 +160,21 @@ export interface RunDoctorDeps {
 	readonly socket: SocketLocator;
 	/** Time source for `generatedAt`. */
 	readonly clock: Clock;
+	/**
+	 * Machine facts: `docker.cli`, `docker.group` and `homebrew` checks, the
+	 * report's `platform` and `setupNeeded`.
+	 */
+	readonly platform: PlatformInspector;
 }
 
-/** Diagnoses Docker, compose version and socket. Never throws; failures become `fail` checks. */
+/**
+ * Diagnoses Docker: the checks of `DOCTOR_CHECK` in that order (`docker.api`
+ * only when the daemon answers, `compose.version` only when the plugin
+ * works, `docker.group` on Linux, `homebrew` on macOS), plus `platform` (the
+ * public part of `PlatformFacts`) and `setupNeeded` (see `SetupNeeded`).
+ * Never throws; failures become `fail` checks, a failed inspection an
+ * `other`-OS platform with `setupNeeded: "unsupported"` when a check fails.
+ */
 export type RunDoctor = (deps: RunDoctorDeps) => Promise<DoctorReport>;
 
 /** Ports required by {@link GetSystemInfo}. */
@@ -166,6 +187,166 @@ export interface GetSystemInfoDeps {
 
 /** Docker and compose versions for the header status dot. Never throws. */
 export type GetSystemInfo = (deps: GetSystemInfoDeps) => Promise<SystemInfo>;
+
+// ---------------------------------------------------------------------------
+// Docker setup (`locastack setup`, doctor/bare `locastack` offer, dashboard Start Docker)
+// ---------------------------------------------------------------------------
+
+/**
+ * Pure planner: turns machine facts and a doctor report into the commands
+ * that fix the failing checks, cheapest remedy first (start a stopped
+ * runtime before installing anything). Runs nothing and never throws.
+ *
+ * - `report.ok` → `kind: "none"`, no steps.
+ * - `win32`/`other` → `unsupported` with manual instructions in `postNotes`.
+ * - macOS: Homebrew missing and needed → download `SETUP_INSTALLER_URLS.homebrew`
+ *   to `tmpDir` (a `remoteScript` step), then `/bin/bash <file>` (attached);
+ *   later steps call `<brewPrefix>/bin/brew` by absolute path (prefix
+ *   `/opt/homebrew` on arm64, `/usr/local` on x64 when not yet installed).
+ *   Colima (default): `brew install colima docker docker-compose`,
+ *   `mkdir -p <home>/.docker/cli-plugins`, `ln -sfn <prefix>/opt/docker-compose/bin/docker-compose <home>/.docker/cli-plugins/docker-compose`,
+ *   then `colima start` (or `brew services start colima` with `startAtLogin`).
+ *   Docker Desktop: `brew install --cask docker`, `open -a Docker` (note: the
+ *   app finishes setup in its own window). OrbStack: `brew install --cask orbstack`,
+ *   `open -a OrbStack`. Compose missing/too old with a working daemon: only
+ *   the compose install/upgrade and link steps.
+ * - Linux: stopped `docker-engine` → `sudo systemctl start docker` (when
+ *   `hasSystemd`, else `sudo service docker start`); nothing installed →
+ *   `curl -fsSL https://get.docker.com -o <tmpDir>/get-docker.sh`
+ *   (`remoteScript`), `sudo sh <tmpDir>/get-docker.sh`, `sudo systemctl enable --now docker`
+ *   (with systemd; else `sudo service docker start`), `sudo usermod -aG docker <username>`
+ *   (+ `requiresRelogin`). Docker Desktop for Linux: start only
+ *   (`systemctl --user start docker-desktop`). Stopped engine and not in
+ *   the group → start + usermod; running engine refusing the user → the
+ *   usermod step only. The curl download uses `--create-dirs`. `sudo` is dropped when
+ *   `isRoot`.
+ *
+ * Unknown/unsuitable `options.runtime` for the OS → `unsupported` with the
+ * reason. `alternatives` lists the other macOS runtimes for install plans and
+ * the other installed runtimes for start plans. Several installed runtimes:
+ * the one the docker context names starts, else Docker Desktop, OrbStack,
+ * Colima (macOS) / Docker Engine, Docker Desktop (Linux). `DOCKER_HOST` set
+ * and not answering → `unsupported` unless its unix socket belongs to an
+ * installed runtime (then only that one starts). A socket refusing the user
+ * (Linux, EACCES) is a running engine: `usermod` only. Homebrew not on PATH
+ * (not installed yet, or `brewOnPath: false`) → brew-installed binaries are
+ * called by absolute path and `pathAdditions` names the prefix. A `docker`
+ * CLI already on PATH is kept (no `docker` formula) on a Colima install.
+ */
+export type BuildSetupPlan = (
+	facts: PlatformFacts,
+	report: DoctorReport,
+	options: SetupOptions,
+) => SetupPlan;
+
+/** Ports required by {@link PlanSetup}. */
+export interface PlanSetupDeps {
+	/** Machine facts. */
+	readonly platform: PlatformInspector;
+	/** Doctor ports (run when {@link PlanSetupInput.report} is absent). */
+	readonly doctor: RunDoctorDeps;
+}
+
+/** Input of {@link PlanSetup}. */
+export interface PlanSetupInput extends SetupOptions {
+	/** A fresh doctor report to reuse (bare `locastack` and `doctor` already ran it). */
+	readonly report?: DoctorReport;
+}
+
+/**
+ * Inspects the platform, runs doctor (unless `report` is given) and returns
+ * {@link BuildSetupPlan}'s plan. Executes nothing. Never throws: an
+ * inspection failure yields `kind: "unsupported"` with the reason.
+ */
+export type PlanSetup = (
+	deps: PlanSetupDeps,
+	input: PlanSetupInput,
+) => Promise<SetupPlan>;
+
+/** Ports required by {@link RunSetupPlan}. */
+export interface RunSetupPlanDeps {
+	/** Runs each step (the only port that installs or starts anything). */
+	readonly runner: ProcessRunner;
+	/** Waits for the daemon after the last step. */
+	readonly waiter: DaemonWaiter;
+	/** Doctor ports for the final re-check. */
+	readonly doctor: RunDoctorDeps;
+}
+
+/** What {@link RunSetupPlanInput.beforeStep} decides for the next step. */
+export type SetupStepDecision = "run" | "abort";
+
+/** Input of {@link RunSetupPlan}. */
+export interface RunSetupPlanInput {
+	/** The plan the user consented to (unchanged from what was shown). */
+	readonly plan: SetupPlan;
+	/**
+	 * `true` from a terminal (`locastack setup`): every step inherits stdio.
+	 * `false` (server): output is captured and streamed as `log` events, and a
+	 * plan with `needsTerminal` fails first with `SETUP_NEEDS_TERMINAL`.
+	 */
+	readonly attached: boolean;
+	/**
+	 * Called before each step; the CLI uses it to offer the inspect step
+	 * after a `remoteScript` download ("Downloaded to …; inspect with: …;
+	 * run it?"). Absent = run every step. `abort` ends with `SETUP_CANCELLED`.
+	 */
+	readonly beforeStep?: (
+		step: CommandStep,
+		index: number,
+		plan: SetupPlan,
+	) => Promise<SetupStepDecision>;
+	/** Aborts the running step and the wait (`SETUP_CANCELLED`). */
+	readonly signal?: AbortSignal;
+	/** Daemon wait deadline (default `DOCKER_START_TIMEOUT_MS`). */
+	readonly waitTimeoutMs?: number;
+}
+
+/**
+ * Executes a plan's steps in order: a `step` event per command (message:
+ * its title), captured output as `log` events when not attached, then stops
+ * at the first non-zero exit with `SETUP_STEP_FAILED` (details: `stepId`,
+ * `exitCode`, `stepTimedOut`, `fix` with the manual remedy). After the last
+ * step it waits for the daemon (skipped when the plan has
+ * `requiresRelogin`: this process cannot reach the socket before a new
+ * login), re-runs doctor and ends with `done` ("Docker is ready: <engine>"
+ * plus `postNotes`, or the re-login explanation with `requiresRelogin`) or `error` (`DOCKER_START_TIMEOUT`, or
+ * the first failing check's fix as `DOCKER_UNREACHABLE`/`COMPOSE_MISSING`/
+ * `COMPOSE_TOO_OLD`; both fixes end with the plan's `postNotes`). Before the
+ * wait, `plan.pathAdditions` is prepended to this process's PATH
+ * (`ProcessRunner.prependPath`). A `none` plan yields only `done`; an `unsupported`
+ * plan only `error` (`SETUP_UNSUPPORTED`). Exactly one terminal event.
+ */
+export type RunSetupPlan = (
+	deps: RunSetupPlanDeps,
+	input: RunSetupPlanInput,
+) => AsyncIterable<Progress>;
+
+/** Ports required by {@link StartDockerRuntime}. */
+export type StartDockerRuntimeDeps = PlanSetupDeps & RunSetupPlanDeps;
+
+/** Input of {@link StartDockerRuntime}. */
+export interface StartDockerRuntimeInput {
+	/** Runtime to start when several are installed (default: the planner's choice). */
+	readonly provider?: RuntimeProvider;
+	/** See {@link RunSetupPlanInput.attached} (the server passes `false`). */
+	readonly attached: boolean;
+	/** Aborts the start and the wait. */
+	readonly signal?: AbortSignal;
+}
+
+/**
+ * The `start` subset of setup (dashboard Start Docker): plans with
+ * {@link PlanSetup}; `kind: "none"` → `done` ("Docker is already running");
+ * `install` → `error` `DOCKER_NOT_INSTALLED` (fix: run `locastack setup`);
+ * `unsupported` → `SETUP_UNSUPPORTED`; `start` → {@link RunSetupPlan} (a
+ * sudo start, e.g. `systemctl` on Linux, fails with `SETUP_NEEDS_TERMINAL`
+ * when not attached, fix naming the exact command). Never installs anything.
+ */
+export type StartDockerRuntime = (
+	deps: StartDockerRuntimeDeps,
+	input: StartDockerRuntimeInput,
+) => AsyncIterable<Progress>;
 
 // ---------------------------------------------------------------------------
 // Catalog

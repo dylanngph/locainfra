@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { DOCTOR_CHECK_IDS } from "@locastack/core";
+import { DOCTOR_CHECK } from "@locastack/core";
 import { createApp } from "../app";
 import { createTestDeps, HOST } from "./support/fixtures";
 
@@ -43,9 +43,15 @@ describe("app", () => {
 			checks: { id: string }[];
 		};
 		expect(body.ok).toBe(true);
-		expect(body.checks.map((c) => c.id)).toEqual(
-			Object.values(DOCTOR_CHECK_IDS),
-		);
+		expect(body.checks.map((c) => c.id)).toEqual([
+			DOCTOR_CHECK.dockerCli,
+			DOCTOR_CHECK.socket,
+			DOCTOR_CHECK.daemon,
+			DOCTOR_CHECK.api,
+			DOCTOR_CHECK.composePlugin,
+			DOCTOR_CHECK.composeVersion,
+			DOCTOR_CHECK.homebrew,
+		]);
 	});
 	it("does not serve an SPA without staticDir", async () => {
 		expect((await req("/")).status).toBe(404);

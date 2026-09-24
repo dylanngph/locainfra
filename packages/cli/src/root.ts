@@ -37,6 +37,10 @@ export function createRootCommand(io: CliIo) {
 			"register this folder as a project and open it in the dashboard",
 		)
 		.helpOption("-h, --help", "show help")
+		.addHelpText(
+			"after",
+			"\nNo Docker yet, or it is stopped? `locastack setup` shows the exact commands and asks before running any.",
+		)
 		.showHelpAfterError("(run `locastack --help` for usage)")
 		.configureOutput({
 			writeOut: (text) => {

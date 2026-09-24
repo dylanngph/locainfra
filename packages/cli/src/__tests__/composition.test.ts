@@ -3,10 +3,17 @@ import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import type { CatalogError } from "@locastack/core";
 import {
+	type CatalogError,
+	planSetup,
+	startDockerRuntime,
+} from "@locastack/core";
+import {
+	BunProcessRunner,
 	createEngines,
 	DockerClient,
+	HostPlatformInspector,
+	PollingDaemonWaiter,
 	resolveDefaultPaths,
 } from "@locastack/engines";
 import {
@@ -145,6 +152,17 @@ describe("composeDeps", () => {
 		expect(deps.dashboard.createToken()).not.toBe(deps.dashboard.createToken());
 	});
 
+	test("wires the setup ports (runner, waiter, platform) and shares the doctor deps", () => {
+		const deps = composeDeps({ env });
+		expect(deps.setup.runner).toBeInstanceOf(BunProcessRunner);
+		expect(deps.setup.waiter).toBeInstanceOf(PollingDaemonWaiter);
+		expect(deps.setup.platform).toBeInstanceOf(HostPlatformInspector);
+		expect(deps.doctor.platform).toBe(deps.setup.platform);
+		expect(deps.setup.doctor).toBe(deps.doctor);
+		expect(typeof deps.ops.planSetup).toBe("function");
+		expect(typeof deps.ops.runSetupPlan).toBe("function");
+	});
+
 	test("LOCASTACK_SESSION_TOKEN fixes the token when long enough", () => {
 		const fixed = "e2e-token-0123456789";
 		expect(
@@ -162,7 +180,9 @@ describe("composeDeps", () => {
 	test("serverOps covers every op the server needs", () => {
 		const ops = serverOps();
 		for (const fn of Object.values(ops)) expect(typeof fn).toBe("function");
-		expect(Object.keys(ops)).toHaveLength(31);
+		expect(Object.keys(ops)).toHaveLength(33);
+		expect(ops.planSetup).toBe(planSetup);
+		expect(ops.startDockerRuntime).toBe(startDockerRuntime);
 	});
 
 	test("serverPorts hands the server every M3 adapter, sharing one database", () => {
@@ -176,6 +196,9 @@ describe("composeDeps", () => {
 		expect(ports.snapshots).toBe(engines.snapshots);
 		expect(ports.journal).toBe(engines.journal);
 		expect(ports.state).toBe(engines.state);
+		expect(ports.platform).toBe(engines.platform);
+		expect(ports.runner).toBe(engines.runner);
+		expect(ports.waiter).toBe(engines.waiter);
 	});
 
 	test("loads the built-in catalog and skips invalid overrides", async () => {

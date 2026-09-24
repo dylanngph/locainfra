@@ -215,3 +215,19 @@ export interface ContainerStreams {
 	 */
 	events(filter: EventFilter, signal: AbortSignal): AsyncIterable<DockerEvent>;
 }
+
+/**
+ * Waits for a Docker daemon to come up after a runtime was started
+ * (`colima start`, `open -a Docker`, `systemctl start docker`). Polls the
+ * socket (via {@link SocketLocator}, re-located on every attempt because a
+ * fresh runtime may create its socket or docker context late) and the Engine
+ * API (`/_ping`) about once a second.
+ */
+export interface DaemonWaiter {
+	/**
+	 * @param timeoutMs - Give up after this long.
+	 * @param signal - Stops waiting early (resolves `false`).
+	 * @returns `true` as soon as the Engine API answers, `false` on timeout or abort. Never rejects.
+	 */
+	waitForDocker(timeoutMs: number, signal?: AbortSignal): Promise<boolean>;
+}

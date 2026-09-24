@@ -16,6 +16,7 @@ import {
 	mockDb,
 } from "./mock-db";
 import { mockPreviewImport } from "./mock-import";
+import { mockSystemInfo, mockSystemSetup } from "./mock-system";
 
 const NAME = /^[a-z][a-z0-9-]*$/;
 
@@ -86,17 +87,29 @@ const randomSecret = () =>
  */
 export const createHttpHandlers = (db: MockDb = mockDb) => [
 	http.get("*/api/health", () => HttpResponse.json({ ok: true })),
-	http.get("*/api/system", () =>
-		HttpResponse.json({
-			docker: {
-				version: "27.1.1",
-				apiVersion: "1.46",
-				platformName: "Docker Desktop",
-			},
-			compose: "2.29.1",
-			dashboardVersion: "0.0.0-mock",
-		}),
+	http.get("*/api/system", () => HttpResponse.json(mockSystemInfo(db.docker))),
+	http.get("*/api/system/setup", () =>
+		HttpResponse.json(mockSystemSetup(db.docker)),
 	),
+	http.post("*/api/system/docker/start", () => {
+		const { plan } = mockSystemSetup(db.docker);
+		if (plan.kind === "install")
+			return fail(409, "DOCKER_NOT_INSTALLED", plan.reason, {
+				fix: "Run `locastack setup` in a terminal",
+				command: "locastack setup",
+			});
+		return accepted(
+			db.runOp(
+				plan.steps.map((step) => ({ message: step.title, delay: 50 })),
+				plan.kind === "none"
+					? "Docker is already running"
+					: "Docker is ready: 27.1.1",
+				() => {
+					db.docker = "running";
+				},
+			),
+		);
+	}),
 	http.get("*/api/catalog", () => HttpResponse.json(db.catalogListing())),
 	http.get("*/api/catalog/:type/free-port", ({ params }) => {
 		const definition = db

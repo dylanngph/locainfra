@@ -16,11 +16,13 @@ import {
 	type ProjectSummary,
 	runDoctor,
 	type ServiceDetail,
+	type SetupPlan,
 	type Snapshot,
 	type SnapshotRecord,
 	type Stack,
 } from "@locastack/core";
 import {
+	createPlatformFacts,
 	createProjectStack,
 	createTestPaths,
 	FakeComposeInfo,
@@ -28,10 +30,13 @@ import {
 	FakeContainerInspector,
 	FakeContainerReader,
 	FakeContainerStreams,
+	FakeDaemonWaiter,
 	FakeDockerInfo,
 	FakeFolderPicker,
 	FakeLifecycleRunner,
+	FakePlatformInspector,
 	FakePortProbe,
+	FakeProcessRunner,
 	FakeSnapshotIndex,
 	FakeSocketLocator,
 	FakeVolumeArchiver,
@@ -221,6 +226,17 @@ export const importPreview: ImportPreview = {
 	],
 };
 
+/** Setup plan of a healthy machine (nothing to do). */
+export const nonePlan: SetupPlan = {
+	kind: "none",
+	reason: "Docker is ready.",
+	steps: [],
+	postNotes: [],
+	alternatives: [],
+	needsTerminal: false,
+	requiresRelogin: false,
+};
+
 /** One recorded op call. */
 export interface OpCall {
 	/** Op name. */
@@ -403,6 +419,14 @@ export function createStubOps(overrides: Partial<ServerOps> = {}): {
 			record("importProject", input);
 			return succeed();
 		},
+		planSetup: async (_deps, input) => {
+			record("planSetup", input);
+			return nonePlan;
+		},
+		startDockerRuntime: (_deps, input) => {
+			record("startDockerRuntime", input);
+			return succeed();
+		},
 		...overrides,
 	};
 	return { ops, calls };
@@ -426,6 +450,12 @@ export interface TestPorts extends ServerPorts {
 	readonly snapshots: FakeSnapshotIndex;
 	/** In-memory operation history. */
 	readonly journal: InMemoryOpJournal;
+	/** Scripted machine facts (Docker Desktop installed and running, CLI on PATH). */
+	readonly platform: FakePlatformInspector;
+	/** Recording process runner (never spawns). */
+	readonly runner: FakeProcessRunner;
+	/** Daemon waiter answering ready. */
+	readonly waiter: FakeDaemonWaiter;
 }
 
 /**
@@ -457,6 +487,15 @@ export function createTestPorts(busyPorts: number[] = []): TestPorts {
 		archiver: new FakeVolumeArchiver(),
 		snapshots: new FakeSnapshotIndex([snapshotRecord]),
 		journal: new InMemoryOpJournal(),
+		platform: new FakePlatformInspector(
+			createPlatformFacts({
+				installedRuntimes: ["docker-desktop"],
+				runningRuntime: "docker-desktop",
+				dockerCliPath: "/usr/local/bin/docker",
+			}),
+		),
+		runner: new FakeProcessRunner(),
+		waiter: new FakeDaemonWaiter(),
 	};
 }
 

@@ -31,7 +31,7 @@ describe("locastack entry (spawned)", () => {
 		const { code, stdout } = await runEntry(["--help"]);
 		expect(code).toBe(0);
 		expect(stdout).toContain("Usage: locastack");
-		for (const name of ["up", "down", "env", "doctor", "--json"]) {
+		for (const name of ["up", "down", "env", "doctor", "setup", "--json"]) {
 			expect(stdout).toContain(name);
 		}
 	});

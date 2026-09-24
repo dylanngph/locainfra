@@ -50,7 +50,9 @@ compiled binary always is.
 | `SNAPSHOT_NOT_FOUND` | 404 |
 | `PROJECT_EXISTS`, `SERVICE_EXISTS`, `PORT_CONFLICT`, `SERVICE_NOT_RUNNING` | 409 |
 | `INVALID_INPUT`, `INVALID_STACK`, `INVALID_CATALOG` | 422 |
-| `DOCKER_UNREACHABLE`, `COMPOSE_MISSING`, `COMPOSE_TOO_OLD` | 503 |
+| `DOCKER_UNREACHABLE`, `COMPOSE_MISSING`, `COMPOSE_TOO_OLD`, `DOCKER_START_TIMEOUT` | 503 |
+| `DOCKER_NOT_INSTALLED`, `SETUP_UNSUPPORTED`, `SETUP_NEEDS_TERMINAL`, `SETUP_CANCELLED` | 409 |
+| `SETUP_STEP_FAILED` | 500 (in practice only seen as an `error` progress event) |
 | `IO`, `UNKNOWN` | 500 |
 | any code with `details.timedOut: true` (e.g. a Data tab query past 15 s) | 504 `{ code: "TIMEOUT", message, details: { ...details, opCode } }` (`TIMEOUT_CODE`) |
 
@@ -76,7 +78,59 @@ event on `op:<opId>`, not as an HTTP status.
 |---|---|---|---|
 | GET | `/api/health` | — (public) | `{ ok: true }` |
 | GET | `/api/system` | — | `System.Status` = `{ docker: { version, apiVersion, platformName? } \| null, compose: string \| null, dashboardVersion }` |
-| GET | `/api/doctor` | — | `Doctor.Report` = `{ ok, checks: [{ id, label, status: ok\|warn\|fail, detail?, fix? }], generatedAt }` |
+| GET | `/api/doctor` | — | `Doctor.Report` = `{ ok, checks: [{ id, label, status: ok\|warn\|fail, detail?, fix? }], generatedAt, platform?, setupNeeded? }` (see below) |
+| GET | `/api/system/setup` | — | `System.Setup` = `{ doctor: Doctor.Report, plan: SetupPlan }`: the plan for this machine right now. **Never executes anything.** |
+| POST | `/api/system/docker/start` | `System.StartDocker` = `{ provider?: colima\|docker-desktop\|orbstack\|docker-engine }` (send `{}` for the default) | `202 Common.OpAccepted`; plans first, then runs `startDockerRuntime` (captured output, never attached) through the OpRegistry as op kind `docker.start` (no project lane). A second request while a start is running returns the same `opId`. Pre-checks, all `409` with `details.fix`: `DOCKER_NOT_INSTALLED` when the plan is `install` and `SETUP_NEEDS_TERMINAL` when the start needs sudo (Linux `systemctl`/`service`), both with `details.command: "locastack setup"`; `SETUP_UNSUPPORTED` (`details.fix` = the plan's notes). Docker already running → `202` and the op ends with `done`. |
+
+Errors of the Start Docker op arrive as its `error` event: `SETUP_STEP_FAILED`
+(`details`: `stepId`, `command`, `exitCode` (-1 when the process could not be
+spawned or was killed), `stepTimedOut`, `fix`), `DOCKER_START_TIMEOUT` (the
+daemon did not answer within 3 min; `details.fix` ends with the plan's notes,
+also in `details.notes`), or a failing doctor check after the start
+(`details.checkId`, `details.fix`, `details.notes`). Progress: one `step` event per command
+(with `percent`), its captured output as `log` events (ANSI stripped, last 200
+lines), then `done`.
+
+**Doctor report (0.2).** Check ids are stable (`DOCTOR_CHECK` in
+`packages/core/src/ops/doctor/doctor.model.ts`), in this order; a check that
+does not apply is omitted, never `ok`. The pre-0.2 `DOCTOR_CHECK_IDS` export is
+removed; use `DOCTOR_CHECK`. A healthy macOS report lists `docker.cli`,
+`docker.socket`, `docker.daemon`, `docker.api`, `compose.plugin`,
+`compose.version`, `homebrew`; Linux has `docker.group` instead of `homebrew`.
+Each `fix` names the cheapest remedy first, e.g. "Start Colima (`colima
+start`) or run `locastack setup`.":
+
+| id | Present | ok | warn | fail |
+|---|---|---|---|---|
+| `docker.cli` | always | `docker` on PATH (detail: path) | — | not found |
+| `docker.socket` | always | socket located | — | none found |
+| `docker.daemon` | always | Engine answers | — | not reachable |
+| `docker.api` | daemon ok | API ≥ 1.44 | unrecognised | older |
+| `compose.plugin` | always | `docker compose` works | — | missing |
+| `compose.version` | plugin ok | ≥ recommended | ≥ min, < recommended | < min |
+| `docker.group` | Linux | in `docker` group (or root) | not in group, daemon answers anyway | not in group, socket refuses the user |
+| `homebrew` | macOS | `brew` found | missing (informational) | never |
+
+`docker.daemon` and `compose.plugin` replace the pre-0.2 `docker.reachable` and
+`compose.installed`. `platform` = `{ os: darwin|linux|win32|other, arch,
+hasBrew, hasSystemd, installedRuntimes: RuntimeProvider[], runningRuntime?,
+inDockerGroup? }` (no paths or user names). `setupNeeded` = `none` (no fail),
+`start` (an installed runtime is stopped), `install` (install or configure
+something), `unsupported` (no automated remedy). Both are optional in the
+schema (older servers) but always set since 0.2.
+
+**`SetupPlan`** (`packages/core/src/ops/ops.model.ts`): `{ kind: none|start|install|unsupported,
+provider?, alternatives: RuntimeProvider[], reason, steps: CommandStep[],
+postNotes: string[], requiresRelogin?, pathAdditions?: string[], needsTerminal }`.
+`alternatives` lists the other runtimes for an install plan (macOS) and the
+other installed runtimes for a start plan. `pathAdditions` names the folders
+(a Homebrew prefix that is not on PATH) that the run prepends to the
+server's or CLI's own PATH before it waits for the daemon. `CommandStep`
+(`ports/process.port.ts`) = `{ id, title, argv: string[], shell?: false,
+sudo?, attached?, cwd?, env?, note?, remoteScript?: { url, path, inspectHint },
+timeoutMs? }`: argv is run without a shell exactly as shown; step ids are `SETUP_STEP` (`core/src/ops/setup/setup-steps.ts`) and `formatCommandStep(step)` (`@locastack/core`) renders the one-line form (`KEY=value` env first, shell-quoted argv) that the CLI and the dashboard both display. The dashboard
+shows **Start Docker** only for `kind: "start"` with `needsTerminal: false`,
+otherwise the copyable `locastack setup` command. See [setup.md](./setup.md).
 
 ### Catalog
 
@@ -503,6 +557,8 @@ closed when the last one leaves. Unsubscribe when a tab/page unmounts.
 | Environment `/p/:project/env?fmt=` | `GET …/env?format=&reveal=` | — | Write: `POST …/env/write`; Copy/Download: `text` |
 | ⌘K palette | cached `GET /api/projects`, `GET /api/catalog`, the current project | — | Add to project, go to a service or project, Export .env |
 | Toasts | — | — | `GET /api/ops/:opId/events` |
+| Docker unavailable (shown instead of pages while `setupNeeded` ≠ `none`) | `GET /api/system/setup` (once; re-checked on button press and after the op finishes; nothing polls) | — | Start Docker: `POST /api/system/docker/start` → `GET /api/ops/:id/events`, then `GET /api/system/setup` again; otherwise copy `locastack setup` |
 
 CLI hint bar commands that exist: `locastack up`, `locastack down`,
-`locastack env`, `locastack doctor` (run from the project folder).
+`locastack env`, `locastack doctor` (run from the project folder), and
+`locastack setup` (installs or starts Docker after consent).

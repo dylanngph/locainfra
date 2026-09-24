@@ -9,6 +9,7 @@ import { runDashboard } from "./commands/dashboard/dashboard.command";
 import { registerDoctorCommand } from "./commands/doctor/doctor.command";
 import { registerDownCommand } from "./commands/down/down.command";
 import { registerEnvCommand } from "./commands/env/env.command";
+import { registerSetupCommand } from "./commands/setup/setup.command";
 import { registerUpCommand } from "./commands/up/up.command";
 import { createProcessIo } from "./io";
 import { createRootCommand, type RootCommand } from "./root";
@@ -33,6 +34,7 @@ export function createProgram(
 	registerDownCommand(program, ctx);
 	registerEnvCommand(program, ctx);
 	registerDoctorCommand(program, ctx);
+	registerSetupCommand(program, ctx);
 	program.action(async (opts) => {
 		io.setExitCode(
 			await runDashboard(ctx, {

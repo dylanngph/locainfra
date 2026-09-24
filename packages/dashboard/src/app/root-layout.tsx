@@ -1,18 +1,24 @@
 import { NuqsAdapter } from "nuqs/adapters/react-router/v8";
 import { Outlet } from "react-router";
 import { CommandPalette } from "@/features/command-palette/components/command-palette";
+import { DockerGate } from "@/features/system/components/docker-gate";
 import { Toaster } from "@/shared/ui/sonner";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { AppHeader } from "./header";
 
-/** Application shell: sticky header, routed content, ⌘K palette, toasts. */
+/**
+ * Application shell: sticky header, routed content (or the Docker-unavailable
+ * screen instead of it), ⌘K palette, toasts.
+ */
 export function RootLayout() {
 	return (
 		<NuqsAdapter>
 			<TooltipProvider>
 				<div className="flex min-h-screen flex-col bg-background text-foreground">
 					<AppHeader />
-					<Outlet />
+					<DockerGate>
+						<Outlet />
+					</DockerGate>
 				</div>
 				<CommandPalette />
 				<Toaster />

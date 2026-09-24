@@ -20,6 +20,8 @@ export type {
 	DashboardLauncher,
 	GlobalOptions,
 	RunningDashboardInfo,
+	SelectChoice,
+	SetupDeps,
 	StartedDashboard,
 } from "./cli.types";
 export { ExitCode } from "./cli.types";

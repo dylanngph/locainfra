@@ -51,6 +51,10 @@ export class BunCommandRunner implements CommandRunner {
 	spawn(argv: readonly string[], options: SpawnOptions = {}): RunningCommand {
 		const child = Bun.spawn([...argv], {
 			cwd: options.cwd,
+			// Bun resolves argv[0] from the PATH it started with unless `env` is
+			// passed: pass the live environment so a PATH prepended after a fresh
+			// Homebrew install (`BunProcessRunner.prependPath`) is honoured.
+			env: { ...process.env },
 			stdin: "ignore",
 			stdout: "pipe",
 			stderr: "pipe",

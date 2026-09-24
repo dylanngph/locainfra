@@ -1,6 +1,8 @@
 import { type Static, Type } from "@sinclair/typebox";
 import { ServiceCategory, ServiceDefinition } from "../catalog/catalog.model";
 import { ContainerHealth } from "../ports/docker.port";
+import { RuntimeProvider } from "../ports/platform.port";
+import { CommandStep } from "../ports/process.port";
 import {
 	SNAPSHOT_ID_PATTERN,
 	SNAPSHOT_NAME_PATTERN,
@@ -646,3 +648,107 @@ export const ImportPreview = Type.Composite([
 ]);
 /** Result of `previewImport`. */
 export type ImportPreview = Static<typeof ImportPreview>;
+
+// ---------------------------------------------------------------------------
+// Docker setup (`locastack setup`, dashboard "Start Docker")
+// ---------------------------------------------------------------------------
+
+/** Runtime planned on macOS when none is installed and `--runtime` is not given. */
+export const DEFAULT_MAC_RUNTIME = "colima" satisfies RuntimeProvider;
+
+/** How long `runSetupPlan` waits for the daemon after its last step (first Docker Desktop start can be slow). */
+export const DOCKER_START_TIMEOUT_MS = 180_000;
+
+/** Default deadline of a captured (non-attached) setup step, e.g. `colima start`. */
+export const SETUP_STEP_TIMEOUT_MS = 15 * 60_000;
+
+/** Official installer scripts the planner may download (to a temp file first, never piped into a shell). */
+export const SETUP_INSTALLER_URLS = {
+	/** Homebrew's official installer (macOS, when `brew` is missing). */
+	homebrew:
+		"https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh",
+	/** Docker's convenience script (Linux Docker Engine + CLI + compose plugin). */
+	getDocker: "https://get.docker.com",
+} as const;
+
+/**
+ * Class of a {@link SetupPlan}: `none` (Docker already works), `start` (only
+ * start an installed runtime), `install` (install or configure, then start),
+ * `unsupported` (no automated remedy; `reason` and `postNotes` explain).
+ * Same values as `DoctorReport.setupNeeded`.
+ */
+export const SetupKind = Type.Union([
+	Type.Literal("none"),
+	Type.Literal("start"),
+	Type.Literal("install"),
+	Type.Literal("unsupported"),
+]);
+/** Class of a {@link SetupPlan}. */
+export type SetupKind = Static<typeof SetupKind>;
+
+/**
+ * What `locastack setup` (or the dashboard's Start Docker) would run, in
+ * order. Built from machine facts only; building it runs nothing. Every
+ * command is shown to the user before any of them runs.
+ */
+export const SetupPlan = Type.Object({
+	kind: SetupKind,
+	provider: Type.Optional(
+		Type.Union(RuntimeProvider.anyOf, {
+			description:
+				"Runtime the plan installs or starts; absent for none/unsupported and for fixes that are not runtime-specific (docker group only)",
+		}),
+	),
+	alternatives: Type.Array(RuntimeProvider, {
+		description:
+			"Other runtimes planSetup can plan for on this machine (pass one as `runtime`); the CLI offers [provider, ...alternatives] in one select. Install plans (macOS): the other runtimes it can install. Start plans: the other installed runtimes it could start instead. Empty when there is no choice",
+	}),
+	reason: Type.String({
+		description:
+			"One sentence: what is wrong and what the plan does, e.g. Colima is installed but not running; start it.",
+	}),
+	steps: Type.Array(CommandStep, {
+		description:
+			"Commands in execution order; empty for none/unsupported. A remote script is always a download step (with remoteScript) followed by a separate step that runs the file",
+	}),
+	postNotes: Type.Array(Type.String(), {
+		description:
+			"Shown after a successful run (or instead of steps when unsupported), e.g. Log out and back in (or run `newgrp docker`) so the docker group applies",
+	}),
+	requiresRelogin: Type.Optional(
+		Type.Boolean({
+			description:
+				"A step adds the user to the docker group: this shell cannot reach the daemon until a new login (or `newgrp docker`), so the final doctor may still fail docker.group",
+		}),
+	),
+	pathAdditions: Type.Optional(
+		Type.Array(Type.String(), {
+			description:
+				"Directories `runSetupPlan` puts in front of this process's PATH after the last step succeeds (a Homebrew prefix that is not on PATH yet, e.g. /opt/homebrew/bin), so the daemon wait and the final doctor find the freshly installed `docker`. Absent when nothing needs adding",
+		}),
+	),
+	needsTerminal: Type.Boolean({
+		description:
+			"Some step is sudo or attached, so the plan can only run from `locastack setup` in a terminal (the dashboard shows the command instead)",
+	}),
+});
+/** What `locastack setup` would run. */
+export type SetupPlan = Static<typeof SetupPlan>;
+
+/** Choices of the user for {@link SetupPlan} (CLI flags / prompts). */
+export const SetupOptions = Type.Object({
+	runtime: Type.Optional(
+		Type.Union(RuntimeProvider.anyOf, {
+			description:
+				"Runtime to install or start (`--runtime`); default: the running/installed one, else colima on macOS, docker-engine on Linux. docker-engine is Linux only; colima/orbstack are macOS only",
+		}),
+	),
+	startAtLogin: Type.Optional(
+		Type.Boolean({
+			description:
+				"Colima only: start at login with `brew services start colima` instead of a one-off `colima start` (asked by the CLI; default false)",
+		}),
+	),
+});
+/** Choices of the user for a setup plan. */
+export type SetupOptions = Static<typeof SetupOptions>;

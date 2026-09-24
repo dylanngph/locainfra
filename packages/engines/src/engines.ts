@@ -4,6 +4,7 @@ import { SystemBrowserOpener } from "./desktop/browser-opener";
 import { NativeFolderPicker } from "./desktop/folder-picker";
 import { DockerContainerExec } from "./docker/container-exec";
 import { DockerContainerStreams } from "./docker/container-streams";
+import { PollingDaemonWaiter } from "./docker/daemon-waiter";
 import { DockerClient } from "./docker/docker-client";
 import { UnixSocketHijacker } from "./docker/hijack";
 import { DockerSocketLocator } from "./docker/socket-locator";
@@ -12,6 +13,8 @@ import { DockerVolumeArchiver } from "./docker/volume-archiver";
 import { BunFileStore } from "./fs/file-store";
 import { BindPortProbe } from "./net/port-probe";
 import { resolveDefaultPaths } from "./paths/default-paths";
+import { HostPlatformInspector } from "./platform/platform-inspector";
+import { BunProcessRunner } from "./process/process-runner";
 import { FileSecretStore } from "./state/secret-store";
 import { SqliteOpJournal } from "./state/sqlite/op-journal";
 import { SqliteSnapshotIndex } from "./state/sqlite/snapshot-index";
@@ -66,6 +69,15 @@ export interface Engines {
 	readonly folderPicker: NativeFolderPicker;
 	/** Default-browser launcher (`BrowserOpener`). */
 	readonly browser: SystemBrowserOpener;
+	/** Read-only machine facts for doctor and setup (`PlatformInspector`). */
+	readonly platform: HostPlatformInspector;
+	/**
+	 * Runs consented setup steps (`ProcessRunner`): the only adapter that
+	 * installs software or starts daemons. Nothing calls it on its own.
+	 */
+	readonly runner: BunProcessRunner;
+	/** Polls until the Docker daemon answers after a start (`DaemonWaiter`). */
+	readonly waiter: PollingDaemonWaiter;
 }
 
 /**
@@ -108,5 +120,8 @@ export function createEngines(paths: Paths = resolveDefaultPaths()): Engines {
 		clock,
 		folderPicker: new NativeFolderPicker(),
 		browser: new SystemBrowserOpener(),
+		platform: new HostPlatformInspector(),
+		runner: new BunProcessRunner(),
+		waiter: new PollingDaemonWaiter({ locator: socket }),
 	};
 }

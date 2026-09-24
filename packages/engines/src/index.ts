@@ -77,6 +77,12 @@ export {
 } from "./docker/container-mapper";
 export type { DockerContainerStreamsOptions } from "./docker/container-streams";
 export { DockerContainerStreams } from "./docker/container-streams";
+export type { PollingDaemonWaiterOptions } from "./docker/daemon-waiter";
+export {
+	DAEMON_ATTEMPT_TIMEOUT_MS,
+	DAEMON_POLL_INTERVAL_MS,
+	PollingDaemonWaiter,
+} from "./docker/daemon-waiter";
 export { DockerClient } from "./docker/docker-client";
 export {
 	dockerApiError,
@@ -144,6 +150,21 @@ export {
 	resolveDefaultPaths,
 } from "./paths/default-paths";
 export type {
+	HostPlatformInspectorOptions,
+	HostPlatformProbeOptions,
+	PlatformProbe,
+	ProbeOutput,
+} from "./platform/platform-inspector";
+export {
+	classifyRuntime,
+	HostPlatformInspector,
+	HostPlatformProbe,
+	hasDockerGroup,
+	PLATFORM_PING_TIMEOUT_MS,
+	PLATFORM_PROBE_TIMEOUT_MS,
+	toPlatformOs,
+} from "./platform/platform-inspector";
+export type {
 	CommandOutput,
 	CommandRunner,
 	RunningCommand,
@@ -155,6 +176,12 @@ export {
 	readLines,
 	runToCompletion,
 } from "./process/command-runner";
+export type { BunProcessRunnerOptions } from "./process/process-runner";
+export {
+	BunProcessRunner,
+	PROCESS_KILL_GRACE_MS,
+	PROCESS_OUTPUT_MAX_BYTES,
+} from "./process/process-runner";
 export type { AtomicWriteOptions } from "./state/atomic-write";
 export { writeFileAtomic } from "./state/atomic-write";
 export type { FileLockOptions, ReleaseLock } from "./state/file-lock";

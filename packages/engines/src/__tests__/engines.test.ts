@@ -10,8 +10,10 @@ import type {
 	GetSystemInfoDeps,
 	ListProjectsDeps,
 	OpJournal,
+	PlanSetupDeps,
 	RemoveServiceDeps,
 	RunDoctorDeps,
+	RunSetupPlanDeps,
 	ServiceLifecycleDeps,
 	SnapshotIndex,
 	StatusForProjectDeps,
@@ -51,6 +53,10 @@ describe("createEngines", () => {
 			engines satisfies NoCatalog<EnvForStackDeps>,
 			engines satisfies NoCatalog<UpStackDeps>,
 		];
+		// Setup deps nest the doctor ports under `doctor`: roots pass `{ ...slice, doctor: engines }`.
+		const setupDeps = { ...engines, doctor: engines };
+		expect(setupDeps satisfies PlanSetupDeps).toBeDefined();
+		expect(setupDeps satisfies RunSetupPlanDeps).toBeDefined();
 		const streams: ContainerStreams = engines.streams;
 		const picker: FolderPicker = engines.folderPicker;
 		const browser: BrowserOpener = engines.browser;

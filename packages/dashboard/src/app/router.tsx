@@ -23,6 +23,10 @@ import {
 import { ProjectsPage } from "@/features/projects/components/projects-page";
 import { serviceQuery } from "@/features/services/api/services.queries";
 import { OverviewPage } from "@/features/services/components/overview-page";
+import {
+	systemQuery,
+	systemSetupQuery,
+} from "@/features/system/api/system.queries";
 import { RouteErrorBoundary } from "@/shared/components/route-error";
 import { ApiRequestError } from "@/shared/lib/api-error";
 import { ProjectLayout } from "./project-layout";
@@ -66,6 +70,25 @@ export function preselectedProject(request: Request): Response | undefined {
 	return name && PROJECT_NAME.test(name) ? redirect(`/p/${name}`) : undefined;
 }
 
+/**
+ * Root loader: seeds `GET /api/system` and, when it reports Docker or
+ * compose missing, `GET /api/system/setup`, so the first paint already shows
+ * the Docker-unavailable screen instead of pages that would fail. Never
+ * throws: an unreachable server leaves the header's status to say so.
+ *
+ * @param queryClient - Shared query client.
+ */
+export async function loadDockerAvailability(
+	queryClient: QueryClient,
+): Promise<null> {
+	const system = await queryClient
+		.ensureQueryData(systemQuery())
+		.catch(() => null);
+	if (system && (system.docker === null || system.compose === null))
+		await queryClient.ensureQueryData(systemSetupQuery()).catch(() => null);
+	return null;
+}
+
 const envFormatOf = (request: Request): EnvFormat => {
 	const fmt = new URL(request.url).searchParams.get("fmt");
 	return ENV_FORMATS.find((f) => f === fmt) ?? "dotenv";
@@ -88,6 +111,7 @@ export function createRoutes(queryClient: QueryClient): RouteObject[] {
 			Component: RootLayout,
 			HydrateFallback: AppFallback,
 			ErrorBoundary: RouteErrorBoundary,
+			loader: () => loadDockerAvailability(queryClient),
 			children: [
 				{
 					index: true,

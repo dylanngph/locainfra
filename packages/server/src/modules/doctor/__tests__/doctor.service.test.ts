@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { DoctorReport, RunDoctorDeps } from "@locastack/core";
 import {
+	createPlatformFacts,
 	FakeComposeInfo,
 	FakeDockerInfo,
+	FakePlatformInspector,
 	FakeSocketLocator,
 	FixedClock,
 } from "@locastack/core/testing";
@@ -13,6 +15,13 @@ const fakeDeps = (): RunDoctorDeps => ({
 	compose: new FakeComposeInfo(),
 	socket: new FakeSocketLocator(),
 	clock: new FixedClock("2026-09-23T08:00:00.000Z"),
+	platform: new FakePlatformInspector(
+		createPlatformFacts({
+			installedRuntimes: ["docker-desktop"],
+			runningRuntime: "docker-desktop",
+			dockerCliPath: "/usr/local/bin/docker",
+		}),
+	),
 });
 
 describe("DoctorService", () => {

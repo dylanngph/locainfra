@@ -26,6 +26,7 @@ import {
 	listProjects,
 	listSnapshots,
 	loadProject,
+	planSetup,
 	previewImport,
 	registerProject,
 	removeService,
@@ -34,7 +35,9 @@ import {
 	rotateSecret,
 	runDoctor,
 	runQuery,
+	runSetupPlan,
 	seedService,
+	startDockerRuntime,
 	startService,
 	statusForProject,
 	stopService,
@@ -187,6 +190,8 @@ export function serverOps(): ServerOps {
 	return {
 		runDoctor,
 		getSystemInfo,
+		planSetup,
+		startDockerRuntime,
 		catalogList,
 		listProjects,
 		registerProject,
@@ -251,6 +256,9 @@ export function serverPorts(
 		archiver: engines.archiver,
 		snapshots: engines.snapshots,
 		journal: engines.journal,
+		platform: engines.platform,
+		runner: engines.runner,
+		waiter: engines.waiter,
 	};
 }
 
@@ -366,6 +374,13 @@ export function composeDeps(options: ComposeDepsOptions = {}): CliDeps {
 		overrideDirs: [paths.registryDir, paths.catalogOverridesDir],
 		onInvalid: options.onInvalidCatalog ?? warnInvalidCatalog,
 	});
+	const doctor = {
+		docker: engines.docker,
+		compose: engines.compose,
+		socket: engines.socket,
+		clock: engines.clock,
+		platform: engines.platform,
+	};
 	return {
 		ops: {
 			runDoctor,
@@ -375,12 +390,15 @@ export function composeDeps(options: ComposeDepsOptions = {}): CliDeps {
 			discoverStack,
 			registerProject,
 			createProject,
+			planSetup,
+			runSetupPlan,
 		},
-		doctor: {
-			docker: engines.docker,
-			compose: engines.compose,
-			socket: engines.socket,
-			clock: engines.clock,
+		doctor,
+		setup: {
+			platform: engines.platform,
+			runner: engines.runner,
+			waiter: engines.waiter,
+			doctor,
 		},
 		up: {
 			files: engines.files,

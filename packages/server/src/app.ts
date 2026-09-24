@@ -156,11 +156,12 @@ export const createApp = (
 				)
 				.use(
 					systemModule(
-						new SystemService(
-							ops.getSystemInfo,
-							ports,
-							deps.version ?? "0.0.0",
-						),
+						new SystemService({
+							ops,
+							ports: { ...ports, doctor: ports },
+							launcher,
+							dashboardVersion: deps.version ?? "0.0.0",
+						}),
 					),
 				)
 				.use(catalogModule(new CatalogService(ops.catalogList, ports)))

@@ -54,6 +54,14 @@ describe("defaultSocketCandidates", () => {
 			"/var/run/docker.sock",
 		);
 	});
+	test("macOS ends with Colima's and OrbStack's sockets (docker CLI not on PATH yet)", () => {
+		expect(defaultSocketCandidates("darwin", "/Users/me")).toEqual([
+			"/Users/me/.docker/run/docker.sock",
+			"/var/run/docker.sock",
+			"/Users/me/.colima/default/docker.sock",
+			"/Users/me/.orbstack/run/docker.sock",
+		]);
+	});
 	test("other platforms have no unix default", () => {
 		expect(defaultSocketCandidates("win32", "C:\\Users\\me")).toEqual([]);
 	});
@@ -61,6 +69,19 @@ describe("defaultSocketCandidates", () => {
 
 describe("DockerSocketLocator", () => {
 	const existing = (paths: string[]) => async (p: string) => paths.includes(p);
+
+	test("fresh Colima while `docker` is not runnable: finds ~/.colima/default/docker.sock", async () => {
+		const locator = new DockerSocketLocator({
+			env: {},
+			platform: "darwin",
+			home: "/Users/me",
+			runner: throwingRunner,
+			exists: existing(["/Users/me/.colima/default/docker.sock"]),
+		});
+		expect(await locator.locate()).toBe(
+			"/Users/me/.colima/default/docker.sock",
+		);
+	});
 
 	test("DOCKER_HOST wins and skips docker context", async () => {
 		const runner = fakeRunner("unix:///ctx.sock");

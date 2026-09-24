@@ -92,6 +92,46 @@ describe("UnixSocketTransport over a real unix socket", () => {
 		expect(isOpError(error) && error.code).toBe("DOCKER_UNREACHABLE");
 	});
 
+	test("re-locates after a connection failure (runtime restarted or switched)", async () => {
+		const dead = join(dir, "dead.sock");
+		const live = join(dir, "live.sock");
+		const { server } = startFakeDaemon(live, "1.44");
+		const answers = [dead, live];
+		let calls = 0;
+		try {
+			const transport = new UnixSocketTransport({
+				locator: { locate: async () => answers[calls++] ?? live },
+			});
+			const error = await transport
+				.request("/version")
+				.catch((e: unknown) => e);
+			expect(isOpError(error) && error.code).toBe("DOCKER_UNREACHABLE");
+			const response = await transport.request("/containers/json");
+			expect(response.status).toBe(200);
+			expect(await transport.socketPath()).toBe(live);
+			expect(calls).toBe(2);
+		} finally {
+			server.stop(true);
+		}
+	});
+
+	test("a fixed socket path is never re-located", async () => {
+		let calls = 0;
+		const transport = new UnixSocketTransport({
+			socketPath: join(dir, "fixed-missing.sock"),
+			locator: {
+				locate: async () => {
+					calls += 1;
+					return null;
+				},
+			},
+		});
+		await transport.request("/version").catch(() => undefined);
+		await transport.request("/version").catch(() => undefined);
+		expect(calls).toBe(0);
+		expect(await transport.socketPath()).toBe(join(dir, "fixed-missing.sock"));
+	});
+
 	test("a locator returning null rejects with DOCKER_UNREACHABLE", async () => {
 		const transport = new UnixSocketTransport({
 			locator: { locate: async () => null },

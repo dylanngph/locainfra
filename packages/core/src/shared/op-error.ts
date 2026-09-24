@@ -1,8 +1,23 @@
-/** Every error code an operation can return. */
+/**
+ * Every error code an operation can return. Setup codes: `DOCKER_NOT_INSTALLED`
+ * (nothing to start; `locastack setup` installs a runtime),
+ * `DOCKER_START_TIMEOUT` (steps ran but the daemon did not answer in time),
+ * `SETUP_UNSUPPORTED` (no automated remedy on this platform),
+ * `SETUP_NEEDS_TERMINAL` (a sudo/attached step was asked to run without a
+ * terminal), `SETUP_STEP_FAILED` (a step exited non-zero; `details`:
+ * `stepId`, `exitCode`, `stepTimedOut`, `fix`, never `timedOut`), `SETUP_CANCELLED` (the user
+ * declined a step or the run was aborted).
+ */
 export const OP_ERROR_CODES = [
 	"DOCKER_UNREACHABLE",
 	"COMPOSE_MISSING",
 	"COMPOSE_TOO_OLD",
+	"DOCKER_NOT_INSTALLED",
+	"DOCKER_START_TIMEOUT",
+	"SETUP_UNSUPPORTED",
+	"SETUP_NEEDS_TERMINAL",
+	"SETUP_STEP_FAILED",
+	"SETUP_CANCELLED",
 	"STACK_NOT_FOUND",
 	"PROJECT_NOT_FOUND",
 	"PROJECT_EXISTS",

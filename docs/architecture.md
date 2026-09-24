@@ -1,6 +1,6 @@
 # Architecture
 
-LocaStack is a dashboard-first tool for local Docker dev services. Running `locastack` starts a localhost dashboard; a tiny CLI (`up`, `down`, `env`, `doctor`) serves scripts and CI. Both are clients of the same **Operations** layer.
+LocaStack is a dashboard-first tool for local Docker dev services. Running `locastack` starts a localhost dashboard; a tiny CLI (`up`, `down`, `env`, `doctor`, `setup`) serves scripts and CI. Both are clients of the same **Operations** layer.
 
 ## Layers
 
@@ -15,14 +15,15 @@ LocaStack is a dashboard-first tool for local Docker dev services. Running `loca
 │  Operations (use-cases): addService, upProject, statusForProject,  │
 │  envPreview, linkEnv, getConnection, upStack, doctor, runQuery,    │
 │  createSnapshot, restoreSnapshot, seedService, rotateSecret,       │
-│  previewImport, importProject …                                    │
+│  previewImport, importProject, planSetup, runSetupPlan …           │
 ├───────────────────────────────────────────────────────────────────┤
 │  Core (pure TS, no I/O): catalog, stack, resolve, render, env,     │
 │  ports (interfaces)                                                │
 ├───────────────────────────────────────────────────────────────────┤
 │  Engines (adapters implementing ports): state (SQLite: registry,   │
 │  snapshots index, op journal), compose, docker (Engine API,        │
-│  streams, exec, volume archiver), desktop, port probe, files       │
+│  streams, exec, volume archiver), desktop, port probe, files,      │
+│  platform inspector, process runner, daemon waiter (setup)         │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -45,7 +46,7 @@ Docker names: compose project and network `ls-<project>`, container `ls-<project
 | Package | Path | Role | Test runner |
 |---|---|---|---|
 | `@locastack/core` | `packages/core` | Models (TypeBox), ports, ops (use-cases), pure logic. No engine imports. | `bun test` |
-| `@locastack/engines` | `packages/engines` | Adapters implementing core ports: SqliteStateStore, SqliteSnapshotIndex and SqliteOpJournal (`bun:sqlite` + Drizzle, one shared connection), ComposeRunner, DockerClient + DockerContainerStreams + DockerContainerExec (Engine API over the socket; exec stdin over a hijacked connection), DockerVolumeArchiver (`docker run --rm` helper), NativeFolderPicker, SystemBrowserOpener, port probe, built-in catalog folder. | `bun test` |
+| `@locastack/engines` | `packages/engines` | Adapters implementing core ports: SqliteStateStore, SqliteSnapshotIndex and SqliteOpJournal (`bun:sqlite` + Drizzle, one shared connection), ComposeRunner, DockerClient + DockerContainerStreams + DockerContainerExec (Engine API over the socket; exec stdin over a hijacked connection), DockerVolumeArchiver (`docker run --rm` helper), NativeFolderPicker, SystemBrowserOpener, port probe, built-in catalog folder; for Docker setup HostPlatformInspector (read-only machine facts), BunProcessRunner (runs a setup step's argv, no shell) and PollingDaemonWaiter. | `bun test` |
 | `@locastack/server` | `packages/server` | Elysia app: feature modules (MVC), WebSocket observer, op registry, auth guard, static SPA, `startServer`. Exports `App` for Eden. | `bun test` |
 | `@locastack/dashboard` | `packages/dashboard` | React 19 + Vite SPA: React Router 8 **Data Mode** (`createBrowserRouter`, loaders seed TanStack Query), nuqs (`nuqs/adapters/react-router/v8`) for URL filter/tab state, TanStack Form, zustand store fed by REST reads and, in Live mode, the observer socket, shadcn (Base UI), virtua + anser for logs. Build-time deps only. | Vitest (+ Playwright e2e) |
 | `@locastack/cli` | `packages/cli` | commander entry + `composition.ts`; bare `locastack` starts the server and opens the browser. | `bun test` |
@@ -68,6 +69,9 @@ Defined in `packages/core/src/ports/`, each narrow (ISP). Ops declare only the s
 | `OpJournal` | `op-journal.port.ts` | Operation history (SQLite `ops` table); a journal failure never fails an op |
 | `Paths` | `paths.port.ts` | Resolved directory layout |
 | `CatalogSource` | `catalog/catalog.source.ts` | Merged catalog (built-ins → registry → overrides) |
+| `PlatformInspector` | `platform.port.ts` | Read-only machine facts for doctor and setup: OS/arch, Homebrew, systemd, installed and running Docker runtimes, `docker` group, Docker CLI path |
+| `ProcessRunner` | `process.port.ts` | Runs one `CommandStep` argv exactly as shown to the user (no shell), attached to the terminal or captured; the only port that installs or starts anything |
+| `DaemonWaiter` | `docker.port.ts` | Waits for the Engine API to answer after a runtime start (never rejects) |
 
 Op signatures live in `packages/core/src/ops/ops.contract.ts`. Long-running ops return `AsyncIterable<Progress>` (an `error` event carries a serializable `ProgressError`: code, message, details such as a `fix` hint or `suggestedPort`); others return `Result<T, OpError>`.
 
@@ -118,12 +122,16 @@ Upstream streams are closed when their last subscriber leaves, and all of them o
 
 Bare `locastack` (`packages/cli/src/commands/dashboard/dashboard.command.ts`):
 
-1. runs the doctor checks and prints a one-line summary (failing checks with their fix);
+1. runs the doctor checks and prints a one-line summary (failing checks with their fix). When a check fails in a terminal (not `--json`), it offers the `locastack setup` flow (show the exact commands, ask, run; see [setup.md](./setup.md)) and continues with the fresh report if that fixes Docker; otherwise, or without a terminal, it exits 1 with the fix hints and never starts the server;
 2. `--project <dir>`: registers the folder (or creates `locastack.yaml` named after it) and adds `?project=<name>` to the URL, which the SPA redirects to `/p/<name>`;
 3. if `dashboard.json` names a live pid that answers `GET /api/health`, prints its URL and opens the browser (a second `locastack` never starts a second server);
 4. otherwise starts the server on `--port` or the first free port ≥ 4488 with a random 24-byte session token (`LOCASTACK_SESSION_TOKEN` fixes it for automation), prints `http://127.0.0.1:<port>/?t=<token>`, opens the browser unless `--no-open`, and stays in the foreground. Ctrl+C / SIGTERM stops only the server; containers keep running.
 
 `@locastack/server` (Elysia) is imported dynamically only by this path, so `up`/`down`/`env`/`doctor` never load it. In a source checkout the SPA comes from `packages/dashboard/dist` (or `LOCASTACK_DASHBOARD_DIR`); without a build, the Vite dev server (`bun run dev` in the dashboard, proxying `/api` and `/ws`) is accepted as an extra host.
+
+### Docker setup
+
+`locastack setup`, the setup offer of bare `locastack` / `locastack doctor`, and the dashboard's **Start Docker** button share core's setup ops: `planSetup` (doctor + `PlatformInspector` → `SetupPlan`, pure `buildSetupPlan`; runs nothing), `runSetupPlan` (runs the steps through `ProcessRunner`, waits with `DaemonWaiter`, re-runs doctor) and `startDockerRuntime` (start plans only, captured output, used by `POST /api/system/docker/start`). Composition roots pass the engines' `platform`, `runner` and `waiter`, and the doctor ports as `doctor` (`{ ...ports, doctor: ports }` in `createApp`). The dashboard never runs sudo or attached steps (`needsTerminal`) and never installs; it shows `locastack setup` instead. Details: [setup.md](./setup.md).
 
 ### Binary and embedded files
 

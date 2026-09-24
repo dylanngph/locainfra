@@ -18,6 +18,7 @@ import type {
 import type { Snapshot } from "@/features/snapshots/api/snapshots.api";
 import { MOCK_CATALOG } from "./catalog.fixture";
 import type { MockPortOwners } from "./mock-import";
+import type { MockDockerState } from "./mock-system";
 
 /** Placeholder of masked secrets (mirrors core's MASKED_SECRET). */
 export const MASKED = "••••••••";
@@ -175,6 +176,8 @@ export class MockDb {
 	projects: MockProject[] = seedProjects();
 	readonly catalog: ServiceDefinition[] = MOCK_CATALOG;
 	readonly ops = new Map<string, Progress[]>();
+	/** Docker runtime behind `/api/system*` (tests set `stopped`/`missing`). */
+	docker: MockDockerState = "running";
 	/** Snapshots by `project/service`, newest first. */
 	snapshots: Map<string, Snapshot[]> = seedSnapshots();
 	readonly #listeners = new Set<Listener>();
@@ -187,6 +190,7 @@ export class MockDb {
 		this.#timers.clear();
 		this.projects = seedProjects();
 		this.snapshots = seedSnapshots();
+		this.docker = "running";
 		this.ops.clear();
 		this.#opSeq = 0;
 	}

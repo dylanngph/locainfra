@@ -53,7 +53,15 @@ export function defaultSocketCandidates(
 	home: string,
 ): string[] {
 	if (platform === "darwin") {
-		return [join(home, ".docker/run/docker.sock"), "/var/run/docker.sock"];
+		// Colima and OrbStack last: they are only reached when the docker CLI
+		// (and so its context) cannot be run, e.g. right after a fresh
+		// Homebrew install that is not on this process's PATH yet.
+		return [
+			join(home, ".docker/run/docker.sock"),
+			"/var/run/docker.sock",
+			join(home, ".colima/default/docker.sock"),
+			join(home, ".orbstack/run/docker.sock"),
+		];
 	}
 	if (platform === "linux") {
 		return ["/var/run/docker.sock", join(home, ".docker/desktop/docker.sock")];
@@ -115,6 +123,8 @@ export class DockerSocketLocator implements SocketLocator {
 
 	async #contextHost(): Promise<string | undefined> {
 		try {
+			// Bare `docker` is resolved from the live PATH (see BunCommandRunner),
+			// so a Homebrew prefix prepended after a fresh install is found.
 			const out = await runToCompletion(this.#runner, [
 				"docker",
 				"context",

@@ -10,7 +10,7 @@ const failingReport: DoctorReport = {
 	generatedAt: "2026-09-23T10:00:00.000Z",
 	checks: [
 		{
-			id: "docker.reachable",
+			id: "docker.daemon",
 			label: "Docker reachable",
 			status: "fail",
 			detail: "connect ENOENT",
@@ -41,7 +41,7 @@ describe("global flags", () => {
 		const { loadDeps } = createFakeDeps();
 		const code = await runCli(["--help"], loadDeps, io);
 		expect(code).toBe(ExitCode.Ok);
-		for (const name of ["up", "down", "env", "doctor", "--json"]) {
+		for (const name of ["up", "down", "env", "doctor", "setup", "--json"]) {
 			expect(io.out.text).toContain(name);
 		}
 	});

@@ -7,10 +7,14 @@ import type {
 	DownStackDeps,
 	EnvForStack,
 	EnvForStackDeps,
+	PlanSetup,
+	PlanSetupDeps,
 	ProjectWriteDeps,
 	RegisterProject,
 	RunDoctor,
 	RunDoctorDeps,
+	RunSetupPlan,
+	RunSetupPlanDeps,
 	UpStack,
 	UpStackDeps,
 } from "@locastack/core";
@@ -44,7 +48,18 @@ export interface CliOps {
 	readonly registerProject: RegisterProject;
 	/** Creates `locastack.yaml` in a folder and registers it (`--project <dir>`). */
 	readonly createProject: CreateProject;
+	/** Plans the commands that install or start Docker (runs nothing). */
+	readonly planSetup: PlanSetup;
+	/** Runs a setup plan the user consented to. */
+	readonly runSetupPlan: RunSetupPlan;
 }
+
+/**
+ * Ports of `locastack setup` and of the doctor/bare-command offer: machine
+ * facts, the process runner (the only port that installs or starts anything),
+ * the daemon waiter and the doctor ports.
+ */
+export type SetupDeps = PlanSetupDeps & RunSetupPlanDeps;
 
 /**
  * Everything the commands need: the ops plus the port bundles each op takes.
@@ -65,6 +80,8 @@ export interface CliDeps {
 	readonly discover: DiscoverStackDeps;
 	/** Deps for {@link CliOps.registerProject} and {@link CliOps.createProject}. */
 	readonly projects: ProjectWriteDeps;
+	/** Deps for {@link CliOps.planSetup} and {@link CliOps.runSetupPlan}. */
+	readonly setup: SetupDeps;
 	/** What bare `locastack` needs to find, start and open the dashboard. */
 	readonly dashboard: DashboardLauncher;
 }
@@ -137,6 +154,29 @@ export interface CliPrompter {
 	 * @returns `true` only when the user explicitly confirmed; `false` on "no" or cancel.
 	 */
 	confirm(message: string): Promise<boolean>;
+	/**
+	 * Asks the user to pick one option.
+	 *
+	 * @param message - Question shown to the user.
+	 * @param choices - Options, in display order.
+	 * @param initialValue - Preselected option.
+	 * @returns The picked value, or `undefined` when the user cancelled.
+	 */
+	select<T extends string>(
+		message: string,
+		choices: readonly SelectChoice<T>[],
+		initialValue: T,
+	): Promise<T | undefined>;
+}
+
+/** One option of {@link CliPrompter.select}. */
+export interface SelectChoice<T extends string> {
+	/** Value returned when picked. */
+	readonly value: T;
+	/** Text shown for the option. */
+	readonly label: string;
+	/** Muted text shown next to the option. */
+	readonly hint?: string;
 }
 
 /** Process boundary of the CLI: streams, TTY detection, cwd and exit code. */
