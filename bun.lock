@@ -13,7 +13,7 @@
     },
     "packages/cli": {
       "name": "@locastack/cli",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "bin": {
         "locastack": "./src/index.ts",
       },
@@ -29,7 +29,7 @@
     },
     "packages/core": {
       "name": "@locastack/core",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
         "@sinclair/typebox": "^0.34.52",
         "yaml": "^2.9.1",
@@ -37,7 +37,7 @@
     },
     "packages/dashboard": {
       "name": "@locastack/dashboard",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
         "@base-ui/react": "^1.8.0",
         "@elysiajs/eden": "^1.4.9",
@@ -82,7 +82,7 @@
     },
     "packages/engines": {
       "name": "@locastack/engines",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
         "@locastack/core": "workspace:*",
         "@sinclair/typebox": "^0.34.52",
@@ -94,7 +94,7 @@
     },
     "packages/server": {
       "name": "@locastack/server",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
         "@elysiajs/eden": "^1.4.9",
         "@elysiajs/openapi": "^1.4.16",

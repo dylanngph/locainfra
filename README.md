@@ -4,7 +4,7 @@ Local Docker dev services, managed from a dashboard.
 
 Type `locastack`, a dashboard opens on `127.0.0.1`, and you add Postgres, Redis and friends from a catalog, start and stop them, read logs, and copy connection strings or write them into your project's `.env`. No hand-written compose files, no copied passwords.
 
-> Status: 0.1.2. macOS and Linux; Windows is planned.
+> Status: 0.1.3. macOS and Linux; Windows is planned.
 
 ## Install
 
