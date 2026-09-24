@@ -119,7 +119,7 @@ describe("doctor", () => {
 describe("default action (dashboard)", () => {
 	test("starts on the first free port from 4488, prints the URL, opens it and waits", async () => {
 		const io = createFakeIo();
-		const { loadDeps, calls } = createFakeDeps({ report: failingReport });
+		const { loadDeps, calls } = createFakeDeps();
 		expect(await runCli([], loadDeps, io)).toBe(ExitCode.Ok);
 		expect(calls.dashboard).toEqual([
 			"find",
@@ -130,8 +130,8 @@ describe("default action (dashboard)", () => {
 			"stop",
 		]);
 		expect(io.out.text).toContain("http://127.0.0.1:4489/?t=tok");
-		expect(io.out.text).toContain("0 ok · 0 warn · 1 fail");
-		expect(io.out.text).toContain("Start Docker Desktop");
+		expect(io.out.text).toContain("1 ok · 1 warn · 0 fail");
+		expect(io.out.text).not.toContain("Fix the failing checks");
 		expect(io.out.text).toContain("Dashboard stopped");
 	});
 

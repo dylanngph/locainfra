@@ -57,6 +57,18 @@ export async function runDashboard(
 	const deps = await ctx.loadDeps();
 	const report = await deps.ops.runDoctor(deps.doctor);
 	if (!options.json) printDoctor(ctx, report);
+	if (!report.ok) {
+		// Without Docker (or Compose) the dashboard cannot manage anything:
+		// stop here with the fix hints instead of opening an empty UI.
+		if (options.json)
+			writeJson(io.stdout, { ok: false, doctor: report }, false);
+		else
+			writeLine(
+				io.stderr,
+				theme.fail("Fix the failing checks above, then run `locastack` again."),
+			);
+		return Exit.OpError;
+	}
 
 	let project: string | undefined;
 	if (options.project !== undefined) {
