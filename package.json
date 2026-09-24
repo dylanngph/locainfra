@@ -6,7 +6,7 @@
 		"@biomejs/biome": "^2.5.14",
 		"@changesets/cli": "^3.0.3",
 		"@types/bun": "latest",
-		"typescript": "^5"
+		"typescript": "^7"
 	},
 	"version": "0.1.1",
 	"workspaces": [
