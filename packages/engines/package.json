@@ -2,7 +2,7 @@
 	"name": "@locastack/engines",
 	"type": "module",
 	"private": true,
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"exports": {
 		".": "./src/index.ts"
 	},

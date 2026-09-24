@@ -1,5 +1,13 @@
 # @locastack/engines
 
+## 0.1.2
+
+### Patch Changes
+
+- Republish of 0.1.1 for npm: one platform package's upload never finalized on the registry, so the launcher could not be published. No functional changes.
+- Updated dependencies
+  - @locastack/core@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes

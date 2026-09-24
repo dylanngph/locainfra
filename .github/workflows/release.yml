@@ -296,7 +296,7 @@ jobs:
             # Up to 10 minutes; the publish already succeeded, so a slow read replica is a warning, not a failure.
             for attempt in $(seq 1 60); do
               visible "$pkg" && break
-              if [ "$attempt" -eq 60 ]; then echo "::warning::$pkg@$VERSION not visible on the registry yet; publishing the launcher anyway"; break; fi
+              if [ "$attempt" -eq 60 ]; then echo "::error::$pkg@$VERSION is not visible on the registry after 10 minutes (stuck staged publish?). Not publishing the launcher against a missing version; re-run the release or bump the version."; exit 1; fi
               echo "waiting for $pkg@$VERSION to become visible ($attempt/60)"; sleep 10
             done
           done
