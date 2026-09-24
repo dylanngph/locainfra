@@ -156,7 +156,7 @@ jobs:
             printf 'LocaStack %s: local Docker dev services, managed from a dashboard.\n\n' "$VERSION"
             printf '**Platforms:** macOS (Apple Silicon and Intel) and Linux (x64 and arm64, glibc and musl). Windows is planned.\n\n'
             printf '**Install this release**\n\n```sh\ncurl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | VERSION=%s sh\n```\n' "$VERSION"
-            if [ "$PRERELEASE" = "false" ]; then printf '\nOr `brew install dylanngph/locastack/locastack`.\n'; fi
+            if [ "$PRERELEASE" = "true" ]; then printf '\nOr with npm: `npm i -g locastack@next`\n'; else printf '\nOr with npm: `npm i -g locastack`, or `brew install dylanngph/locastack/locastack`.\n'; fi
             printf '\n**macOS:** the binaries are not code-signed yet. Installs through curl or brew run without prompts; a tarball downloaded in a browser needs right-click, Open once, or `xattr -d com.apple.quarantine locastack`.\n\n'
             printf 'Checksums are in `SHA256SUMS`; verify provenance with `gh attestation verify <tarball> --repo dylanngph/locastack`.\n\n'
             if [ -s body.md ]; then cat body.md; fi
