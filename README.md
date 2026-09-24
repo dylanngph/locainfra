@@ -4,23 +4,23 @@ Local Docker dev services, managed from a dashboard.
 
 Type `locastack`, a dashboard opens on `127.0.0.1`, and you add Postgres, Redis and friends from a catalog, start and stop them, read logs, and copy connection strings or write them into your project's `.env`. No hand-written compose files, no copied passwords.
 
-> Status: 0.1 release candidate. macOS and Linux; Windows is planned.
+> Status: 0.1.0. macOS and Linux; Windows is planned.
 
 ## Install
 
 With npm (Node 20+; the package pulls the prebuilt binary for your platform):
 
 ```sh
-npm i -g locastack@next      # release candidate; `npm i -g locastack` once 0.1.0 ships
+npm i -g locastack
 ```
 
 Or the standalone installer:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | VERSION=0.1.0-rc.0 sh
+curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | sh
 ```
 
-Until the first stable release, pass `VERSION=` as above (the plain command installs the latest stable release). A Homebrew tap (`brew install dylanngph/locastack/locastack`) follows the first stable release. Binaries for every release, with `SHA256SUMS` and build attestations, are on the [Releases](https://github.com/dylanngph/locastack/releases) page. The installer verifies the checksum and puts `locastack` in `~/.locastack/bin`.
+Pin a version with `VERSION=0.1.0` before `sh`. A Homebrew tap (`brew install dylanngph/locastack/locastack`) is coming. Binaries for every release, with `SHA256SUMS` and build attestations, are on the [Releases](https://github.com/dylanngph/locastack/releases) page. The installer verifies the checksum and puts `locastack` in `~/.locastack/bin`.
 
 **Requirements:** a Docker daemon plus the `docker` CLI with the Compose plugin 2.24+. On macOS that is Docker Desktop, or an alternative such as OrbStack or Colima (with the compose plugin installed); on Linux, Docker Engine 24+ with your user in the `docker` group. LocaStack finds the daemon through `DOCKER_HOST`, then the active `docker context`, then the default socket. Without a running daemon, `locastack` stops with the doctor checks and how to fix them. macOS (Apple Silicon and Intel) and Linux (x64 and arm64, glibc or musl).
 

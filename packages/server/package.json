@@ -1,6 +1,6 @@
 {
 	"name": "@locastack/server",
-	"version": "0.1.0-rc.0",
+	"version": "0.1.0",
 	"dependencies": {
 		"@elysiajs/eden": "^1.4.9",
 		"@elysiajs/openapi": "^1.4.16",
