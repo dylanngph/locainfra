@@ -288,10 +288,11 @@ jobs:
           visible() { npm view "$1@$VERSION" version >/dev/null 2>&1; }
           for TARGET in $TARGETS; do
             pkg="@locastack/cli-$TARGET"
-            for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            # Up to 10 minutes; the publish already succeeded, so a slow read replica is a warning, not a failure.
+            for attempt in $(seq 1 60); do
               visible "$pkg" && break
-              [ "$attempt" -eq 12 ] && { echo "::error::$pkg@$VERSION not visible on the registry after 2 minutes"; exit 1; }
-              echo "waiting for $pkg@$VERSION to become visible ($attempt/12)"; sleep 10
+              if [ "$attempt" -eq 60 ]; then echo "::warning::$pkg@$VERSION not visible on the registry yet; publishing the launcher anyway"; break; fi
+              echo "waiting for $pkg@$VERSION to become visible ($attempt/60)"; sleep 10
             done
           done
           if npm view "locastack@$VERSION" version >/dev/null 2>&1; then echo "locastack@$VERSION already published"; exit 0; fi
