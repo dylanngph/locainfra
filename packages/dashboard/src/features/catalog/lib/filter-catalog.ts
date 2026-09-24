@@ -1,4 +1,4 @@
-import type { CatalogCategory, ServiceDefinition } from "@locainfra/server";
+import type { CatalogCategory, ServiceDefinition } from "@locastack/server";
 
 /** `cat` value that shows every category. */
 export const ALL_CATEGORIES = "all";

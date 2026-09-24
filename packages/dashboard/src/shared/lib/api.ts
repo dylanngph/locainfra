@@ -1,5 +1,5 @@
 import { treaty } from "@elysiajs/eden";
-import type { App } from "@locainfra/server";
+import type { App } from "@locastack/server";
 import { toApiError } from "./api-error";
 import { getSessionToken } from "./session-token";
 
@@ -22,7 +22,7 @@ export function createApiClient(
 		fetcher: ((input, init) => fetch(input, init)) as typeof fetch,
 		headers() {
 			const token = getToken();
-			return token ? { "x-locainfra-token": token } : undefined;
+			return token ? { "x-locastack-token": token } : undefined;
 		},
 	});
 }

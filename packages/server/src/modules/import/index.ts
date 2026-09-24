@@ -43,7 +43,7 @@ export const importModule = (service: ImportService) =>
 				detail: {
 					tags: TAGS,
 					summary:
-						"Create the project folder and locainfra.yaml from the reviewed preview, store secrets, register, optionally start",
+						"Create the project folder and locastack.yaml from the reviewed preview, store secrets, register, optionally start",
 				},
 			},
 		);

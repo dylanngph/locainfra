@@ -1,4 +1,4 @@
-import type { LogLine } from "@locainfra/core";
+import type { LogLine } from "@locastack/core";
 import type { Channel, ServerMessage } from "./observer.model";
 
 /** `bufferedAmount` above which a socket's log channels pause (1 MB). */

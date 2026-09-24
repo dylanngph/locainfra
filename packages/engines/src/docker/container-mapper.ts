@@ -5,7 +5,7 @@ import type {
 	ContainerSummary,
 	DockerInfo,
 	PortMapping,
-} from "@locainfra/core";
+} from "@locastack/core";
 
 type JsonObject = Record<string, unknown>;
 

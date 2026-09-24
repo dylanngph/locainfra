@@ -1,4 +1,4 @@
-import { OpError, type Snapshot, snapshotMismatch } from "@locainfra/core";
+import { OpError, type Snapshot, snapshotMismatch } from "@locastack/core";
 import type { ServerOps, ServerPorts } from "../../deps";
 import type { OpAccepted } from "../../models/common.model";
 import { ServiceLookup } from "../../shared/service-lookup";

@@ -70,8 +70,8 @@ export const RESERVED_ENV_NAMES: ReadonlySet<string> = new Set([
 	"SUDO_ASKPASS",
 	"DOCKER_HOST",
 	"DOCKER_CONFIG",
-	"LOCAINFRA_HOME",
-	"LOCAINFRA_CATALOG_DIR",
+	"LOCASTACK_HOME",
+	"LOCASTACK_CATALOG_DIR",
 ]);
 
 /** Name prefixes reserved like {@link RESERVED_ENV_NAMES} (loader injection, exported shell functions). */
@@ -83,7 +83,7 @@ export const RESERVED_ENV_PREFIXES: readonly string[] = [
 
 /**
  * @param name - A variable name.
- * @returns Whether `name` (case-insensitively) is one LocaInfra refuses to
+ * @returns Whether `name` (case-insensitively) is one LocaStack refuses to
  *   export: see {@link RESERVED_ENV_NAMES} and {@link RESERVED_ENV_PREFIXES}.
  */
 export function isReservedEnvName(name: string): boolean {
@@ -285,7 +285,7 @@ export function deriveEnvLines(
 }
 
 /**
- * {@link deriveEnvLines} as one variable map (what `locainfra env` prints).
+ * {@link deriveEnvLines} as one variable map (what `locastack env` prints).
  *
  * @param resolved - The resolved stack.
  * @param link - The stack file's `link` section, if any.

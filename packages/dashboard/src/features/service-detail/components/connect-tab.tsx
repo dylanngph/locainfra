@@ -1,4 +1,4 @@
-import type { ServiceDefinition, ServiceDetail } from "@locainfra/server";
+import type { ServiceDefinition, ServiceDetail } from "@locastack/server";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";

@@ -1,4 +1,4 @@
-import type { DoctorCheckStatus, DoctorReport } from "@locainfra/core";
+import type { DoctorCheckStatus, DoctorReport } from "@locastack/core";
 import { formatTable } from "../../ui/table";
 import { glyph, theme } from "../../ui/theme";
 

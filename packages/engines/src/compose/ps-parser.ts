@@ -2,7 +2,7 @@ import type {
 	ComposePublisher,
 	ComposeServiceStatus,
 	ContainerHealth,
-} from "@locainfra/core";
+} from "@locastack/core";
 
 type JsonObject = Record<string, unknown>;
 
@@ -145,7 +145,7 @@ export function parseComposePs(output: string): ComposeServiceStatus[] {
 
 /**
  * Like {@link parseComposePs} but also exposes each row's split labels (for callers
- * that need `com.docker.compose.*` or `locainfra.*` metadata).
+ * that need `com.docker.compose.*` or `locastack.*` metadata).
  *
  * @param output - Raw stdout.
  * @returns Status + labels per row.

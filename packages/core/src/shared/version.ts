@@ -1,4 +1,4 @@
-/** Oldest Docker Engine API version LocaInfra talks to. */
+/** Oldest Docker Engine API version LocaStack talks to. */
 export const MIN_DOCKER_API_VERSION = "1.44";
 /** Oldest supported `docker compose` version (fail below). */
 export const MIN_COMPOSE_VERSION = "2.24.0";

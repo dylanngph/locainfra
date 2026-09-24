@@ -77,7 +77,7 @@ export const ServiceStatus = Type.Object({
 	}),
 	hostPort: Type.Integer({ description: "Pinned host port on 127.0.0.1" }),
 	containerPort: Type.Integer(),
-	containerName: Type.String({ description: "li-<project>-<name>" }),
+	containerName: Type.String({ description: "ls-<project>-<name>" }),
 	containerId: Type.Optional(
 		Type.String({ description: "Absent when no container exists yet" }),
 	),
@@ -107,9 +107,9 @@ export type ServiceStatus = Static<typeof ServiceStatus>;
 /** Live status of a project (payload of `status:<project>` snapshots). */
 export const ProjectStatus = Type.Object({
 	project: ResourceName,
-	network: Type.String({ description: "li-<project>" }),
+	network: Type.String({ description: "ls-<project>" }),
 	services: Type.Array(ServiceStatus, {
-		description: "In locainfra.yaml order",
+		description: "In locastack.yaml order",
 	}),
 });
 /** Live status of a project. */
@@ -147,7 +147,7 @@ export const ProjectSummary = Type.Object({
 	issue: Type.Optional(
 		Type.String({
 			description:
-				"Set when the project cannot be loaded (folder or locainfra.yaml missing, invalid file); counts are then 0",
+				"Set when the project cannot be loaded (folder or locastack.yaml missing, invalid file); counts are then 0",
 		}),
 	),
 });
@@ -157,7 +157,7 @@ export type ProjectSummary = Static<typeof ProjectSummary>;
 /** A mounted named volume of a service. */
 export const ServiceVolumeInfo = Type.Object({
 	name: Type.String({
-		description: "Docker volume, li-<project>-<service>-<vol>",
+		description: "Docker volume, ls-<project>-<service>-<vol>",
 	}),
 	source: Type.String({ description: "Catalog volume name, e.g. data" }),
 	path: Type.String({ description: "Mount path in the container" }),
@@ -169,7 +169,7 @@ export type ServiceVolumeInfo = Static<typeof ServiceVolumeInfo>;
 export const ServiceDetail = Type.Composite([
 	ServiceStatus,
 	Type.Object({
-		network: Type.String({ description: "li-<project>" }),
+		network: Type.String({ description: "ls-<project>" }),
 		config: Type.Record(Type.String(), Type.String(), {
 			description: "Effective non-secret config values (defaults applied)",
 		}),
@@ -566,7 +566,7 @@ export type ParsedCompose = Static<typeof ParsedCompose>;
 /** Why a compose service cannot be imported. */
 export const ImportSkipReason = Type.Union([
 	Type.Literal("build", {
-		description: "Built from source: your app, runs outside LocaInfra",
+		description: "Built from source: your app, runs outside LocaStack",
 	}),
 	Type.Literal("no-match", {
 		description: "No catalog definition matches the image",

@@ -5,7 +5,7 @@
 
 ## Context and Problem Statement
 
-LocaInfra must start/stop multi-service stacks and show live stats, logs and events. Which Docker interface should it use?
+LocaStack must start/stop multi-service stacks and show live stats, logs and events. Which Docker interface should it use?
 
 ## Decision Drivers
 
@@ -21,7 +21,7 @@ LocaInfra must start/stop multi-service stacks and show live stats, logs and eve
 
 ## Decision Outcome
 
-Chosen option: **hybrid**. Lifecycle writes go through `docker compose` (`Bun.spawn`), with rendered compose files kept inspectable under `~/.locainfra/stacks/<stack>/`. Read/observe (list, inspect, logs, stats, events, exec) uses the Engine API over the Docker socket with Bun's `fetch({ unix })`; no dockerode.
+Chosen option: **hybrid**. Lifecycle writes go through `docker compose` (`Bun.spawn`), with rendered compose files kept inspectable under `~/.locastack/stacks/<stack>/`. Read/observe (list, inspect, logs, stats, events, exec) uses the Engine API over the Docker socket with Bun's `fetch({ unix })`; no dockerode.
 
 ### Consequences
 

@@ -2,7 +2,7 @@ import {
 	type DockerEvent,
 	type EventFilter,
 	LABEL_STACK,
-} from "@locainfra/core";
+} from "@locastack/core";
 
 type JsonObject = Record<string, unknown>;
 
@@ -15,8 +15,8 @@ function isObject(value: unknown): value is JsonObject {
  *
  * Label semantics: `{ key: "value" }` matches that exact value and
  * `{ key: "" }` matches containers that carry the label at all. When
- * `filter.labels` is omitted or empty, only LocaInfra containers are
- * watched (presence of `locainfra.stack`).
+ * `filter.labels` is omitted or empty, only LocaStack containers are
+ * watched (presence of `locastack.stack`).
  *
  * @param filter - Label filter.
  * @returns Query without the leading `?`.

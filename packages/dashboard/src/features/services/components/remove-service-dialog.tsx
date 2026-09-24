@@ -97,7 +97,7 @@ function RemoveServiceForm({
 				<AlertDialogTitle>Remove {target.name}?</AlertDialogTitle>
 				<AlertDialogDescription>
 					This deletes the container and removes <b>{target.name}</b> from{" "}
-					<code className="font-mono">locainfra.yaml</code>.
+					<code className="font-mono">locastack.yaml</code>.
 					{target.persist === "volume"
 						? " Its data volume and snapshots are kept unless you also delete them."
 						: " It keeps no data (ephemeral)."}

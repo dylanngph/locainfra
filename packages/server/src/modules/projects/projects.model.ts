@@ -4,7 +4,7 @@ import {
 	ProjectSummary,
 	ResourceName,
 	Stack,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { t } from "elysia";
 
 /** `POST /api/projects` body: a new or existing project folder. */
@@ -13,7 +13,7 @@ export const CreateProjectBody = t.Object({
 	root: t.String({
 		minLength: 1,
 		description:
-			"Absolute folder. Created with a fresh locainfra.yaml when it has none; an existing locainfra.yaml is registered as-is (its name must match)",
+			"Absolute folder. Created with a fresh locastack.yaml when it has none; an existing locastack.yaml is registered as-is (its name must match)",
 	}),
 });
 /** `POST /api/projects` body. */

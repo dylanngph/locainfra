@@ -1,7 +1,7 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-/** Contents of `~/.locainfra/dashboard.json`: how to reach the running dashboard. */
+/** Contents of `~/.locastack/dashboard.json`: how to reach the running dashboard. */
 export interface DashboardFile {
 	/** Server process id. */
 	readonly pid: number;

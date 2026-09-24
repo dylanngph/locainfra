@@ -10,7 +10,7 @@ let dir: string;
 let app: { handle(request: Request): Promise<Response> };
 
 beforeAll(async () => {
-	dir = await mkdtemp(join(tmpdir(), "locainfra-static-"));
+	dir = await mkdtemp(join(tmpdir(), "locastack-static-"));
 	await mkdir(join(dir, "dist", "assets"), { recursive: true });
 	await writeFile(join(dir, "dist", "index.html"), "INDEX");
 	await writeFile(join(dir, "dist", "favicon.svg"), "<svg/>");

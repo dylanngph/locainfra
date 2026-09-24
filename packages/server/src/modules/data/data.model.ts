@@ -2,7 +2,7 @@ import {
 	DataObjects,
 	DataQueryRequest,
 	DataQueryResult,
-} from "@locainfra/core";
+} from "@locastack/core";
 
 /** `POST /api/projects/:project/services/:name/data/query` body. */
 export const DataQueryBody = DataQueryRequest;

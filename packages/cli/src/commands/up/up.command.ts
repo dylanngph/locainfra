@@ -4,7 +4,7 @@ import type { RootCommand } from "../../root";
 import { createProgressRenderer, renderProgress } from "../../ui/progress";
 import { resolveStackTarget } from "../shared/stack-target";
 
-/** Parsed flags of `locainfra up`. */
+/** Parsed flags of `locastack up`. */
 export interface UpCommandOptions {
 	/** Only these service instances (all when empty or omitted). */
 	readonly services?: readonly string[];
@@ -13,7 +13,7 @@ export interface UpCommandOptions {
 }
 
 /**
- * `locainfra up`: discover the project stack from cwd, stream `upStack` progress, and map the
+ * `locastack up`: discover the project stack from cwd, stream `upStack` progress, and map the
  * outcome to an exit code (so CI fails when services never become healthy).
  *
  * @param ctx - IO and deps loader.
@@ -52,7 +52,7 @@ export function registerUpCommand(
 	program
 		.command("up")
 		.description(
-			"start the services of the project in this folder (nearest locainfra.yaml)",
+			"start the services of the project in this folder (nearest locastack.yaml)",
 		)
 		.option("-s, --service <name...>", "only start these service instances")
 		.action(async (opts, cmd) => {

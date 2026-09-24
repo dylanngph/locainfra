@@ -17,7 +17,7 @@ import { provisionAndRender } from "./support/provision";
  * the project's name to its folder (`INVALID_STACK` when another folder owns
  * it or a container name would clash), resolves the stack (pinning ports,
  * generating missing secrets), writes `docker-compose.yml` and `.env` to
- * `~/.locainfra/stacks/<name>/`, then runs `docker compose up -d --wait`,
+ * `~/.locastack/stacks/<name>/`, then runs `docker compose up -d --wait`,
  * forwarding its progress. Ends with exactly one `done` or `error` event; no
  * event carries a secret value.
  */

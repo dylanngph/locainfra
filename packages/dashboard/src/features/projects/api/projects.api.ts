@@ -1,4 +1,4 @@
-import type { CreateProjectBody } from "@locainfra/server";
+import type { CreateProjectBody } from "@locastack/server";
 import { api, unwrap } from "@/shared/lib/api";
 
 /**

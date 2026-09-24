@@ -130,7 +130,7 @@ describe("renderCompose golden snapshots (built-in catalog)", () => {
 		const stack: Stack = {
 			...base,
 			root: "/work/shop$app",
-			filePath: "/work/shop$app/locainfra.yaml",
+			filePath: "/work/shop$app/locastack.yaml",
 		};
 		const text = renderCompose(resolve(stack, shopState, builtins));
 		expect(text).toMatchSnapshot();
@@ -138,7 +138,7 @@ describe("renderCompose golden snapshots (built-in catalog)", () => {
 			services: Record<string, { volumes?: unknown[] }>;
 		};
 		expect(doc.services["main-db"]?.volumes).toEqual([
-			"li-shop-main-db-data:/var/lib/postgresql/data",
+			"ls-shop-main-db-data:/var/lib/postgresql/data",
 			{
 				type: "bind",
 				source: "/work/shop$$app/db/seed.sql",
@@ -156,7 +156,7 @@ describe("renderCompose golden snapshots (built-in catalog)", () => {
 				bind: { create_host_path: false },
 			},
 		]);
-		expect(doc.services.cache?.volumes).toEqual(["li-shop-cache-data:/data"]);
+		expect(doc.services.cache?.volumes).toEqual(["ls-shop-cache-data:/data"]);
 	});
 });
 
@@ -171,12 +171,12 @@ describe("toComposeDocument", () => {
 	);
 	const doc = toComposeDocument(resolved);
 
-	test("binds ports to 127.0.0.1 and names containers li-<stack>-<svc>", () => {
-		expect(doc.name).toBe("li-shop");
+	test("binds ports to 127.0.0.1 and names containers ls-<stack>-<svc>", () => {
+		expect(doc.name).toBe("ls-shop");
 		expect(doc.services.postgres?.ports).toEqual(["127.0.0.1:5433:5432"]);
-		expect(doc.services.postgres?.container_name).toBe("li-shop-postgres");
+		expect(doc.services.postgres?.container_name).toBe("ls-shop-postgres");
 		expect(doc.services.postgres?.restart).toBe("unless-stopped");
-		expect(doc.services.postgres?.networks).toEqual(["li-shop"]);
+		expect(doc.services.postgres?.networks).toEqual(["ls-shop"]);
 	});
 
 	test("labels every container with project, instance, type and version", () => {
@@ -199,17 +199,17 @@ describe("toComposeDocument", () => {
 
 	test("declares named volumes and the stack network", () => {
 		expect(doc.services.postgres?.volumes).toEqual([
-			"li-shop-postgres-data:/var/lib/postgresql/data",
+			"ls-shop-postgres-data:/var/lib/postgresql/data",
 		]);
 		expect(Object.keys(doc.volumes ?? {})).toEqual([
-			"li-shop-postgres-data",
-			"li-shop-redis-data",
+			"ls-shop-postgres-data",
+			"ls-shop-redis-data",
 		]);
-		expect(doc.volumes?.["li-shop-postgres-data"]?.name).toBe(
-			"li-shop-postgres-data",
+		expect(doc.volumes?.["ls-shop-postgres-data"]?.name).toBe(
+			"ls-shop-postgres-data",
 		);
 		expect(doc.networks).toEqual({
-			"li-shop": { name: "li-shop", labels: { [LABEL_STACK]: "shop" } },
+			"ls-shop": { name: "ls-shop", labels: { [LABEL_STACK]: "shop" } },
 		});
 	});
 
@@ -265,8 +265,8 @@ describe("toComposeDocument with named instances", () => {
 			"cache",
 			"rest",
 		]);
-		expect(doc.services["main-db"]?.container_name).toBe("li-shop-main-db");
-		expect(doc.services.events?.container_name).toBe("li-shop-events");
+		expect(doc.services["main-db"]?.container_name).toBe("ls-shop-main-db");
+		expect(doc.services.events?.container_name).toBe("ls-shop-events");
 		expect(doc.services["main-db"]?.ports).toEqual(["127.0.0.1:5433:5432"]);
 		expect(doc.services.events?.ports).toEqual(["127.0.0.1:5434:5432"]);
 		expect(doc.services.events?.labels).toMatchObject({
@@ -278,10 +278,10 @@ describe("toComposeDocument with named instances", () => {
 	test("ephemeral instances get no named volume", () => {
 		expect(doc.services.events?.volumes).toBeUndefined();
 		expect(Object.keys(doc.volumes ?? {})).toEqual([
-			"li-shop-main-db-data",
-			"li-shop-cache-data",
+			"ls-shop-main-db-data",
+			"ls-shop-cache-data",
 		]);
-		expect(doc.volumes?.["li-shop-main-db-data"]?.labels).toEqual({
+		expect(doc.volumes?.["ls-shop-main-db-data"]?.labels).toEqual({
 			[LABEL_STACK]: "shop",
 			[LABEL_SERVICE]: "main-db",
 			[LABEL_INSTANCE]: "main-db",

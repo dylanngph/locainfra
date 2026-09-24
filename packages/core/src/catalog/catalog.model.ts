@@ -349,7 +349,7 @@ export const ServiceDefinition = Type.Object(
 		),
 		import: Type.Optional(ServiceImport),
 	},
-	{ $id: "https://locainfra.dev/schema/service.v1.json" },
+	{ $id: "https://locastack.dev/schema/service.v1.json" },
 );
 /** A data-only catalog service definition. */
 export type ServiceDefinition = Static<typeof ServiceDefinition>;

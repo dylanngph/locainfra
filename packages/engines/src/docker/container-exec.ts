@@ -3,7 +3,7 @@ import {
 	type ExecOptions,
 	type ExecResult,
 	OpError,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { dockerApiError } from "./docker-errors";
 import type { DockerHijacker } from "./hijack";
 import { LogDemuxer, type LogFrame } from "./log-demuxer";
@@ -17,11 +17,11 @@ export const EXEC_STDERR_MAX_BYTES = 64 * 1024;
  * timed-out process (and its children, which inherit the environment) can be
  * found and killed from inside the container.
  */
-export const EXEC_TAG_ENV = "LOCAINFRA_EXEC_TAG";
+export const EXEC_TAG_ENV = "LOCASTACK_EXEC_TAG";
 
 /**
  * POSIX `sh` script that SIGKILLs every process whose environment holds
- * `LOCAINFRA_EXEC_TAG=$1`. The tag is passed as a positional argument, never
+ * `LOCASTACK_EXEC_TAG=$1`. The tag is passed as a positional argument, never
  * spliced into the script. Needs `sh` and `grep` in the image (busybox or
  * coreutils); a missing tool only makes the kill a no-op.
  */

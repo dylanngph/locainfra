@@ -1,4 +1,4 @@
-import { type BrowserOpener, OpError } from "@locainfra/core";
+import { type BrowserOpener, OpError } from "@locastack/core";
 import {
 	BunCommandRunner,
 	type CommandRunner,

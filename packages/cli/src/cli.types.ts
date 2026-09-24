@@ -13,7 +13,7 @@ import type {
 	RunDoctorDeps,
 	UpStack,
 	UpStackDeps,
-} from "@locainfra/core";
+} from "@locastack/core";
 
 /** Process exit codes used by every command. */
 export const ExitCode = {
@@ -42,7 +42,7 @@ export interface CliOps {
 	readonly discoverStack: DiscoverStack;
 	/** Registers an existing project folder (`--project <dir>`). */
 	readonly registerProject: RegisterProject;
-	/** Creates `locainfra.yaml` in a folder and registers it (`--project <dir>`). */
+	/** Creates `locastack.yaml` in a folder and registers it (`--project <dir>`). */
 	readonly createProject: CreateProject;
 }
 
@@ -65,7 +65,7 @@ export interface CliDeps {
 	readonly discover: DiscoverStackDeps;
 	/** Deps for {@link CliOps.registerProject} and {@link CliOps.createProject}. */
 	readonly projects: ProjectWriteDeps;
-	/** What bare `locainfra` needs to find, start and open the dashboard. */
+	/** What bare `locastack` needs to find, start and open the dashboard. */
 	readonly dashboard: DashboardLauncher;
 }
 
@@ -81,7 +81,7 @@ export interface StartedDashboard {
 	stop(): Promise<void>;
 }
 
-/** A dashboard another `locainfra` process is already serving. */
+/** A dashboard another `locastack` process is already serving. */
 export interface RunningDashboardInfo {
 	/** Server process id. */
 	readonly pid: number;
@@ -92,11 +92,11 @@ export interface RunningDashboardInfo {
 }
 
 /**
- * Side effects of bare `locainfra`, injectable so tests never bind ports,
+ * Side effects of bare `locastack`, injectable so tests never bind ports,
  * spawn browsers or wait for signals. The real one loads the server lazily.
  */
 export interface DashboardLauncher {
-	/** @returns The live instance from `~/.locainfra/dashboard.json` (pid alive and `/api/health` ok), or `null`. */
+	/** @returns The live instance from `~/.locastack/dashboard.json` (pid alive and `/api/health` ok), or `null`. */
 	findRunning(): Promise<RunningDashboardInfo | null>;
 	/**
 	 * @param from - First candidate port.

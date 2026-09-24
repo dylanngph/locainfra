@@ -1,4 +1,4 @@
-import { dashboardFilePath } from "@locainfra/core";
+import { dashboardFilePath } from "@locastack/core";
 import { createApp, createRuntime, type ServerDeps } from "../app";
 import {
 	dashboardUrl,
@@ -23,7 +23,7 @@ export interface StartServerOptions {
 	readonly extraHosts?: readonly string[];
 	/**
 	 * Where to write `{ pid, port, token, startedAt }`. Default
-	 * `~/.locainfra/dashboard.json`; `false` skips it.
+	 * `~/.locastack/dashboard.json`; `false` skips it.
 	 */
 	readonly dashboardFile?: string | false;
 	/** Stop, remove the dashboard file and exit on SIGINT/SIGTERM. Default true. */
@@ -45,7 +45,7 @@ export interface RunningServer {
 /**
  * Starts the dashboard server on `127.0.0.1` only: REST + `/ws`, plus the
  * SPA when `staticDir` is given. Writes the dashboard file (0600) so a second
- * `locainfra` reuses this instance, and removes it on stop or SIGINT/SIGTERM.
+ * `locastack` reuses this instance, and removes it on stop or SIGINT/SIGTERM.
  *
  * @param options - Port, token, deps and SPA folder.
  * @returns The running server.

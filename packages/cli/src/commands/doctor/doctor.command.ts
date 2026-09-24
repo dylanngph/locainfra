@@ -5,14 +5,14 @@ import { writeJson, writeLine } from "../../ui/output";
 import { theme } from "../../ui/theme";
 import { formatDoctorReport } from "./doctor.view";
 
-/** Parsed flags of `locainfra doctor`. */
+/** Parsed flags of `locastack doctor`. */
 export interface DoctorCommandOptions {
 	/** Print the raw `DoctorReport` as JSON. */
 	readonly json: boolean;
 }
 
 /**
- * `locainfra doctor`: diagnose Docker, compose and the socket.
+ * `locastack doctor`: diagnose Docker, compose and the socket.
  *
  * @param ctx - IO and deps loader.
  * @param options - Parsed flags.
@@ -27,7 +27,7 @@ export async function runDoctorCommand(
 	if (options.json) {
 		writeJson(ctx.io.stdout, report);
 	} else {
-		writeLine(ctx.io.stdout, theme.strong("LocaInfra doctor"));
+		writeLine(ctx.io.stdout, theme.strong("LocaStack doctor"));
 		writeLine(ctx.io.stdout, formatDoctorReport(report));
 	}
 	return report.ok ? Exit.Ok : Exit.OpError;

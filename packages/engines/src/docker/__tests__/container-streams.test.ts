@@ -6,7 +6,7 @@ import {
 	LogLine,
 	OpError,
 	StatsSample,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { Value } from "@sinclair/typebox/value";
 import { DockerContainerStreams } from "../container-streams";
 import { encodeLogFrame } from "../log-demuxer";
@@ -57,7 +57,7 @@ describe("DockerContainerStreams.logs", () => {
 		);
 		const transport = new FakeTransport([
 			[
-				"/containers/li-shop-db/logs",
+				"/containers/ls-shop-db/logs",
 				() =>
 					streamingResponse(
 						[
@@ -71,7 +71,7 @@ describe("DockerContainerStreams.logs", () => {
 			],
 		]);
 		const lines = await drain(
-			new DockerContainerStreams(transport, { clock }).logs("li-shop-db", {
+			new DockerContainerStreams(transport, { clock }).logs("ls-shop-db", {
 				follow: false,
 				tail: 5,
 			}),
@@ -317,7 +317,7 @@ describe("DockerContainerStreams.events", () => {
 				(init) =>
 					streamingResponse(
 						[
-							'{"Type":"container","Action":"start","Actor":{"ID":"c1","Attributes":{"locainfra.stack":"shop"}},"timeNano":1790143200000000000}\n{"Type":"network","Action":"connect","Actor":{"ID":"n"}}\nnot json\n',
+							'{"Type":"container","Action":"start","Actor":{"ID":"c1","Attributes":{"locastack.stack":"shop"}},"timeNano":1790143200000000000}\n{"Type":"network","Action":"connect","Actor":{"ID":"n"}}\nnot json\n',
 							'{"Type":"container","Action":"die","Actor":{"ID":"c1","Attributes":{"exitCode":"1"}},"time":1790143201}\n',
 						],
 						{ signal: init?.signal },
@@ -326,7 +326,7 @@ describe("DockerContainerStreams.events", () => {
 		]);
 		const events = await drain(
 			new DockerContainerStreams(transport, { clock }).events(
-				{ labels: { "locainfra.stack": "shop" } },
+				{ labels: { "locastack.stack": "shop" } },
 				new AbortController().signal,
 			),
 		);
@@ -335,7 +335,7 @@ describe("DockerContainerStreams.events", () => {
 				action: "start",
 				id: "c1",
 				at: "2026-09-23T06:00:00.000Z",
-				attributes: { "locainfra.stack": "shop" },
+				attributes: { "locastack.stack": "shop" },
 			},
 			{
 				action: "die",
@@ -347,7 +347,7 @@ describe("DockerContainerStreams.events", () => {
 		const query = new URLSearchParams(transport.calls[0]?.split("?")[1]);
 		expect(JSON.parse(query.get("filters") ?? "")).toEqual({
 			type: ["container"],
-			label: ["locainfra.stack=shop"],
+			label: ["locastack.stack=shop"],
 		});
 	});
 });

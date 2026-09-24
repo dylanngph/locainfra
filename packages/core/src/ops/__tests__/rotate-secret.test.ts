@@ -9,7 +9,7 @@ import {
 } from "../rotate-secret.op";
 import { createWorld, SHOP_COMPOSE, SHOP_SECRETS } from "./world";
 
-const ENV_FILE = "/home/test/.locainfra/stacks/shop/.env";
+const ENV_FILE = "/home/test/.locastack/stacks/shop/.env";
 
 describe("rotateSecret", () => {
 	test("redis: new value stored and rendered, service and dependents recreated", async () => {
@@ -39,7 +39,7 @@ describe("rotateSecret", () => {
 		);
 		expect(world.lifecycle.upCalls).toEqual([
 			{
-				projectName: "li-shop",
+				projectName: "ls-shop",
 				composeFile: SHOP_COMPOSE,
 				services: ["cache", "rest"],
 				wait: true,
@@ -105,17 +105,17 @@ describe("rotateSecret", () => {
 		);
 		expect(events.map((e) => e.message)).toEqual([
 			"Removing main-db",
-			"Deleting volume li-shop-main-db-data",
+			"Deleting volume ls-shop-main-db-data",
 			"Rotating POSTGRES_PASSWORD",
 			"Starting main-db",
 			"Rotated POSTGRES_PASSWORD of main-db",
 		]);
 		expect(world.lifecycle.removeCalls).toEqual([
 			{
-				projectName: "li-shop",
+				projectName: "ls-shop",
 				composeFile: SHOP_COMPOSE,
 				services: ["main-db"],
-				volumes: ["li-shop-main-db-data"],
+				volumes: ["ls-shop-main-db-data"],
 			},
 		]);
 		expect(

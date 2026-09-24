@@ -7,7 +7,7 @@ import {
 	ok,
 	type Progress,
 	type Stack,
-} from "@locainfra/core";
+} from "@locastack/core";
 import type {
 	CliDeps,
 	CliDepsLoader,
@@ -102,7 +102,7 @@ export function unusedPort<T extends object>(name: string): T {
 export const sampleStack: Stack = {
 	name: "acme",
 	root: "/work/acme",
-	filePath: "/work/acme/locainfra.yaml",
+	filePath: "/work/acme/locastack.yaml",
 	file: { version: 1, name: "acme", services: { db: { type: "postgres" } } },
 };
 
@@ -161,7 +161,7 @@ export interface FakeDepsOptions {
 	readonly envFails?: boolean;
 	/** A dashboard that is already running (reused instead of started). */
 	readonly running?: RunningDashboardInfo;
-	/** Folders (absolute) that contain a `locainfra.yaml`, with its text. */
+	/** Folders (absolute) that contain a `locastack.yaml`, with its text. */
 	readonly stackFiles?: Readonly<Record<string, string>>;
 	/** Make `launcher.start` throw. */
 	readonly startFails?: boolean;
@@ -190,7 +190,7 @@ export function createFakeDeps(options: FakeDepsOptions = {}): {
 		{ kind: "step", message: "Rendering compose file" },
 		{
 			kind: "log",
-			message: "Container li-acme-postgres Started",
+			message: "Container ls-acme-postgres Started",
 			service: "postgres",
 		},
 		{ kind: "done", message: "Stack acme is up" },
@@ -226,7 +226,7 @@ export function createFakeDeps(options: FakeDepsOptions = {}): {
 			calls.discover.push(input);
 			if (options.noStack) {
 				return err(
-					new OpError("STACK_NOT_FOUND", "No locainfra.yaml found", {
+					new OpError("STACK_NOT_FOUND", "No locastack.yaml found", {
 						details: { cwd: input.cwd },
 					}),
 				);
@@ -242,7 +242,7 @@ export function createFakeDeps(options: FakeDepsOptions = {}): {
 			return ok({
 				name: input.name,
 				root: input.root,
-				filePath: `${input.root}/locainfra.yaml`,
+				filePath: `${input.root}/locastack.yaml`,
 				file: { version: 1, name: input.name, services: {} },
 			});
 		},
@@ -250,9 +250,9 @@ export function createFakeDeps(options: FakeDepsOptions = {}): {
 	const stackFiles = options.stackFiles ?? {};
 	const files = {
 		exists: async (path: string) =>
-			Object.hasOwn(stackFiles, path.replace(/\/locainfra\.yaml$/, "")),
+			Object.hasOwn(stackFiles, path.replace(/\/locastack\.yaml$/, "")),
 		readText: async (path: string) =>
-			stackFiles[path.replace(/\/locainfra\.yaml$/, "")] ?? null,
+			stackFiles[path.replace(/\/locastack\.yaml$/, "")] ?? null,
 	} as unknown as FileStore;
 	const dashboard: DashboardLauncher = {
 		findRunning: async () => {

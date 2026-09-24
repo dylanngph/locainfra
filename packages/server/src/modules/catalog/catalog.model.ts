@@ -1,4 +1,4 @@
-import { CatalogListing } from "@locainfra/core";
+import { CatalogListing } from "@locastack/core";
 import { t } from "elysia";
 
 /** `GET /api/catalog/:type/free-port` params. */

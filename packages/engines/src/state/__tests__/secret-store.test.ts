@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isOpError } from "@locainfra/core";
+import { isOpError } from "@locastack/core";
 import { resolveDefaultPaths } from "../../paths/default-paths";
 import {
 	FileSecretStore,
@@ -12,7 +12,7 @@ import {
 
 let dir: string;
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "li-secrets-"));
+	dir = mkdtempSync(join(tmpdir(), "ls-secrets-"));
 });
 afterEach(() => {
 	rmSync(dir, { recursive: true, force: true });
@@ -52,13 +52,13 @@ describe("formatSecretsEnv / parseSecretsEnv", () => {
 describe("FileSecretStore", () => {
 	test("missing stack reads as empty", async () => {
 		const store = new FileSecretStore(
-			resolveDefaultPaths({ env: { LOCAINFRA_HOME: dir } }),
+			resolveDefaultPaths({ env: { LOCASTACK_HOME: dir } }),
 		);
 		expect(await store.read("demo")).toEqual({});
 	});
 
 	test("writes <secretsDir>/<stack>.env with mode 0600 in a 0700 dir", async () => {
-		const paths = resolveDefaultPaths({ env: { LOCAINFRA_HOME: dir } });
+		const paths = resolveDefaultPaths({ env: { LOCASTACK_HOME: dir } });
 		const store = new FileSecretStore(paths);
 		await store.write("demo", { POSTGRES_PASSWORD: "s3cr3t" });
 		const file = join(paths.secretsDir, "demo.env");
@@ -72,7 +72,7 @@ describe("FileSecretStore", () => {
 
 	test("rejects path-traversing stack names without leaking values", async () => {
 		const store = new FileSecretStore(
-			resolveDefaultPaths({ env: { LOCAINFRA_HOME: dir } }),
+			resolveDefaultPaths({ env: { LOCASTACK_HOME: dir } }),
 		);
 		const error = await store
 			.write("../evil", { PW: "topsecret" })
@@ -84,7 +84,7 @@ describe("FileSecretStore", () => {
 
 describe("FileSecretStore.update", () => {
 	test("two stores on one directory: concurrent first-time generation agrees on one value", async () => {
-		const paths = resolveDefaultPaths({ env: { LOCAINFRA_HOME: dir } });
+		const paths = resolveDefaultPaths({ env: { LOCASTACK_HOME: dir } });
 		const stores = [new FileSecretStore(paths), new FileSecretStore(paths)];
 		let generated = 0;
 		const results = await Promise.all(
@@ -106,7 +106,7 @@ describe("FileSecretStore.update", () => {
 	});
 
 	test("undefined from mutate leaves the file untouched", async () => {
-		const paths = resolveDefaultPaths({ env: { LOCAINFRA_HOME: dir } });
+		const paths = resolveDefaultPaths({ env: { LOCASTACK_HOME: dir } });
 		const store = new FileSecretStore(paths);
 		expect(await store.update("app", () => undefined)).toEqual({});
 		expect(readdirSync(paths.secretsDir)).toEqual([]);

@@ -31,9 +31,9 @@ describe("published JSON Schemas", () => {
 			$id: string;
 		};
 		expect(service.$schema).toBe(JSON_SCHEMA_DRAFT);
-		expect(service.$id).toBe("https://locainfra.dev/schema/service.v1.json");
+		expect(service.$id).toBe("https://locastack.dev/schema/service.v1.json");
 		expect((JSON.parse(stackJsonSchema) as { $id: string }).$id).toBe(
-			"https://locainfra.dev/schema/v1.json",
+			"https://locastack.dev/schema/v1.json",
 		);
 	});
 

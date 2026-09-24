@@ -77,7 +77,7 @@ describe("envForStack", () => {
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
 			expect(result.error.code).toBe("INVALID_STACK");
-			expect(String(result.error.details.fix)).toContain("locainfra up");
+			expect(String(result.error.details.fix)).toContain("locastack up");
 		}
 		expect(d.state.updates).toBe(0);
 		expect(d.secrets.writes).toBe(0);
@@ -113,7 +113,7 @@ describe("envForStack", () => {
 		const d = deps();
 		d.state.state.projects = [{ name: "shop", root: "/work/elsewhere" }];
 		d.files.files.set(
-			"/work/elsewhere/locainfra.yaml",
+			"/work/elsewhere/locastack.yaml",
 			"version: 1\nname: shop\n",
 		);
 		const result = await envForStack(d, { stack, format: "dotenv" });

@@ -1,4 +1,4 @@
-import type { PersistMode, StackServiceEntry } from "@locainfra/server";
+import type { PersistMode, StackServiceEntry } from "@locastack/server";
 import { parse, stringify } from "yaml";
 
 /** Result of parsing the YAML side editor. */
@@ -15,7 +15,7 @@ export type ParsedEntry =
 	| { readonly ok: false; readonly error: string };
 
 /**
- * Renders one instance as the `services:` block of `locainfra.yaml`.
+ * Renders one instance as the `services:` block of `locastack.yaml`.
  *
  * @param name - Instance name (`unnamed` when empty).
  * @param entry - Stack entry.

@@ -1,4 +1,4 @@
-import type { ServiceDefinition } from "@locainfra/server";
+import type { ServiceDefinition } from "@locastack/server";
 import type { ImportItem } from "../api/import.api";
 
 /** Largest compose text the server accepts (`IMPORT_YAML_MAX_BYTES`). */
@@ -106,7 +106,7 @@ export function itemTarget(
 	if (item.supported && def)
 		return `${def.name} ${item.version ?? def.defaultVersion}`;
 	return item.skipReason === "build"
-		? "Your app, runs outside LocaInfra"
+		? "Your app, runs outside LocaStack"
 		: "No matching service in catalog";
 }
 

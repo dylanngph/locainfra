@@ -72,7 +72,7 @@ async function api(
 	return fetch(`http://127.0.0.1:${E2E_PORT}${path}`, {
 		method,
 		headers: {
-			"x-locainfra-token": E2E_TOKEN,
+			"x-locastack-token": E2E_TOKEN,
 			...(body === undefined ? {} : { "content-type": "application/json" }),
 		},
 		...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -146,7 +146,7 @@ function archives(home: string, service: string): string[] {
 }
 
 test.describe("M3b live smoke: import, Data, Snapshots, seed, rotate (real Docker)", () => {
-	test.skip(!E2E_ENABLED, "set LOCAINFRA_E2E=1 to run against real Docker");
+	test.skip(!E2E_ENABLED, "set LOCASTACK_E2E=1 to run against real Docker");
 
 	test("import → query → snapshot/restore → seed → rotate → clean up", async ({
 		page,
@@ -175,7 +175,7 @@ test.describe("M3b live smoke: import, Data, Snapshots, seed, rotate (real Docke
 			await expect(row("db")).toContainText("PostgreSQL 16");
 			await expect(row("cache")).toContainText("Redis 7");
 			await expect(row("web")).toContainText(
-				"Your app, runs outside LocaInfra",
+				"Your app, runs outside LocaStack",
 			);
 			for (const skipped of ["storage", "mailhog", "web"]) {
 				await expect(row(skipped)).toContainText("Skipped");
@@ -213,7 +213,7 @@ test.describe("M3b live smoke: import, Data, Snapshots, seed, rotate (real Docke
 				.toEqual({ db: "running", cache: "running" });
 			for (const s of await services())
 				expect(RESERVED_PORTS).not.toContain(s.hostPort);
-			expect(readFileSync(join(root, "locainfra.yaml"), "utf8")).toContain(
+			expect(readFileSync(join(root, "locastack.yaml"), "utf8")).toContain(
 				"POSTGRES_DB: shop",
 			);
 		});
@@ -272,7 +272,7 @@ test.describe("M3b live smoke: import, Data, Snapshots, seed, rotate (real Docke
 				timeout: 60_000,
 			});
 			expect(archives(home, "db")).toHaveLength(1);
-			const rows = sqliteSnapshotRows(join(home, "locainfra.db"));
+			const rows = sqliteSnapshotRows(join(home, "locastack.db"));
 			if (rows !== undefined) expect(rows).toBe(1);
 			expect(helperContainers()).toEqual([]);
 			await page.waitForTimeout(500);
@@ -331,7 +331,7 @@ test.describe("M3b live smoke: import, Data, Snapshots, seed, rotate (real Docke
 				"No snapshots yet",
 			);
 			expect(archives(home, "db")).toEqual([]);
-			const rows = sqliteSnapshotRows(join(home, "locainfra.db"));
+			const rows = sqliteSnapshotRows(join(home, "locastack.db"));
 			if (rows !== undefined) expect(rows).toBe(0);
 		});
 
@@ -348,7 +348,7 @@ test.describe("M3b live smoke: import, Data, Snapshots, seed, rotate (real Docke
 			await expect(password).toHaveValue(/^[A-Za-z0-9_-]{43}$/);
 			const chosen = await password.inputValue();
 			await page.getByLabel(/Seed file/).fill("./seed.sql");
-			await expect(page.getByLabel("locainfra.yaml entry")).toHaveValue(
+			await expect(page.getByLabel("locastack.yaml entry")).toHaveValue(
 				/seed: \.?\/?seed\.sql/,
 			);
 			await page.waitForTimeout(300);

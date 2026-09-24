@@ -1,6 +1,6 @@
 import { link, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { OpError } from "@locainfra/core";
+import { OpError } from "@locastack/core";
 
 /** Options for {@link acquireFileLock}. */
 export interface FileLockOptions {
@@ -196,7 +196,7 @@ async function lockTimeout(
 			lockPath,
 			timeoutMs,
 			...(holder ? { holderPid: holder.pid } : {}),
-			fix: `Another LocaInfra process holds the lock. If none is running, delete ${lockPath}.`,
+			fix: `Another LocaStack process holds the lock. If none is running, delete ${lockPath}.`,
 		},
 	});
 }

@@ -1,4 +1,4 @@
-import type { ProjectStatus, ServiceStatus } from "@locainfra/server";
+import type { ProjectStatus, ServiceStatus } from "@locastack/server";
 import { describe, expect, it } from "vitest";
 import {
 	EMPTY_OBSERVER_DATA,
@@ -19,7 +19,7 @@ const row = (
 	image: "postgres:17-alpine",
 	hostPort: 5433,
 	containerPort: 5432,
-	containerName: `li-shop-${name}`,
+	containerName: `ls-shop-${name}`,
 	persist: "volume",
 	state: "running",
 	health: "healthy",
@@ -28,7 +28,7 @@ const row = (
 
 const snapshot: ProjectStatus = {
 	project: "shop",
-	network: "li-shop",
+	network: "ls-shop",
 	services: [row("db"), row("cache")],
 };
 

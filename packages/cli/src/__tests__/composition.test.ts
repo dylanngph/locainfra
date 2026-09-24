@@ -3,12 +3,12 @@ import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import type { CatalogError } from "@locainfra/core";
+import type { CatalogError } from "@locastack/core";
 import {
 	createEngines,
 	DockerClient,
 	resolveDefaultPaths,
-} from "@locainfra/engines";
+} from "@locastack/engines";
 import {
 	composeDeps,
 	DASHBOARD_DIR_ENV,
@@ -20,7 +20,7 @@ import {
 	serverPorts,
 } from "../composition";
 
-const stateDir = await mkdtemp(join(tmpdir(), "locainfra-cli-home-"));
+const stateDir = await mkdtemp(join(tmpdir(), "locastack-cli-home-"));
 afterAll(() => rm(stateDir, { recursive: true, force: true }));
 
 const BUNFS_CATALOG = join(embeddedRoot(), "catalog");
@@ -64,14 +64,14 @@ describe("resolveCatalogDir", () => {
 		);
 	});
 
-	test("LOCAINFRA_CATALOG_DIR wins, even over an embedded catalog", () => {
+	test("LOCASTACK_CATALOG_DIR wins, even over an embedded catalog", () => {
 		expect(
 			resolveCatalogDir(
-				{ LOCAINFRA_CATALOG_DIR: "/tmp/cat" },
+				{ LOCASTACK_CATALOG_DIR: "/tmp/cat" },
 				only(BUNFS_CATALOG),
 			),
 		).toBe(resolve("/tmp/cat"));
-		expect(resolveCatalogDir({ LOCAINFRA_CATALOG_DIR: "  " })).toBe(
+		expect(resolveCatalogDir({ LOCASTACK_CATALOG_DIR: "  " })).toBe(
 			resolve(import.meta.dir, "../../../../catalog"),
 		);
 	});
@@ -80,7 +80,7 @@ describe("resolveCatalogDir", () => {
 describe("resolveDashboardAssets", () => {
 	const repoIndex = join(repoDashboardDir(), "index.html");
 
-	test("LOCAINFRA_DASHBOARD_DIR wins", () => {
+	test("LOCASTACK_DASHBOARD_DIR wins", () => {
 		expect(
 			resolveDashboardAssets(
 				{ [DASHBOARD_DIR_ENV]: " /srv/spa " },
@@ -117,9 +117,9 @@ describe("resolveDashboardAssets", () => {
 });
 
 describe("composeDeps", () => {
-	const env = { LOCAINFRA_HOME: stateDir };
+	const env = { LOCASTACK_HOME: stateDir };
 
-	test("wires paths from LOCAINFRA_HOME into every op", () => {
+	test("wires paths from LOCASTACK_HOME into every op", () => {
 		const deps = composeDeps({ env, home: "/home/test" });
 		expect(deps.up.paths.stateDir).toBe(stateDir);
 		expect(deps.down.paths).toBe(deps.up.paths);
@@ -145,16 +145,16 @@ describe("composeDeps", () => {
 		expect(deps.dashboard.createToken()).not.toBe(deps.dashboard.createToken());
 	});
 
-	test("LOCAINFRA_SESSION_TOKEN fixes the token when long enough", () => {
+	test("LOCASTACK_SESSION_TOKEN fixes the token when long enough", () => {
 		const fixed = "e2e-token-0123456789";
 		expect(
 			composeDeps({
-				env: { ...env, LOCAINFRA_SESSION_TOKEN: fixed },
+				env: { ...env, LOCASTACK_SESSION_TOKEN: fixed },
 			}).dashboard.createToken(),
 		).toBe(fixed);
 		expect(
 			composeDeps({
-				env: { ...env, LOCAINFRA_SESSION_TOKEN: "short" },
+				env: { ...env, LOCASTACK_SESSION_TOKEN: "short" },
 			}).dashboard.createToken(),
 		).not.toBe("short");
 	});
@@ -168,7 +168,7 @@ describe("composeDeps", () => {
 	test("serverPorts hands the server every M3 adapter, sharing one database", () => {
 		const deps = composeDeps({ env });
 		const engines = createEngines(
-			resolveDefaultPaths({ env: { LOCAINFRA_HOME: stateDir } }),
+			resolveDefaultPaths({ env: { LOCASTACK_HOME: stateDir } }),
 		);
 		const ports = serverPorts(engines, deps.up.catalog);
 		expect(ports.exec).toBe(engines.exec);

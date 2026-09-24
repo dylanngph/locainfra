@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ContainerDetails, LogLine, StatsSample } from "@locainfra/core";
+import { ContainerDetails, LogLine, StatsSample } from "@locastack/core";
 import { Value } from "@sinclair/typebox/value";
 import { DockerContainerStreams } from "../container-streams";
 import { DockerClient } from "../docker-client";
@@ -42,7 +42,7 @@ describe.skipIf(!dockerAvailable)("DockerClient (live, read-only)", () => {
 			);
 		}
 		const none = await client.list({
-			labels: { "com.docker.compose.project": "li-no-such-project-xyz" },
+			labels: { "com.docker.compose.project": "ls-no-such-project-xyz" },
 		});
 		expect(none).toEqual([]);
 	});
@@ -69,7 +69,7 @@ describe.skipIf(!dockerAvailable)(
 			expect(Value.Check(ContainerDetails, details)).toBe(true);
 			expect(details?.state).toBe("running");
 			expect(details?.startedAt).toBeDefined();
-			expect(await client.inspect("li-no-such-container-xyz")).toBeNull();
+			expect(await client.inspect("ls-no-such-container-xyz")).toBeNull();
 		});
 
 		test("stats() yields a sample and closes on abort", async () => {
@@ -105,7 +105,7 @@ describe.skipIf(!dockerAvailable)(
 			setTimeout(() => controller.abort(), 150);
 			const events: unknown[] = [];
 			for await (const event of streams.events(
-				{ labels: { "li-no-such-label-xyz": "" } },
+				{ labels: { "ls-no-such-label-xyz": "" } },
 				controller.signal,
 			)) {
 				events.push(event);

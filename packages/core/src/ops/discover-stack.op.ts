@@ -7,7 +7,7 @@ import { PROJECT_STACK_FILE_NAME } from "../stack/stack.model";
 import type { DiscoverStack } from "./ops.contract";
 
 /**
- * Finds and validates the nearest `locainfra.yaml` walking up from `cwd` to
+ * Finds and validates the nearest `locastack.yaml` walking up from `cwd` to
  * the filesystem root.
  *
  * @returns The stack; `STACK_NOT_FOUND` (with a fix hint) when there is none,
@@ -36,7 +36,7 @@ export const discoverStack: DiscoverStack = async (deps, input) => {
 			{
 				details: {
 					cwd: resolve(input.cwd),
-					fix: "Run `locainfra` to create a project from the dashboard, or cd into a project folder.",
+					fix: "Run `locastack` to create a project from the dashboard, or cd into a project folder.",
 				},
 			},
 		),

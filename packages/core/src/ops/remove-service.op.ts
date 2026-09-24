@@ -24,14 +24,14 @@ import { deleteSnapshotFiles } from "./support/snapshots";
  *
  * 1. refuses (`INVALID_INPUT`) while another service depends on it;
  * 2. `LifecycleRunner.remove` stops and removes its container and, with
- *    `volumes: true`, deletes its named volumes (`li-<project>-<name>-<vol>`
+ *    `volumes: true`, deletes its named volumes (`ls-<project>-<name>-<vol>`
  *    for every catalog volume; adapters ignore ones that do not exist);
  *    skipped when the project was never rendered; removing the last
- *    instance also deletes the project network `li-<project>` (best effort:
+ *    instance also deletes the project network `ls-<project>` (best effort:
  *    a busy network is logged and the next `down` retries it). "Last" is
  *    decided from the stack loaded here, so callers serialize mutating ops
  *    per project (the server's `OpRegistry` does);
- * 3. removes the entry from `locainfra.yaml` (comments kept), unpins its
+ * 3. removes the entry from `locastack.yaml` (comments kept), unpins its
  *    port and, with `volumes: true`, forgets its secrets and deletes its
  *    snapshots (a new instance of that name starts fresh; otherwise kept so
  *    re-adding it reuses the data);
@@ -89,7 +89,7 @@ export const removeService: RemoveService = async function* (deps, input) {
 		: [];
 	const target = composeTarget(deps.paths, stack.name);
 	// The last instance takes the project network with it: once no service is
-	// left, `docker compose down` finds nothing and would leave li-<project>.
+	// left, `docker compose down` finds nothing and would leave ls-<project>.
 	const last = Object.keys(stack.file.services).every((s) => s === name);
 	const networks = last ? [composeProjectName(stack.name)] : [];
 	let rendered: boolean;

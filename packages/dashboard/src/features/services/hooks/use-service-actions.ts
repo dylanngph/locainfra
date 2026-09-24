@@ -1,4 +1,4 @@
-import type { ServiceState } from "@locainfra/server";
+import type { ServiceState } from "@locastack/server";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";

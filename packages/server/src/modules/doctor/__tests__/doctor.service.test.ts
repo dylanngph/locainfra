@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import type { DoctorReport, RunDoctorDeps } from "@locainfra/core";
+import type { DoctorReport, RunDoctorDeps } from "@locastack/core";
 import {
 	FakeComposeInfo,
 	FakeDockerInfo,
 	FakeSocketLocator,
 	FixedClock,
-} from "@locainfra/core/testing";
+} from "@locastack/core/testing";
 import { createDoctorRunner, DoctorService } from "../doctor.service";
 
 const fakeDeps = (): RunDoctorDeps => ({

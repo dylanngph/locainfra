@@ -51,12 +51,12 @@ import type {
 	UpdateService,
 	UpProject,
 	VolumeArchiver,
-} from "@locainfra/core";
+} from "@locastack/core";
 
 /**
  * Every core operation the server calls. Injected (rather than imported) so
  * the composition root decides the implementation and tests can stub any op.
- * Keys are the op function names exported by `@locainfra/core`.
+ * Keys are the op function names exported by `@locastack/core`.
  */
 export interface ServerOps {
 	/** Diagnostics (`GET /api/doctor`). */
@@ -69,7 +69,7 @@ export interface ServerOps {
 	readonly listProjects: ListProjects;
 	/** Registers an existing folder (`POST /api/projects`). */
 	readonly registerProject: RegisterProject;
-	/** Creates a folder + `locainfra.yaml` (`POST /api/projects`). */
+	/** Creates a folder + `locastack.yaml` (`POST /api/projects`). */
 	readonly createProject: CreateProject;
 	/** Unregisters (`DELETE /api/projects/:project`). */
 	readonly unregisterProject: UnregisterProject;
@@ -130,7 +130,7 @@ export interface ServerOps {
  * any op.
  */
 export interface ServerPorts {
-	/** `locainfra.db` state store (project registry, pinned ports). */
+	/** `locastack.db` state store (project registry, pinned ports). */
 	readonly state: StateReader & StateWriter;
 	/** Text file access. */
 	readonly files: FileStore;

@@ -19,7 +19,7 @@ export const DOCTOR_CHECK_IDS = {
 } as const;
 
 const START_DOCKER_FIX =
-	"Start Docker Desktop (or your Docker daemon) and run `locainfra doctor` again.";
+	"Start Docker Desktop (or your Docker daemon) and run `locastack doctor` again.";
 const UPDATE_DOCKER_FIX = "Update Docker Desktop to the latest version.";
 
 async function socketCheck(

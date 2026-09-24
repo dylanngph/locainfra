@@ -1,4 +1,4 @@
-import type { ProjectStatus, ProjectSummary } from "@locainfra/server";
+import type { ProjectStatus, ProjectSummary } from "@locastack/server";
 import { describe, expect, it } from "vitest";
 import { projectHealth } from "../project-health";
 
@@ -21,7 +21,7 @@ const row = (
 	image: "postgres:16",
 	hostPort: 5433,
 	containerPort: 5432,
-	containerName: `li-shop-${name}`,
+	containerName: `ls-shop-${name}`,
 	persist: "volume",
 	state: "running",
 	health: "healthy",
@@ -44,7 +44,7 @@ describe("projectHealth", () => {
 	it("sums only known readings of a live status, undefined when none", () => {
 		const live = (services: ProjectStatus["services"]): ProjectStatus => ({
 			project: "shop",
-			network: "li-shop",
+			network: "ls-shop",
 			services,
 		});
 		const none = projectHealth(summary, live([row("a", {}), row("b", {})]));

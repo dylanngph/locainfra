@@ -1,4 +1,4 @@
-import type { ServiceDefinition, ServiceDetail } from "@locainfra/server";
+import type { ServiceDefinition, ServiceDetail } from "@locastack/server";
 
 /**
  * Whether a service has a data volume the server can snapshot (it archives

@@ -1,4 +1,4 @@
-import { CreateSnapshotRequest, Snapshot } from "@locainfra/core";
+import { CreateSnapshotRequest, Snapshot } from "@locastack/core";
 import { t } from "elysia";
 
 /** `POST /api/projects/:project/services/:name/snapshots` body. */

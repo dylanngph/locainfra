@@ -4,6 +4,9 @@
 	"commit": false,
 	"access": "public",
 	"baseBranch": "main",
+	"fixed": [["@locastack/*"]],
+	"linked": [],
+	"privatePackages": { "version": true, "tag": false },
 	"updateInternalDependencies": "patch",
 	"ignore": []
 }

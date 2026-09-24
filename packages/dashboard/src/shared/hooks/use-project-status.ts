@@ -1,4 +1,4 @@
-import type { ProjectStatus, ServiceStatus } from "@locainfra/server";
+import type { ProjectStatus, ServiceStatus } from "@locastack/server";
 import { useMemo } from "react";
 import { useLiveMode } from "@/shared/lib/live/live-mode";
 import { useObserverStore } from "@/shared/lib/observer/observer-store";

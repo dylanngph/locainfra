@@ -1,4 +1,4 @@
-import { type LogLine, type LogOptions, OpError } from "@locainfra/core";
+import { type LogLine, type LogOptions, OpError } from "@locastack/core";
 import {
 	LOG_FRAME_HEADER_BYTES,
 	type LogFrame,

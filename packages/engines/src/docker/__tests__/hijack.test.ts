@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isOpError } from "@locainfra/core";
+import { isOpError } from "@locastack/core";
 import type { Socket } from "bun";
 import { DockerContainerExec } from "../container-exec";
 import { decodeChunked, parseHttpHead, UnixSocketHijacker } from "../hijack";
@@ -14,7 +14,7 @@ let socketPath: string;
 const stops: (() => void)[] = [];
 
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "li-hj-"));
+	dir = mkdtempSync(join(tmpdir(), "ls-hj-"));
 	socketPath = join(dir, "d.sock");
 });
 afterEach(() => {

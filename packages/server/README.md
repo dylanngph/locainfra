@@ -1,4 +1,4 @@
-# @locainfra/server
+# @locastack/server
 
 The dashboard's HTTP + WebSocket server (Elysia on Bun). Localhost only.
 
@@ -6,7 +6,7 @@ The dashboard's HTTP + WebSocket server (Elysia on Bun). Localhost only.
 
 - `startServer({ port, token, deps, staticDir?, extraHosts?, dashboardFile?, handleSignals? })`
   listens on `127.0.0.1`, serves `/api/*`, `/ws` and (with `staticDir`, a real folder or the compiled binary's embedded `/$bunfs/root/dist`) the built SPA with an
-  `index.html` fallback. Writes `~/.locainfra/dashboard.json` (`{ pid, port, token, startedAt }`,
+  `index.html` fallback. Writes `~/.locastack/dashboard.json` (`{ pid, port, token, startedAt }`,
   mode 0600) and removes it on `stop()` or SIGINT/SIGTERM.
 - `probeDashboard(path)`: the CLI's check for an already running instance (pid alive +
   `GET /api/health`).

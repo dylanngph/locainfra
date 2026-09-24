@@ -6,7 +6,7 @@ import {
 	ok,
 	PROJECT_STACK_FILE_NAME,
 	type Result,
-} from "@locainfra/core";
+} from "@locastack/core";
 import type { CliDeps } from "../../cli.types";
 
 /**
@@ -28,8 +28,8 @@ export function projectNameFromDir(root: string): string {
 
 /**
  * `--project <dir>`: registers the folder so the dashboard can preselect it.
- * A folder with `locainfra.yaml` is registered under the name in that file
- * (a no-op when it already is); otherwise a fresh `locainfra.yaml` named
+ * A folder with `locastack.yaml` is registered under the name in that file
+ * (a no-op when it already is); otherwise a fresh `locastack.yaml` named
  * after the folder is created and registered.
  *
  * @param deps - Composition root.

@@ -8,7 +8,7 @@ import { PROJECT_STACK_FILE_NAME } from "../stack/stack.model";
 import type { LoadProject } from "./ops.contract";
 
 /**
- * Loads and validates a registered project's `<root>/locainfra.yaml`.
+ * Loads and validates a registered project's `<root>/locastack.yaml`.
  *
  * @returns The stack; `PROJECT_NOT_FOUND` when the name is not registered,
  *   `STACK_NOT_FOUND` when the file is gone, `INVALID_STACK` when it is
@@ -21,7 +21,7 @@ export const loadProject: LoadProject = async (deps, input) => {
 		state = await deps.state.read();
 	} catch (cause) {
 		return err(
-			ioErrorFrom("Could not read the LocaInfra project registry", cause),
+			ioErrorFrom("Could not read the LocaStack project registry", cause),
 		);
 	}
 	const entry = findProjectEntry(state, input.project);
@@ -33,7 +33,7 @@ export const loadProject: LoadProject = async (deps, input) => {
 				{
 					details: {
 						project: input.project,
-						fix: "Create the project from the dashboard, or run `locainfra up` in its folder.",
+						fix: "Create the project from the dashboard, or run `locastack up` in its folder.",
 					},
 				},
 			),

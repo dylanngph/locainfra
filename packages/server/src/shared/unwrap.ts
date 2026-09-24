@@ -1,4 +1,4 @@
-import type { OpError, Result } from "@locainfra/core";
+import type { OpError, Result } from "@locastack/core";
 
 /**
  * Returns an op result's value or throws its `OpError`, which the

@@ -78,11 +78,11 @@ describe("Command palette", () => {
 			).toHaveTextContent("db"),
 		);
 		expect(within(dialog).queryByTestId("palette-cli")).toBeNull();
-		// Next: the blog project → `locainfra up`.
+		// Next: the blog project → `locastack up`.
 		await user.keyboard("{ArrowDown}");
 		await waitFor(() =>
 			expect(within(dialog).getByTestId("palette-cli")).toHaveTextContent(
-				"locainfra up",
+				"locastack up",
 			),
 		);
 		await user.keyboard("{ArrowUp}{Enter}");
@@ -109,7 +109,7 @@ describe("Command palette", () => {
 		await user.keyboard("{ArrowDown}");
 		await waitFor(() =>
 			expect(within(dialog).getByTestId("palette-cli")).toHaveTextContent(
-				"locainfra up",
+				"locastack up",
 			),
 		);
 		await user.keyboard("{Escape}");
@@ -131,12 +131,12 @@ describe("Command palette", () => {
 		expect(within(again).queryByTestId("palette-cli")).toBeNull();
 	});
 
-	it("opens the Environment page from Actions with `locainfra env`", async () => {
+	it("opens the Environment page from Actions with `locastack env`", async () => {
 		const { user, input, dialog, router } = await openPalette("/p/shop-api");
 		await user.type(input, "export");
 		await waitFor(() =>
 			expect(within(dialog).getByTestId("palette-cli")).toHaveTextContent(
-				"locainfra env",
+				"locastack env",
 			),
 		);
 		await user.keyboard("{Enter}");

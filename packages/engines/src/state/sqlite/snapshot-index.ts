@@ -1,4 +1,4 @@
-import { OpError, type SnapshotIndex, SnapshotRecord } from "@locainfra/core";
+import { OpError, type SnapshotIndex, SnapshotRecord } from "@locastack/core";
 import { Value } from "@sinclair/typebox/value";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { snapshots } from "./schema";
@@ -37,7 +37,7 @@ function toRow(record: SnapshotRecord): typeof snapshots.$inferInsert {
 }
 
 /**
- * {@link SnapshotIndex} on the `snapshots` table of `locainfra.db`, sharing
+ * {@link SnapshotIndex} on the `snapshots` table of `locastack.db`, sharing
  * the {@link SqliteStateStore}'s connection (opened and migrated lazily).
  * Rows are validated against `SnapshotRecord` on insert; the archive files
  * themselves are the archiver's concern.
@@ -45,7 +45,7 @@ function toRow(record: SnapshotRecord): typeof snapshots.$inferInsert {
 export class SqliteSnapshotIndex implements SnapshotIndex {
 	readonly #store: SqliteStateStore;
 
-	/** @param store - The state store owning `locainfra.db`. */
+	/** @param store - The state store owning `locastack.db`. */
 	constructor(store: SqliteStateStore) {
 		this.#store = store;
 	}

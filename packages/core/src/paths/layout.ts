@@ -1,12 +1,12 @@
 import { join } from "node:path";
 import type { Paths } from "../ports/paths.port";
 
-/** Prefix of every compose project and network created by LocaInfra. */
-export const COMPOSE_PREFIX = "li-";
+/** Prefix of every compose project and network created by LocaStack. */
+export const COMPOSE_PREFIX = "ls-";
 
 /**
  * @param stackName - Stack name.
- * @returns Compose project (and network) name, `li-<stackName>`.
+ * @returns Compose project (and network) name, `ls-<stackName>`.
  */
 export function composeProjectName(stackName: string): string {
 	return `${COMPOSE_PREFIX}${stackName}`;
@@ -15,11 +15,11 @@ export function composeProjectName(stackName: string): string {
 /**
  * Docker container name of a service instance. Registration must reject a
  * project/instance pair whose name equals one in another registered project
- * (`li-shop` + `api-db` and `li-shop-api` + `db` both give `li-shop-api-db`).
+ * (`ls-shop` + `api-db` and `ls-shop-api` + `db` both give `ls-shop-api-db`).
  *
  * @param stackName - Project name.
  * @param instanceName - Service instance name.
- * @returns `li-<stack>-<instance>`.
+ * @returns `ls-<stack>-<instance>`.
  */
 export function serviceContainerName(
 	stackName: string,
@@ -34,7 +34,7 @@ export function serviceContainerName(
  * @param stackName - Project name.
  * @param instanceName - Service instance name.
  * @param volume - Catalog volume name (e.g. `data`).
- * @returns `li-<stack>-<instance>-<volume>`.
+ * @returns `ls-<stack>-<instance>-<volume>`.
  */
 export function serviceVolumeName(
 	stackName: string,
@@ -46,7 +46,7 @@ export function serviceVolumeName(
 
 /**
  * @param paths - Resolved paths.
- * @returns `~/.locainfra/state.json`, the legacy (M1/M2) state file that the SQLite store imports once.
+ * @returns `~/.locastack/state.json`, the legacy (M1/M2) state file that the SQLite store imports once.
  */
 export function stateFilePath(paths: Paths): string {
 	return join(paths.stateDir, "state.json");
@@ -54,7 +54,7 @@ export function stateFilePath(paths: Paths): string {
 
 /**
  * @param paths - Resolved paths.
- * @returns `~/.locainfra/dashboard.json` (running dashboard pidfile).
+ * @returns `~/.locastack/dashboard.json` (running dashboard pidfile).
  */
 export function dashboardFilePath(paths: Paths): string {
 	return join(paths.stateDir, "dashboard.json");
@@ -63,7 +63,7 @@ export function dashboardFilePath(paths: Paths): string {
 /**
  * @param paths - Resolved paths.
  * @param stackName - Stack name.
- * @returns `~/.locainfra/stacks/<stack>` (rendered compose dir).
+ * @returns `~/.locastack/stacks/<stack>` (rendered compose dir).
  */
 export function stackDir(paths: Paths, stackName: string): string {
 	return join(paths.stacksDir, stackName);
@@ -72,7 +72,7 @@ export function stackDir(paths: Paths, stackName: string): string {
 /**
  * @param paths - Resolved paths.
  * @param stackName - Stack name.
- * @returns `~/.locainfra/stacks/<stack>/docker-compose.yml`.
+ * @returns `~/.locastack/stacks/<stack>/docker-compose.yml`.
  */
 export function composeFilePath(paths: Paths, stackName: string): string {
 	return join(stackDir(paths, stackName), "docker-compose.yml");
@@ -81,7 +81,7 @@ export function composeFilePath(paths: Paths, stackName: string): string {
 /**
  * @param paths - Resolved paths.
  * @param stackName - Stack name.
- * @returns `~/.locainfra/secrets/<stack>.env`.
+ * @returns `~/.locastack/secrets/<stack>.env`.
  */
 export function secretsFilePath(paths: Paths, stackName: string): string {
 	return join(paths.secretsDir, `${stackName}.env`);

@@ -61,7 +61,7 @@ export async function provisionStack(
 		return resolveStack({ stack, definitions, state, secrets: secrets.value });
 	} catch (cause) {
 		return err(
-			new OpError("IO", "Could not read LocaInfra state", {
+			new OpError("IO", "Could not read LocaStack state", {
 				cause,
 				details: { stack: stack.name },
 			}),

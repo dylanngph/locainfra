@@ -44,7 +44,7 @@ export interface RunningService<T> {
 	readonly resolved: ResolvedStack;
 	/** The resolved service (holds secrets; never log). */
 	readonly service: ResolvedService;
-	/** Container to exec in (`li-<project>-<name>`). */
+	/** Container to exec in (`ls-<project>-<name>`). */
 	readonly container: string;
 	/** Template context for catalog argv (holds secrets). */
 	readonly context: TemplateContext;

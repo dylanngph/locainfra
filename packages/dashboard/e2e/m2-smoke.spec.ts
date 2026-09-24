@@ -28,7 +28,7 @@ async function api(
 	return fetch(`http://127.0.0.1:${E2E_PORT}${path}`, {
 		method,
 		headers: {
-			"x-locainfra-token": E2E_TOKEN,
+			"x-locastack-token": E2E_TOKEN,
 			...(body === undefined ? {} : { "content-type": "application/json" }),
 		},
 		...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -90,7 +90,7 @@ async function addFromCatalog(
 }
 
 test.describe("M2 live smoke (real Docker)", () => {
-	test.skip(!E2E_ENABLED, "set LOCAINFRA_E2E=1 to run against real Docker");
+	test.skip(!E2E_ENABLED, "set LOCASTACK_E2E=1 to run against real Docker");
 
 	test("create a project, add named instances, connect, env, stop/start, remove", async ({
 		page,
@@ -104,7 +104,7 @@ test.describe("M2 live smoke (real Docker)", () => {
 			await expect(page).toHaveURL(/\/$/);
 			// Brand mark, not the prototype's rotated square; ⌘K opens the palette.
 			await expect(
-				page.getByRole("link", { name: "LocaInfra" }).locator("svg"),
+				page.getByRole("link", { name: "LocaStack" }).locator("svg"),
 			).toBeVisible();
 			await expect(
 				page.getByRole("button", { name: /Search or add a service/ }),
@@ -116,7 +116,7 @@ test.describe("M2 live smoke (real Docker)", () => {
 			await form.getByRole("button", { name: "Create" }).click();
 			await expect(page).toHaveURL(new RegExp(`/p/${E2E_PROJECT}$`));
 			await expect(page.getByText("No services yet")).toBeVisible();
-			expect(existsSync(join(root, "locainfra.yaml"))).toBe(true);
+			expect(existsSync(join(root, "locastack.yaml"))).toBe(true);
 		});
 
 		await test.step("add Postgres main-db with port auto (lands on 5433, never 5432)", async () => {
@@ -131,7 +131,7 @@ test.describe("M2 live smoke (real Docker)", () => {
 			).toBeVisible();
 			await expect(page.getByText(/localhost:/)).toHaveCount(0);
 			// Running: no CLI equivalent, so no hint bar.
-			await expect(page.getByText(/locainfra up --service/)).toHaveCount(0);
+			await expect(page.getByText(/locastack up --service/)).toHaveCount(0);
 		});
 
 		await test.step("add Redis cache", async () => {
@@ -195,7 +195,7 @@ test.describe("M2 live smoke (real Docker)", () => {
 				.poll(() => existsSync(join(root, ".env")), { timeout: 10_000 })
 				.toBe(true);
 			const written = readFileSync(join(root, ".env"), "utf8");
-			expect(written).toContain("# locainfra:start");
+			expect(written).toContain("# locastack:start");
 			expect(written).toMatch(
 				/DATABASE_URL=postgres:\/\/postgres:[^•\s]+@127\.0\.0\.1:5433\//,
 			);
@@ -252,10 +252,10 @@ test.describe("M2 live smoke (real Docker)", () => {
 				"inspect",
 				"--format",
 				'{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}\n{{end}}{{end}}',
-				`li-${E2E_PROJECT}-scratch`,
+				`ls-${E2E_PROJECT}-scratch`,
 			]);
 			expect(anonymous.length).toBeGreaterThan(0);
-			expect(anonymous.every((v) => !v.startsWith("li-"))).toBe(true);
+			expect(anonymous.every((v) => !v.startsWith("ls-"))).toBe(true);
 			// Remove through the UI: typed confirmation, then back to the overview.
 			await page.getByRole("button", { name: "Remove", exact: true }).click();
 			const dialog = page.getByRole("alertdialog");
@@ -275,7 +275,7 @@ test.describe("M2 live smoke (real Docker)", () => {
 
 		await test.step("remove every instance with its volumes; Docker keeps no li-* leftovers", async () => {
 			// Sent together on purpose: the server serializes ops per project,
-			// so the last removal still sees itself as last and drops li-<project>.
+			// so the last removal still sees itself as last and drops ls-<project>.
 			const responses = await Promise.all(
 				["events", "cache", "main-db"].map((name) =>
 					api(

@@ -29,18 +29,18 @@ describe("port data schemas", () => {
 		expect(
 			Value.Check(ContainerSummary, {
 				id: "abc",
-				name: "li-shop-postgres-1",
+				name: "ls-shop-postgres-1",
 				image: "postgres:17-alpine",
 				state: "running",
 				health: "healthy",
-				labels: { "locainfra.stack": "shop" },
+				labels: { "locastack.stack": "shop" },
 				ports: [{ host: 5433, container: 5432 }],
 			}),
 		).toBe(true);
 		expect(
 			Value.Check(ComposeServiceStatus, {
 				service: "postgres",
-				name: "li-shop-postgres-1",
+				name: "ls-shop-postgres-1",
 				state: "running",
 				image: "postgres:17-alpine",
 				publishers: [{ publishedPort: 5433, targetPort: 5432 }],

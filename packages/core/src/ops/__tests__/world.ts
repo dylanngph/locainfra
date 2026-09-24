@@ -27,10 +27,10 @@ import {
 /** Folder of the test project. */
 export const SHOP_ROOT = "/work/shop";
 /** Its stack file. */
-export const SHOP_FILE = `${SHOP_ROOT}/locainfra.yaml`;
+export const SHOP_FILE = `${SHOP_ROOT}/locastack.yaml`;
 /** Rendered compose file of the test project. */
 export const SHOP_COMPOSE =
-	"/home/test/.locainfra/stacks/shop/docker-compose.yml";
+	"/home/test/.locastack/stacks/shop/docker-compose.yml";
 
 /** A commented stack with two postgres instances, a redis and an Upstash proxy. */
 export const SHOP_YAML = `# shop services
@@ -131,13 +131,13 @@ export function addContainer(
 	details: Partial<ContainerDetails> = {},
 ): ContainerSummary {
 	const labels = {
-		"locainfra.stack": "shop",
-		"locainfra.service": service,
-		"locainfra.instance": service,
+		"locastack.stack": "shop",
+		"locastack.service": service,
+		"locastack.instance": service,
 	};
 	const summary: ContainerSummary = {
 		id: `id-${service}`,
-		name: `li-shop-${service}`,
+		name: `ls-shop-${service}`,
 		image: "img",
 		state: details.state ?? "running",
 		...(details.health !== undefined && { health: details.health }),

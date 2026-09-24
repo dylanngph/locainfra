@@ -1,7 +1,7 @@
 ---
-"@locainfra/core": minor
-"@locainfra/engines": minor
-"@locainfra/cli": patch
+"@locastack/core": minor
+"@locastack/engines": minor
+"@locastack/cli": patch
 ---
 
 Hardening from review:

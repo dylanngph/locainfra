@@ -29,7 +29,7 @@ export type {
 	StackServiceEntry,
 	StatsSample,
 	SystemInfo,
-} from "@locainfra/core";
+} from "@locastack/core";
 export {
 	type App,
 	createApp,

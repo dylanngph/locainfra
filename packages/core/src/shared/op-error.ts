@@ -73,7 +73,7 @@ export function isOpError(value: unknown): value is OpError {
 /**
  * Wraps a port failure (state store, secrets…) as an `IO` {@link OpError}.
  * A cause that already is an `OpError` is user-facing (e.g. the state store's
- * "created by a newer LocaInfra; update LocaInfra" with its `fix`), so its
+ * "created by a newer LocaStack; update LocaStack" with its `fix`), so its
  * code and message are kept and `details` are only added to.
  *
  * @param message - Message for an unexpected (non-`OpError`) cause.

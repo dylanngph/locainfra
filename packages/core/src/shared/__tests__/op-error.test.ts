@@ -58,11 +58,11 @@ describe("ioErrorFrom", () => {
 	test("keeps a user-facing OpError from a port and adds context", () => {
 		const cause = new OpError(
 			"IO",
-			"/h/locainfra.db was created by a newer LocaInfra; update LocaInfra",
+			"/h/locastack.db was created by a newer LocaStack; update LocaStack",
 			{
 				details: {
-					path: "/h/locainfra.db",
-					fix: "Install the newer LocaInfra",
+					path: "/h/locastack.db",
+					fix: "Install the newer LocaStack",
 				},
 			},
 		);
@@ -73,8 +73,8 @@ describe("ioErrorFrom", () => {
 		expect(error.message).toBe(cause.message);
 		expect(error.details).toEqual({
 			stack: "shop",
-			path: "/h/locainfra.db",
-			fix: "Install the newer LocaInfra",
+			path: "/h/locastack.db",
+			fix: "Install the newer LocaStack",
 		});
 		expect(error.cause).toBe(cause);
 	});

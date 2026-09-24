@@ -1,5 +1,5 @@
 /** sessionStorage key holding the dashboard session token. */
-export const TOKEN_STORAGE_KEY = "locainfra.token";
+export const TOKEN_STORAGE_KEY = "locastack.token";
 
 /** Query parameter the CLI appends when it opens the dashboard (`?t=<token>`). */
 export const TOKEN_QUERY_PARAM = "t";
@@ -59,11 +59,11 @@ export function initSessionToken(
 
 /**
  * Development fallback: `bun run dev` fixes the token in `.env.development`
- * and Vite exposes it as `VITE_LOCAINFRA_TOKEN`, so the HMR dashboard on
+ * and Vite exposes it as `VITE_LOCASTACK_TOKEN`, so the HMR dashboard on
  * :5173 needs no `?t=`. Never defined in production builds.
  */
 const devToken = (): string | null =>
-	import.meta.env.DEV ? (import.meta.env.VITE_LOCAINFRA_TOKEN ?? null) : null;
+	import.meta.env.DEV ? (import.meta.env.VITE_LOCASTACK_TOKEN ?? null) : null;
 
 /**
  * The current session token (initialised lazily from the browser).

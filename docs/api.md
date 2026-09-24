@@ -35,7 +35,7 @@ compiled binary always is.
 | Topic | Rule |
 |---|---|
 | Bind | `127.0.0.1` only. |
-| Auth | Every route except `GET /api/health` needs the session token: header `x-locainfra-token: <t>` or query `?t=<t>` (the WebSocket must use `?t=`). `Host` must be an allowed `127.0.0.1:<port>`; a present `Origin` must be `http://<allowed host>`. Failures: `401 "Unauthorized"`, `403 "Forbidden host"` / `"Forbidden origin"`. |
+| Auth | Every route except `GET /api/health` needs the session token: header `x-locastack-token: <t>` or query `?t=<t>` (the WebSocket must use `?t=`). `Host` must be an allowed `127.0.0.1:<port>`; a present `Origin` must be `http://<allowed host>`. Failures: `401 "Unauthorized"`, `403 "Forbidden host"` / `"Forbidden origin"`. |
 | Names | Project and service instance names match `^[a-z][a-z0-9-]*$` (validated on params and bodies). |
 | Errors | Expected failures return `Common.Error` `{ code, message, details? }` where `code` is an `OpErrorCode`; `details.fix` is a human hint. For `PORT_CONFLICT`, `details.port` is the busy port and `details.suggestedPort` a free one to offer ("Use port N"). Never contains secrets. |
 | Long actions | Anything that touches containers answers `202 { opId }`. Progress is available as NDJSON from `GET /api/ops/:opId/events` (what the dashboard uses) and on WebSocket channel `op:<opId>`: `Progress` events ending with one `done` or `error`. The server buffers an op's events and replays them until 60 s after the terminal event, so following right after the `202` loses nothing. |
@@ -61,12 +61,12 @@ event on `op:<opId>`, not as an HTTP status.
 
 | Thing | Name |
 |---|---|
-| Compose project and network | `li-<project>` |
-| Container | `li-<project>-<service>` (registration rejects a pair that collides with another project's, e.g. `shop`+`api-db` vs `shop-api`+`db`) |
-| Volume (persist `volume`) | `li-<project>-<service>-<catalog volume>` e.g. `li-shop-api-main-db-data`; none for `ephemeral` |
+| Compose project and network | `ls-<project>` |
+| Container | `ls-<project>-<service>` (registration rejects a pair that collides with another project's, e.g. `shop`+`api-db` vs `shop-api`+`db`) |
+| Volume (persist `volume`) | `ls-<project>-<service>-<catalog volume>` e.g. `ls-shop-api-main-db-data`; none for `ephemeral` |
 | Secret key (secrets file and compose `.env`) | `<SERVICE_UPPER>__<SECRET>`, e.g. `MAIN_DB__POSTGRES_PASSWORD` (`instanceSecretKey`) |
-| Labels | `locainfra.stack=<project>`, `locainfra.service=<service>`, `locainfra.instance=<service>`, `locainfra.catalog-id=<type>`, `locainfra.type=<type>`, `locainfra.version=<version>` |
-| Network removal | Removing a project's last service also deletes `li-<project>` (compose `down` cannot find it once no service is left). |
+| Labels | `locastack.stack=<project>`, `locastack.service=<service>`, `locastack.instance=<service>`, `locastack.catalog-id=<type>`, `locastack.type=<type>`, `locastack.version=<version>` |
+| Network removal | Removing a project's last service also deletes `ls-<project>` (compose `down` cannot find it once no service is left). |
 
 ## Routes
 
@@ -116,7 +116,7 @@ M3 part 2 adds optional blocks (`ServiceData`, `ServiceSeed`,
 | POST | `/api/projects/:project/up` | — | 202 `{ opId }` | 404, 422 |
 | POST | `/api/projects/:project/down` | query `volumes?` | 202 `{ opId }` | 404 |
 
-- `POST /api/projects`: when `<root>/locainfra.yaml` does not exist the server
+- `POST /api/projects`: when `<root>/locastack.yaml` does not exist the server
   creates the folder and a fresh file (`createProject`); when it exists it is
   registered as-is (`registerProject`, its `name` must match). `root` is absolute.
 - `pick-folder` opens the native dialog on the server machine, starting at
@@ -154,12 +154,12 @@ Base: `/api/projects/:project/services`.
 `data` block (`none` when it has none, or the type is missing from the
 catalog). `label` is the object list heading ("Tables", "Key patterns").
 
-- Add writes the entry to `locainfra.yaml` (comments kept), resolves (port
+- Add writes the entry to `locastack.yaml` (comments kept), resolves (port
   pinned, secrets generated), renders compose and `up --wait`s that service.
   Validation that needs the catalog (unknown type/version/config key) is a `422`
   before the `202` when cheap, otherwise an `error` event. An explicit port that
   is bound on 127.0.0.1 or pinned by another project is a `409 PORT_CONFLICT`
-  before the `202`. The entry is written to `locainfra.yaml` shortly *after*
+  before the `202`. The entry is written to `locastack.yaml` shortly *after*
   the `202`, so a client that opens the service right away polls
   `GET …/services/:name` until it answers (the dashboard does) or follows
   `op:<opId>`.
@@ -279,7 +279,7 @@ CreateSnapshotBody = { name?: string }                    // ^[A-Za-z0-9][A-Za-z
   a tar of a live Postgres volume is inconsistent), "Archiving <volume>"
   (helper `docker run --rm --network none --mount
   type=volume,src=<vol>,dst=/from,readonly --mount type=bind,src=<dir>,dst=/to
-  alpine:3.20 sh -c …`, labelled `io.locainfra.helper`; the archive is written
+  alpine:3.20 sh -c …`, labelled `io.locastack.helper`; the archive is written
   to a temp name and renamed on success, mode 0600), "Starting <name>" (only
   if it was running; `up --wait`, so the op settles once it is healthy), `done`
   "Snapshot “<name>” created". The dashboard refetches the list when the op
@@ -378,15 +378,15 @@ ImportBody = { name, root /* absolute */, items: ImportItem[] /* ≥ 1 */, start
 - The preview is echoed back in `items` (only `supported && include` ones are
   imported) and re-validated. Before the `202` the server applies the New
   project folder rules and answers `409 PROJECT_EXISTS` for a registered name
-  or a folder that already has `locainfra.yaml`, `422` for no importable item
+  or a folder that already has `locastack.yaml`, `422` for no importable item
   or duplicate instance names. `importProject` steps: "Creating <root>",
-  "Registering <name>", "Storing secrets", "Writing locainfra.yaml",
+  "Registering <name>", "Storing secrets", "Writing locastack.yaml",
   optionally "Starting N services", then `done` "Imported N services into
   <name>[, M ports remapped]". If storing secrets or writing the file fails,
   the registration is undone, so nothing is left behind. A failure while
   starting leaves the project registered (start it again from the project
-  page). The dashboard opens the project once `locainfra.yaml` is written:
-  on the first event after "Writing locainfra.yaml" ("Starting N services"
+  page). The dashboard opens the project once `locastack.yaml` is written:
+  on the first event after "Writing locastack.yaml" ("Starting N services"
   or `done`), confirmed with one `GET /api/projects/:name`.
 
 ### Operations
@@ -451,8 +451,8 @@ serviceCount, file }`. `text` groups lines under `# <service> (<type>)` comments
 `.env`. Key naming: the primary export may be renamed by `link.names.<service>`;
 otherwise every key of a service gets a `<SERVICE_NAME>_` prefix (upper case,
 dashes → `_`) only when one of its keys collides with an earlier service's key.
-Write always writes revealed values between `# locainfra:start` /
-`# locainfra:end` markers, leaving the rest of the file alone.
+Write always writes revealed values between `# locastack:start` /
+`# locastack:end` markers, leaving the rest of the file alone.
 
 ## WebSocket `/ws`
 
@@ -504,5 +504,5 @@ closed when the last one leaves. Unsubscribe when a tab/page unmounts.
 | ⌘K palette | cached `GET /api/projects`, `GET /api/catalog`, the current project | — | Add to project, go to a service or project, Export .env |
 | Toasts | — | — | `GET /api/ops/:opId/events` |
 
-CLI hint bar commands that exist: `locainfra up`, `locainfra down`,
-`locainfra env`, `locainfra doctor` (run from the project folder).
+CLI hint bar commands that exist: `locastack up`, `locastack down`,
+`locastack env`, `locastack doctor` (run from the project folder).

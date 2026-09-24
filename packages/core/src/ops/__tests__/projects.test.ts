@@ -48,21 +48,21 @@ describe("loadProject", () => {
 		world.state.read = async () => {
 			throw new OpError(
 				"IO",
-				"/h/locainfra.db was created by a newer LocaInfra; update LocaInfra",
+				"/h/locastack.db was created by a newer LocaStack; update LocaStack",
 				{
 					details: {
-						path: "/h/locainfra.db",
-						fix: "Install the newer LocaInfra",
+						path: "/h/locastack.db",
+						fix: "Install the newer LocaStack",
 					},
 				},
 			);
 		};
 		const newer = await loadProject(world, { project: "shop" });
 		expect(!newer.ok && newer.error.message).toContain(
-			"created by a newer LocaInfra",
+			"created by a newer LocaStack",
 		);
 		expect(!newer.ok && newer.error.details.fix).toBe(
-			"Install the newer LocaInfra",
+			"Install the newer LocaStack",
 		);
 	});
 });
@@ -72,7 +72,7 @@ describe("registerProject", () => {
 
 	test("registers an existing folder; re-registering is a no-op", async () => {
 		const world = createWorld();
-		world.files.files.set("/work/app/locainfra.yaml", APP);
+		world.files.files.set("/work/app/locastack.yaml", APP);
 		const result = await registerProject(world, {
 			name: "app",
 			root: "/work/app/",
@@ -95,7 +95,7 @@ describe("registerProject", () => {
 
 	test("validates name, root and the file's name", async () => {
 		const world = createWorld();
-		world.files.files.set("/work/app/locainfra.yaml", APP);
+		world.files.files.set("/work/app/locastack.yaml", APP);
 		const badName = await registerProject(world, {
 			name: "App",
 			root: "/work/app",
@@ -121,7 +121,7 @@ describe("registerProject", () => {
 	test("PROJECT_EXISTS when another folder holds the name or containers would clash", async () => {
 		const world = createWorld();
 		world.files.files.set(
-			"/work/shop-copy/locainfra.yaml",
+			"/work/shop-copy/locastack.yaml",
 			"version: 1\nname: shop\n",
 		);
 		const taken = await registerProject(world, {
@@ -131,9 +131,9 @@ describe("registerProject", () => {
 		expect(!taken.ok && taken.error.code).toBe("PROJECT_EXISTS");
 		expect(!taken.ok && taken.error.details.reason).toBe("name-taken");
 
-		// li-shop + main-db  ==  li-shop-main + db
+		// ls-shop + main-db  ==  ls-shop-main + db
 		world.files.files.set(
-			"/work/shop-main/locainfra.yaml",
+			"/work/shop-main/locastack.yaml",
 			"version: 1\nname: shop-main\nservices:\n  db: { type: postgres }\n",
 		);
 		const clash = await registerProject(world, {
@@ -142,7 +142,7 @@ describe("registerProject", () => {
 		});
 		expect(!clash.ok && clash.error.code).toBe("PROJECT_EXISTS");
 		expect(!clash.ok && clash.error.details.containerName).toBe(
-			"li-shop-main-db",
+			"ls-shop-main-db",
 		);
 		expect(world.state.state.projects).toHaveLength(1);
 	});
@@ -160,10 +160,10 @@ describe("createProject", () => {
 		expect(result.value).toMatchObject({
 			name: "blog",
 			root: "/Users/me/Developer/blog",
-			filePath: "/Users/me/Developer/blog/locainfra.yaml",
+			filePath: "/Users/me/Developer/blog/locastack.yaml",
 		});
 		const text = world.files.files.get(
-			"/Users/me/Developer/blog/locainfra.yaml",
+			"/Users/me/Developer/blog/locastack.yaml",
 		);
 		expect(text).toContain("# yaml-language-server");
 		expect(text).toContain("name: blog\n");
@@ -244,7 +244,7 @@ describe("listProjects", () => {
 			{ name: "empty", root: "/work/empty" },
 		);
 		world.files.files.set(
-			"/work/empty/locainfra.yaml",
+			"/work/empty/locastack.yaml",
 			"version: 1\nname: empty\n",
 		);
 		addContainer(world, "main-db", { state: "running", health: "healthy" });
@@ -269,7 +269,7 @@ describe("listProjects", () => {
 				running: 0,
 				errors: 0,
 				types: [],
-				issue: "/work/gone/locainfra.yaml: not found",
+				issue: "/work/gone/locastack.yaml: not found",
 			},
 			{
 				name: "empty",

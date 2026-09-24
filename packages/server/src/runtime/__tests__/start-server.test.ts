@@ -35,11 +35,11 @@ async function openSocket(token = TOKEN) {
 }
 
 beforeAll(async () => {
-	dir = await mkdtemp(join(tmpdir(), "locainfra-server-"));
+	dir = await mkdtemp(join(tmpdir(), "locastack-server-"));
 	await mkdir(join(dir, "dist", "assets"), { recursive: true });
 	await writeFile(
 		join(dir, "dist", "index.html"),
-		"<!doctype html><title>LocaInfra</title>",
+		"<!doctype html><title>LocaStack</title>",
 	);
 	await writeFile(join(dir, "dist", "assets", "app-1234.js"), "console.log(1)");
 	dashboardFile = join(dir, "home", "dashboard.json");
@@ -77,9 +77,9 @@ describe("startServer", () => {
 		const get = (path: string) => fetch(`${server.origin}${path}`);
 		const root = await get("/");
 		expect(root.status).toBe(200);
-		expect(await root.text()).toContain("<title>LocaInfra</title>");
+		expect(await root.text()).toContain("<title>LocaStack</title>");
 		const deep = await get(`/p/${PROJECT}/s/main-db?tab=logs`);
-		expect(await deep.text()).toContain("<title>LocaInfra</title>");
+		expect(await deep.text()).toContain("<title>LocaStack</title>");
 		expect(deep.headers.get("cache-control")).toBe("no-cache");
 		const asset = await get("/assets/app-1234.js");
 		expect(await asset.text()).toBe("console.log(1)");
@@ -103,7 +103,7 @@ describe("startServer", () => {
 		const { ws, messages } = await openSocket();
 		const res = await fetch(`${server.origin}/api/projects/${PROJECT}/up`, {
 			method: "POST",
-			headers: { "x-locainfra-token": TOKEN },
+			headers: { "x-locastack-token": TOKEN },
 		});
 		expect(res.status).toBe(202);
 		const { opId } = (await res.json()) as { opId: string };

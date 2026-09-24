@@ -14,15 +14,15 @@ const app = createProjectStack("app", {});
 const twin = {
 	...app,
 	root: "/work/twin",
-	filePath: "/work/twin/locainfra.yaml",
+	filePath: "/work/twin/locastack.yaml",
 };
 
 describe("claimProjectName", () => {
 	test("concurrent claims of one name from two folders: exactly one wins", async () => {
 		const state = new InMemoryStateStore();
 		const files = new InMemoryFileStore({
-			"/work/app/locainfra.yaml": "version: 1\nname: app\n",
-			"/work/twin/locainfra.yaml": "version: 1\nname: app\n",
+			"/work/app/locastack.yaml": "version: 1\nname: app\n",
+			"/work/twin/locastack.yaml": "version: 1\nname: app\n",
 		});
 		const [a, b] = await Promise.all([
 			claimProjectName({ state, files }, app),
@@ -53,7 +53,7 @@ describe("claimProjectName", () => {
 			stacks: {},
 		});
 		const files = new InMemoryFileStore({
-			"/work/twin/locainfra.yaml": "version: [",
+			"/work/twin/locastack.yaml": "version: [",
 		});
 		const result = await claimProjectName({ state, files }, app);
 		expect(result.ok).toBe(false);
@@ -94,20 +94,20 @@ describe("container name clashes", () => {
 		cache: { type: "redis" },
 	});
 
-	test("findContainerNameClash reports li-shop-api-db from both sides", async () => {
+	test("findContainerNameClash reports ls-shop-api-db from both sides", async () => {
 		const state = new InMemoryStateStore({
 			projects: [{ name: "shop", root: "/work/shop" }],
 			stacks: {},
 		});
 		const files = new InMemoryFileStore({
-			"/work/shop/locainfra.yaml": shopFile,
+			"/work/shop/locastack.yaml": shopFile,
 		});
 		const clash = await findContainerNameClash(
 			{ state, files },
 			{ name: "shop-api", root: "/work/shop-api", services: ["db", "cache"] },
 		);
 		expect(clash).toEqual({
-			containerName: "li-shop-api-db",
+			containerName: "ls-shop-api-db",
 			service: "db",
 			otherProject: "shop",
 			otherRoot: "/work/shop",
@@ -142,7 +142,7 @@ describe("container name clashes", () => {
 			stacks: {},
 		});
 		const files = new InMemoryFileStore({
-			"/work/shop/locainfra.yaml": "version: [",
+			"/work/shop/locastack.yaml": "version: [",
 		});
 		expect(
 			await findContainerNameClash(
@@ -158,14 +158,14 @@ describe("container name clashes", () => {
 			stacks: {},
 		});
 		const files = new InMemoryFileStore({
-			"/work/shop/locainfra.yaml": shopFile,
+			"/work/shop/locastack.yaml": shopFile,
 		});
 		const result = await claimProjectName({ state, files }, shopApi);
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
 			expect(result.error.code).toBe("INVALID_STACK");
 			expect(result.error.details.reason).toBe("container-name");
-			expect(result.error.message).toContain("li-shop-api-db");
+			expect(result.error.message).toContain("ls-shop-api-db");
 		}
 		expect(state.state.projects).toHaveLength(1);
 	});
@@ -173,7 +173,7 @@ describe("container name clashes", () => {
 	test("containerNameClashError uses the requested code", () => {
 		const error = containerNameClashError(
 			{
-				containerName: "li-a-b-c",
+				containerName: "ls-a-b-c",
 				service: "b-c",
 				otherProject: "a-b",
 				otherRoot: "/w/a-b",

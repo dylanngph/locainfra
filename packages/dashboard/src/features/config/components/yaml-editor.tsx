@@ -5,16 +5,16 @@ export interface YamlEditorProps {
 	readonly onChange: (text: string) => void;
 }
 
-/** Dark `locainfra.yaml` side editor; edits flow back into the form. */
+/** Dark `locastack.yaml` side editor; edits flow back into the form. */
 export function YamlEditor({ value, error, onChange }: YamlEditorProps) {
 	return (
 		<div className="flex flex-col overflow-hidden rounded-card border border-[#262626] bg-[#0a0a0a]">
 			<div className="flex items-center border-[#262626] border-b px-3 py-2 font-mono text-[#a3a3a3] text-[12px]">
-				<span className="flex-1">locainfra.yaml</span>
+				<span className="flex-1">locastack.yaml</span>
 				<span className="font-sans text-[11px]">edits sync both ways</span>
 			</div>
 			<textarea
-				aria-label="locainfra.yaml entry"
+				aria-label="locastack.yaml entry"
 				value={value}
 				spellCheck={false}
 				onChange={(e) => onChange(e.target.value)}

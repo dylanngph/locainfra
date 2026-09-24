@@ -1,4 +1,4 @@
-import type { ServiceDefinition } from "@locainfra/server";
+import type { ServiceDefinition } from "@locastack/server";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileTextIcon, FileUpIcon } from "lucide-react";
@@ -126,7 +126,7 @@ export function ImportDialog({
 						Import docker-compose.yml
 					</DialogTitle>
 					<DialogDescription className="text-[13px]">
-						LocaInfra turns the databases, caches and storage in your compose
+						LocaStack turns the databases, caches and storage in your compose
 						file into managed services.
 					</DialogDescription>
 				</DialogHeader>

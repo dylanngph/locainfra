@@ -6,7 +6,7 @@ import { collectProjectStatus } from "./support/service-status";
 /**
  * Live status of every service of a registered project, in stack file order:
  * the resolved stack (pinned ports; never-started services show port 0)
- * joined with its containers (label `locainfra.stack=<project>`) and their
+ * joined with its containers (label `locastack.stack=<project>`) and their
  * inspect details. A service without a running container whose pinned port
  * is busy, or whose container failed to bind, is `port-conflict` with
  * `problem.suggestedPort` set. Read-only.

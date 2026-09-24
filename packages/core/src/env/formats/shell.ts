@@ -10,7 +10,7 @@ export function quoteShellValue(value: string): string {
 	return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
-/** `export KEY='value'` lines, for `eval "$(locainfra env --format shell)"`. */
+/** `export KEY='value'` lines, for `eval "$(locastack env --format shell)"`. */
 export const shellFormatter: EnvFormatter = {
 	id: "shell",
 	format(vars: EnvVars): string {

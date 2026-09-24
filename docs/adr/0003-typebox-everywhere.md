@@ -5,7 +5,7 @@
 
 ## Context and Problem Statement
 
-Schemas are needed for API models, `locainfra.yaml`, catalog YAML and state. An earlier draft used zod for files and TypeBox for Elysia.
+Schemas are needed for API models, `locastack.yaml`, catalog YAML and state. An earlier draft used zod for files and TypeBox for Elysia.
 
 ## Decision Drivers
 

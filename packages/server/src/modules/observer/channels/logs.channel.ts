@@ -1,4 +1,4 @@
-import type { ContainerStreams, LogLine } from "@locainfra/core";
+import type { ContainerStreams, LogLine } from "@locastack/core";
 import type { ChannelError } from "../observer.model";
 import { later, streamFailure, type Timer } from "./channel.types";
 

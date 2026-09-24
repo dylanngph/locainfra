@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 import { chmodSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { OpError } from "@locainfra/core";
+import { OpError } from "@locastack/core";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { readMigrationFiles } from "drizzle-orm/migrator";
@@ -90,7 +90,7 @@ function lastAppliedMillis(client: Database): number | undefined {
 
 /**
  * The `OpError` for a database whose newest applied migration is newer than
- * every migration this binary ships (an older LocaInfra opening a file that a
+ * every migration this binary ships (an older LocaStack opening a file that a
  * newer one already upgraded).
  *
  * @param dbPath - Database file path.
@@ -99,11 +99,11 @@ function lastAppliedMillis(client: Database): number | undefined {
 function newerDatabaseError(dbPath: string): OpError {
 	return new OpError(
 		"IO",
-		`${dbPath} was created by a newer LocaInfra; update LocaInfra`,
+		`${dbPath} was created by a newer LocaStack; update LocaStack`,
 		{
 			details: {
 				path: dbPath,
-				fix: `Install the newer LocaInfra that last opened ${dbPath}, or move the file aside to start from an empty state.`,
+				fix: `Install the newer LocaStack that last opened ${dbPath}, or move the file aside to start from an empty state.`,
 			},
 		},
 	);
@@ -123,7 +123,7 @@ function backupBeforeUpgrade(client: Database, dbPath: string): string {
  * - Before upgrading a database that already has applied migrations, a copy
  *   is written to `<db>.backup` (0600) with `VACUUM INTO`.
  * - A database whose newest applied migration is newer than every migration
- *   in `migrationsFolder` was written by a newer LocaInfra; it is refused
+ *   in `migrationsFolder` was written by a newer LocaStack; it is refused
  *   untouched instead of being written with an older schema.
  * - Drizzle checks the applied version outside its transaction, so two
  *   processes opening a fresh database can race; the loser's transaction is
@@ -132,7 +132,7 @@ function backupBeforeUpgrade(client: Database, dbPath: string): string {
  * @param input - Connection, path and migrations folder.
  * @returns How many migrations ran and the backup path, if one was written.
  * @throws {OpError} `IO` naming the database, the backup and a fix hint;
- *   `IO` "created by a newer LocaInfra" for a database from a newer release.
+ *   `IO` "created by a newer LocaStack" for a database from a newer release.
  */
 export function applyMigrations(
 	input: ApplyMigrationsInput,
@@ -171,7 +171,7 @@ export function applyMigrations(
 		backupPath === undefined
 			? ""
 			: ` A copy taken before the upgrade is at ${backupPath}.`;
-	const fix = `The migration was rolled back and ${dbPath} is unchanged.${copy} Update LocaInfra, or move ${dbPath} aside to start from an empty state.`;
+	const fix = `The migration was rolled back and ${dbPath} is unchanged.${copy} Update LocaStack, or move ${dbPath} aside to start from an empty state.`;
 	throw new OpError(
 		"IO",
 		`Could not migrate the state database ${dbPath}: ${reason}`,

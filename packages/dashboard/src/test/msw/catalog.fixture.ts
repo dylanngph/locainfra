@@ -1,4 +1,4 @@
-import type { ServiceDefinition } from "@locainfra/server";
+import type { ServiceDefinition } from "@locastack/server";
 
 const health = (test: string[]) => ({ test, interval: "5s", retries: 10 });
 
@@ -166,7 +166,7 @@ export const MOCK_CATALOG: ServiceDefinition[] = [
 		defaultVersion: "latest",
 		port: { container: 9000, default: 9000, range: [9000, 9099] },
 		secrets: ["MINIO_ROOT_PASSWORD"],
-		config: { MINIO_ROOT_USER: { default: "locainfra" } },
+		config: { MINIO_ROOT_USER: { default: "locastack" } },
 		env: {},
 		volumes: [{ name: "data", path: "/data" }],
 		healthcheck: health(["CMD", "mc", "ready", "local"]),

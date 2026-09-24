@@ -12,7 +12,7 @@ const SEED_PATH = new RegExp(SEED_PATH_PATTERN);
  * Normalises a typed seed path: trims it and drops leading `./`.
  *
  * @param input - What the user typed, e.g. `./db/seed.sql`.
- * @returns The path stored in `locainfra.yaml`, e.g. `db/seed.sql` (`""` when empty).
+ * @returns The path stored in `locastack.yaml`, e.g. `db/seed.sql` (`""` when empty).
  */
 export function normalizeSeedPath(input: string): string {
 	return input.trim().replace(/^(?:\.\/)+/, "");

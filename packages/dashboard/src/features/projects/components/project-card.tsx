@@ -1,4 +1,4 @@
-import type { ProjectSummary } from "@locainfra/server";
+import type { ProjectSummary } from "@locastack/server";
 import { CpuIcon, MemoryStickIcon } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";

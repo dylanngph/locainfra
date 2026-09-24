@@ -1,5 +1,5 @@
 import { Option } from "@commander-js/extra-typings";
-import type { EnvFormat } from "@locainfra/core";
+import type { EnvFormat } from "@locastack/core";
 import type { CommandContext, ExitCode } from "../../cli.types";
 import { ExitCode as Exit } from "../../cli.types";
 import type { RootCommand } from "../../root";
@@ -13,7 +13,7 @@ export const ENV_FORMATS = [
 	"json",
 ] as const satisfies readonly EnvFormat[];
 
-/** Parsed flags of `locainfra env`. */
+/** Parsed flags of `locastack env`. */
 export interface EnvCommandOptions {
 	/** Explicit `--format`; when omitted, `json` under `--json`, else `dotenv`. */
 	readonly format?: EnvFormat;
@@ -33,8 +33,8 @@ export function effectiveEnvFormat(options: EnvCommandOptions): EnvFormat {
 }
 
 /**
- * `locainfra env`: print the cwd project's connection variables on stdout, e.g.
- * `eval "$(locainfra env --format shell)"`. The output intentionally contains
+ * `locastack env`: print the cwd project's connection variables on stdout, e.g.
+ * `eval "$(locastack env --format shell)"`. The output intentionally contains
  * credentials; nothing is logged elsewhere.
  *
  * @param ctx - IO and deps loader.
@@ -74,7 +74,7 @@ export function registerEnvCommand(
 	program
 		.command("env")
 		.description(
-			"print connection variables of the project in this folder (nearest locainfra.yaml)",
+			"print connection variables of the project in this folder (nearest locastack.yaml)",
 		)
 		.addOption(
 			new Option("-f, --format <format>", "output format").choices(ENV_FORMATS),

@@ -23,7 +23,7 @@ export const unregisterProject: UnregisterProject = async (deps, input) => {
 		});
 	} catch (cause) {
 		return err(
-			new OpError("IO", "Could not update the LocaInfra project registry", {
+			new OpError("IO", "Could not update the LocaStack project registry", {
 				cause,
 			}),
 		);

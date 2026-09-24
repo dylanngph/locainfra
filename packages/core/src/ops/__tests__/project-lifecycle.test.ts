@@ -13,7 +13,7 @@ describe("upProject", () => {
 		expect(events.at(-1)?.kind).toBe("done");
 		expect(world.lifecycle.upCalls).toEqual([
 			{
-				projectName: "li-shop",
+				projectName: "ls-shop",
 				composeFile: SHOP_COMPOSE,
 				services: ["main-db"],
 				wait: true,
@@ -51,7 +51,7 @@ describe("downProject", () => {
 		);
 		expect(events.at(-1)?.kind).toBe("done");
 		expect(world.lifecycle.downCalls).toEqual([
-			{ projectName: "li-shop", composeFile: SHOP_COMPOSE, volumes: true },
+			{ projectName: "ls-shop", composeFile: SHOP_COMPOSE, volumes: true },
 		]);
 		await collect(downProject(world, { project: "shop" }));
 		expect(world.lifecycle.downCalls[1]?.volumes).toBeUndefined();

@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-/** Props for the LocaInfra mark. Color comes from `currentColor`. */
+/** Props for the LocaStack mark. Color comes from `currentColor`. */
 export interface LogoMarkProps
 	extends Omit<SVGProps<SVGSVGElement>, "children"> {
 	/** Rendered width and height in px. */
@@ -46,7 +46,7 @@ export interface LogoProps {
 	className?: string;
 }
 
-/** Horizontal lockup: mark followed by "LocaInfra" in Geist 600. */
+/** Horizontal lockup: mark followed by "LocaStack" in Geist 600. */
 export function Logo({ size = 20, className }: LogoProps) {
 	const fontSize = Math.round(size * 0.75);
 	return (
@@ -63,7 +63,7 @@ export function Logo({ size = 20, className }: LogoProps) {
 					letterSpacing: fontSize > 24 ? "-0.03em" : "-0.02em",
 				}}
 			>
-				LocaInfra
+				LocaStack
 			</span>
 		</span>
 	);

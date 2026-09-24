@@ -10,7 +10,7 @@ import { checkProjectInput, registerStack } from "./support/registration";
 
 /**
  * Creates the project folder (when missing) and a fresh
- * `<root>/locainfra.yaml` (with the given services, nothing started), then
+ * `<root>/locastack.yaml` (with the given services, nothing started), then
  * registers it.
  *
  * @returns The new stack; `INVALID_INPUT` (bad name, relative root),

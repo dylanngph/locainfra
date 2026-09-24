@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ContainerDetails, isOpError } from "@locainfra/core";
+import { ContainerDetails, isOpError } from "@locastack/core";
 import { Value } from "@sinclair/typebox/value";
 import { mapInspectPorts, toContainerDetails } from "../container-mapper";
 import { DockerClient } from "../docker-client";
@@ -8,7 +8,7 @@ import { FakeTransport } from "./fake-transport";
 /** Trimmed from a recorded `GET /containers/local-infra-redis-1/json`. */
 const inspected = {
 	Id: "42c9520b9437",
-	Name: "/li-shop-cache",
+	Name: "/ls-shop-cache",
 	State: {
 		Status: "running",
 		Running: true,
@@ -20,7 +20,7 @@ const inspected = {
 	},
 	Config: {
 		Image: "redis:7-alpine",
-		Labels: { "locainfra.stack": "shop", "locainfra.service": "cache" },
+		Labels: { "locastack.stack": "shop", "locastack.service": "cache" },
 	},
 	NetworkSettings: {
 		Ports: {
@@ -38,13 +38,13 @@ describe("toContainerDetails", () => {
 		const details = toContainerDetails(inspected);
 		expect(details).toEqual({
 			id: "42c9520b9437",
-			name: "li-shop-cache",
+			name: "ls-shop-cache",
 			image: "redis:7-alpine",
 			state: "running",
 			health: "healthy",
 			startedAt: "2026-09-23T02:39:57.828Z",
 			exitCode: 0,
-			labels: { "locainfra.stack": "shop", "locainfra.service": "cache" },
+			labels: { "locastack.stack": "shop", "locastack.service": "cache" },
 			ports: [{ host: 6380, container: 6379 }],
 		});
 		expect(Value.Check(ContainerDetails, details)).toBe(true);
@@ -53,7 +53,7 @@ describe("toContainerDetails", () => {
 	test("created container with a port bind error", () => {
 		const details = toContainerDetails({
 			Id: "abc",
-			Name: "/li-shop-db",
+			Name: "/ls-shop-db",
 			State: {
 				Status: "created",
 				ExitCode: 128,
@@ -85,13 +85,13 @@ describe("toContainerDetails", () => {
 describe("DockerClient.inspect", () => {
 	test("GETs the encoded id; 404 is null", async () => {
 		const transport = new FakeTransport([
-			["/containers/li-shop-cache/json", () => Response.json(inspected)],
+			["/containers/ls-shop-cache/json", () => Response.json(inspected)],
 		]);
 		const client = new DockerClient(transport);
-		expect((await client.inspect("li-shop-cache"))?.state).toBe("running");
+		expect((await client.inspect("ls-shop-cache"))?.state).toBe("running");
 		expect(await client.inspect("gho st")).toBeNull();
 		expect(transport.calls).toEqual([
-			"/containers/li-shop-cache/json",
+			"/containers/ls-shop-cache/json",
 			"/containers/gho%20st/json",
 		]);
 	});

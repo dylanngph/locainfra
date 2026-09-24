@@ -109,7 +109,7 @@ export interface VolumeArchiver {
 	 * Writes a gzip tar of the volume's contents to `destPath` (its folder is
 	 * created when missing). A failed or aborted run leaves no partial file.
 	 *
-	 * @param volume - Docker volume name (`li-<project>-<service>-<vol>`).
+	 * @param volume - Docker volume name (`ls-<project>-<service>-<vol>`).
 	 * @param destPath - Absolute path of the archive to create.
 	 * @param signal - Aborts the run (the helper container is removed).
 	 */

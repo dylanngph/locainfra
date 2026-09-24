@@ -2,11 +2,11 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** Environment variable overriding the built-in catalog directory. */
-export const CATALOG_DIR_ENV = "LOCAINFRA_CATALOG_DIR";
+export const CATALOG_DIR_ENV = "LOCASTACK_CATALOG_DIR";
 
 /** Inputs of {@link resolveBuiltinCatalogDir}. */
 export interface BuiltinCatalogDirOptions {
-	/** Environment (default `process.env`); `LOCAINFRA_CATALOG_DIR` wins when set. */
+	/** Environment (default `process.env`); `LOCASTACK_CATALOG_DIR` wins when set. */
 	readonly env?: Readonly<Record<string, string | undefined>>;
 	/**
 	 * Directory holding the catalog `*.yaml` files shipped inside a compiled
@@ -43,7 +43,7 @@ export function repoCatalogDir(): string {
 
 /**
  * Chooses the built-in catalog directory, in order:
- * 1. `$LOCAINFRA_CATALOG_DIR` (trimmed, resolved against the cwd) when non-empty;
+ * 1. `$LOCASTACK_CATALOG_DIR` (trimmed, resolved against the cwd) when non-empty;
  * 2. `options.embeddedDir` when non-empty (compiled binary; see its docs);
  * 3. the repo `catalog/` folder ({@link repoCatalogDir}).
  *

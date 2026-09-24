@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { type Clock, Progress } from "@locainfra/core";
+import { type Clock, Progress } from "@locastack/core";
 import { Value } from "@sinclair/typebox/value";
 import type {
 	CommandRunner,
@@ -14,7 +14,7 @@ import {
 } from "../compose-runner";
 
 const target = {
-	projectName: "li-shop",
+	projectName: "ls-shop",
 	composeFile: "/tmp/li/stacks/shop/docker-compose.yml",
 };
 const clock: Clock = { now: () => new Date("2026-09-23T00:00:00.000Z") };
@@ -26,7 +26,7 @@ const PREFIX = [
 	"--progress",
 	"plain",
 	"-p",
-	"li-shop",
+	"ls-shop",
 	"-f",
 	"/tmp/li/stacks/shop/docker-compose.yml",
 ];
@@ -77,12 +77,12 @@ describe("argv builders", () => {
 			"--",
 			"cache",
 		]);
-		expect(volumeRemoveArgv("docker", ["li-shop-cache-data"])).toEqual([
+		expect(volumeRemoveArgv("docker", ["ls-shop-cache-data"])).toEqual([
 			"docker",
 			"volume",
 			"rm",
 			"--force",
-			"li-shop-cache-data",
+			"ls-shop-cache-data",
 		]);
 	});
 });
@@ -91,7 +91,7 @@ describe("ComposeRunner start / stop / restart", () => {
 	for (const action of ["start", "stop", "restart"] as const) {
 		test(`${action} runs compose ${action} for the named services and streams progress`, async () => {
 			const runner = scripted({
-				stderr: ` Container li-shop-main-db  ${action === "stop" ? "Stopping" : "Starting"}\n Container li-shop-main-db  Done\n`,
+				stderr: ` Container ls-shop-main-db  ${action === "stop" ? "Stopping" : "Starting"}\n Container ls-shop-main-db  Done\n`,
 			});
 			const compose = new ComposeRunner({ runner, clock });
 			const events = await collect(
@@ -117,7 +117,7 @@ describe("ComposeRunner start / stop / restart", () => {
 	test("a port conflict on start is classified", async () => {
 		const runner = scripted({
 			stderr:
-				"Error response from daemon: driver failed programming external connectivity on endpoint li-shop-main-db: Bind for 127.0.0.1:5432 failed: port is already allocated\n",
+				"Error response from daemon: driver failed programming external connectivity on endpoint ls-shop-main-db: Bind for 127.0.0.1:5432 failed: port is already allocated\n",
 			exitCode: 1,
 		});
 		const events = await collect(
@@ -136,7 +136,7 @@ describe("ComposeRunner start / stop / restart", () => {
 
 describe("ComposeRunner.remove", () => {
 	test("removes containers only when no volumes are listed", async () => {
-		const runner = scripted({ stderr: " Container li-shop-cache  Removed\n" });
+		const runner = scripted({ stderr: " Container ls-shop-cache  Removed\n" });
 		const events = await collect(
 			new ComposeRunner({ runner, clock }).remove({
 				...target,
@@ -151,14 +151,14 @@ describe("ComposeRunner.remove", () => {
 
 	test("then deletes the listed volumes, ending with exactly one done", async () => {
 		const runner = scripted(
-			{ stderr: " Container li-shop-cache  Removed\n" },
-			{ stdout: "li-shop-cache-data\n" },
+			{ stderr: " Container ls-shop-cache  Removed\n" },
+			{ stdout: "ls-shop-cache-data\n" },
 		);
 		const events = await collect(
 			new ComposeRunner({ runner, clock }).remove({
 				...target,
 				services: ["cache"],
-				volumes: ["li-shop-cache-data"],
+				volumes: ["ls-shop-cache-data"],
 			}),
 		);
 		expect(runner.calls[1]).toEqual([
@@ -166,29 +166,29 @@ describe("ComposeRunner.remove", () => {
 			"volume",
 			"rm",
 			"--force",
-			"li-shop-cache-data",
+			"ls-shop-cache-data",
 		]);
 		expect(events.map((e) => e.kind)).toEqual(["log", "step", "log", "done"]);
 		expect(events.filter((e) => e.kind === "done")).toHaveLength(1);
 	});
 
 	test("then deletes the network after the volumes, ending with one done", async () => {
-		const runner = scripted({}, { stdout: "li-shop-cache-data\n" }, {});
+		const runner = scripted({}, { stdout: "ls-shop-cache-data\n" }, {});
 		const events = await collect(
 			new ComposeRunner({ runner, clock }).remove({
 				...target,
 				services: ["cache"],
-				volumes: ["li-shop-cache-data"],
-				networks: ["li-shop"],
+				volumes: ["ls-shop-cache-data"],
+				networks: ["ls-shop"],
 			}),
 		);
-		expect(runner.calls[2]).toEqual(networkRemoveArgv("docker", ["li-shop"]));
+		expect(runner.calls[2]).toEqual(networkRemoveArgv("docker", ["ls-shop"]));
 		expect(runner.calls[2]).toEqual([
 			"docker",
 			"network",
 			"rm",
 			"--force",
-			"li-shop",
+			"ls-shop",
 		]);
 		expect(events.filter((e) => e.kind === "done")).toHaveLength(1);
 		expect(events.at(-1)?.kind).toBe("done");
@@ -200,7 +200,7 @@ describe("ComposeRunner.remove", () => {
 			new ComposeRunner({ runner, clock }).remove({
 				...target,
 				services: ["cache"],
-				networks: ["li-shop"],
+				networks: ["ls-shop"],
 			}),
 		);
 		expect(runner.calls).toHaveLength(2);
@@ -223,10 +223,10 @@ describe("ComposeRunner.remove", () => {
 
 	test("a busy network is logged, not fatal: the run still ends with done", async () => {
 		const runner = scripted(
-			{ stderr: " Container li-shop-redis  Removed\n" },
+			{ stderr: " Container ls-shop-redis  Removed\n" },
 			{
 				stderr:
-					"Error response from daemon: error while removing network: network li-shop id 1234 has active endpoints\n",
+					"Error response from daemon: error while removing network: network ls-shop id 1234 has active endpoints\n",
 				exitCode: 1,
 			},
 		);
@@ -234,7 +234,7 @@ describe("ComposeRunner.remove", () => {
 			new ComposeRunner({ runner, clock }).remove({
 				...target,
 				services: ["redis"],
-				networks: ["li-shop"],
+				networks: ["ls-shop"],
 			}),
 		);
 		expect(runner.calls).toHaveLength(2);
@@ -242,13 +242,13 @@ describe("ComposeRunner.remove", () => {
 		expect(events.filter((e) => e.kind === "done")).toHaveLength(1);
 		expect(events.at(-1)).toMatchObject({
 			kind: "done",
-			message: "docker compose rm finished; network li-shop kept",
+			message: "docker compose rm finished; network ls-shop kept",
 		});
 		expect(
 			events.some(
 				(e) =>
 					e.kind === "log" &&
-					e.message.startsWith("Network li-shop was not deleted"),
+					e.message.startsWith("Network ls-shop was not deleted"),
 			),
 		).toBe(true);
 	});
@@ -263,7 +263,7 @@ describe("ComposeRunner.remove", () => {
 			new ComposeRunner({ runner, clock }).remove({
 				...target,
 				services: ["cache"],
-				volumes: ["li-shop-cache-data"],
+				volumes: ["ls-shop-cache-data"],
 			}),
 		);
 		expect(runner.calls).toHaveLength(1);
@@ -275,7 +275,7 @@ describe("ComposeRunner.remove", () => {
 			{},
 			{
 				stderr:
-					"Error response from daemon: remove li-shop-cache-data: volume is in use\n",
+					"Error response from daemon: remove ls-shop-cache-data: volume is in use\n",
 				exitCode: 1,
 			},
 		);
@@ -283,7 +283,7 @@ describe("ComposeRunner.remove", () => {
 			new ComposeRunner({ runner, clock }).remove({
 				...target,
 				services: ["cache"],
-				volumes: ["li-shop-cache-data"],
+				volumes: ["ls-shop-cache-data"],
 			}),
 		);
 		expect(events.at(-1)?.kind).toBe("error");

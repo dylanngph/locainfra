@@ -1,6 +1,6 @@
 import { type Static, Type } from "@sinclair/typebox";
 
-/** A project folder registered with LocaInfra. */
+/** A project folder registered with LocaStack. */
 export const ProjectEntry = Type.Object({
 	name: Type.String({ description: "Stack name of the project" }),
 	root: Type.String({ description: "Absolute path of the project folder" }),
@@ -29,13 +29,13 @@ export const RegistryState = Type.Object({
 /** Registry cache metadata. */
 export type RegistryState = Static<typeof RegistryState>;
 
-/** Machine-local state (stored in `locainfra.db`; also the legacy `state.json` shape). Missing collections default to empty on parse. */
+/** Machine-local state (stored in `locastack.db`; also the legacy `state.json` shape). Missing collections default to empty on parse. */
 export const StateFile = Type.Object({
 	projects: Type.Array(ProjectEntry, { default: [] }),
 	stacks: Type.Record(Type.String(), StackState, { default: {} }),
 	registry: Type.Optional(RegistryState),
 });
-/** Machine-local state (projects, pinned ports), persisted in `~/.locainfra/locainfra.db`. */
+/** Machine-local state (projects, pinned ports), persisted in `~/.locastack/locastack.db`. */
 export type StateFile = Static<typeof StateFile>;
 
 /**

@@ -9,9 +9,9 @@ services:
 `;
 
 describe("discoverStack", () => {
-	test("walks up from cwd to the nearest locainfra.yaml", async () => {
+	test("walks up from cwd to the nearest locastack.yaml", async () => {
 		const files = new InMemoryFileStore({
-			"/work/shop/locainfra.yaml": projectYaml,
+			"/work/shop/locastack.yaml": projectYaml,
 		});
 		const result = await discoverStack(
 			{ files },
@@ -21,7 +21,7 @@ describe("discoverStack", () => {
 		expect(result.value).toMatchObject({
 			name: "shop",
 			root: "/work/shop",
-			filePath: "/work/shop/locainfra.yaml",
+			filePath: "/work/shop/locastack.yaml",
 		});
 		expect(result.value.file.services.db?.port).toBe(5433);
 	});
@@ -40,7 +40,7 @@ describe("discoverStack", () => {
 
 	test("an invalid stack file is INVALID_STACK", async () => {
 		const files = new InMemoryFileStore({
-			"/work/bad/locainfra.yaml": "version: 2\nname: Bad Name\n",
+			"/work/bad/locastack.yaml": "version: 2\nname: Bad Name\n",
 		});
 		const result = await discoverStack({ files }, { cwd: "/work/bad" });
 		expect(result.ok).toBe(false);

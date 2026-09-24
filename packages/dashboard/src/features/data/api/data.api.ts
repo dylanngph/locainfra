@@ -36,7 +36,7 @@ export type {
 	DataObject,
 	DataObjects,
 	DataQueryResult,
-} from "@locainfra/server";
+} from "@locastack/server";
 
 /**
  * Query of the object list. Under the service's key, so Refresh refetches it;

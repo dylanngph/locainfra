@@ -1,4 +1,4 @@
-import type { StatsSample } from "@locainfra/core";
+import type { StatsSample } from "@locastack/core";
 
 type JsonObject = Record<string, unknown>;
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import type { Progress } from "@locainfra/core";
-import { InMemoryOpJournal } from "@locainfra/core/testing";
+import type { Progress } from "@locastack/core";
+import { InMemoryOpJournal } from "@locastack/core/testing";
 import { OpRegistry } from "../op-registry";
 
 /** A controllable progress stream: push events, then end it. */

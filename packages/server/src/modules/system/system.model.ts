@@ -1,11 +1,11 @@
-import { SystemInfo } from "@locainfra/core";
+import { SystemInfo } from "@locastack/core";
 import { t } from "elysia";
 
 /** `GET /api/system` response: Docker/compose versions plus the dashboard's own version. */
 export const SystemStatus = t.Composite([
 	SystemInfo,
 	t.Object({
-		dashboardVersion: t.String({ description: "LocaInfra version" }),
+		dashboardVersion: t.String({ description: "LocaStack version" }),
 	}),
 ]);
 /** `GET /api/system` response. */

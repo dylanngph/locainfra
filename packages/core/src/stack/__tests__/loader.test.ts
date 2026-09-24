@@ -3,7 +3,7 @@ import { MemoryFiles } from "../../catalog/__tests__/memory-files";
 import { loadStack, parseStackFile, stackErrorToOpError } from "../loader";
 import { StackError } from "../stack.model";
 
-const SHOP = `# yaml-language-server: $schema=https://locainfra.dev/schema/v1.json
+const SHOP = `# yaml-language-server: $schema=https://locastack.dev/schema/v1.json
 version: 1
 name: shop
 services:
@@ -18,7 +18,7 @@ link:
 
 describe("parseStackFile", () => {
 	test("parses named instances", () => {
-		const result = parseStackFile(SHOP, "/p/locainfra.yaml");
+		const result = parseStackFile(SHOP, "/p/locastack.yaml");
 		if (!result.ok) throw result.error;
 		expect(result.value).toEqual({
 			version: 1,
@@ -59,17 +59,17 @@ describe("parseStackFile", () => {
 	test("reports every issue with file:line:col and pointer", () => {
 		const result = parseStackFile(
 			"version: 2\nname: Bad Name\nservices:\n  Pg: { type: postgres }\n  cache: { type: redis, port: 70000 }\n  nope: { port: 1 }\n",
-			"/p/locainfra.yaml",
+			"/p/locastack.yaml",
 		);
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
-		expect(result.error.filePath).toBe("/p/locainfra.yaml");
+		expect(result.error.filePath).toBe("/p/locastack.yaml");
 		expect(result.error.issues).toEqual([
-			"/p/locainfra.yaml:1:1: /version: must be 1",
-			"/p/locainfra.yaml:2:1: /name: must match ^[a-z][a-z0-9-]*$",
-			'/p/locainfra.yaml:5:25: /services/cache/port: must be one of: integer, "auto"',
-			"/p/locainfra.yaml:6:3: /services/nope/type: is required",
-			"/p/locainfra.yaml:4:3: /services/Pg: invalid key; keys must match ^[a-z][a-z0-9-]*$",
+			"/p/locastack.yaml:1:1: /version: must be 1",
+			"/p/locastack.yaml:2:1: /name: must match ^[a-z][a-z0-9-]*$",
+			'/p/locastack.yaml:5:25: /services/cache/port: must be one of: integer, "auto"',
+			"/p/locastack.yaml:6:3: /services/nope/type: is required",
+			"/p/locastack.yaml:4:3: /services/Pg: invalid key; keys must match ^[a-z][a-z0-9-]*$",
 		]);
 	});
 
@@ -82,18 +82,18 @@ describe("parseStackFile", () => {
 
 describe("loadStack", () => {
 	test("wraps a project stack with its root", async () => {
-		const files = new MemoryFiles({ "/p/locainfra.yaml": SHOP });
+		const files = new MemoryFiles({ "/p/locastack.yaml": SHOP });
 		const result = await loadStack(files, {
-			filePath: "/p/locainfra.yaml",
+			filePath: "/p/locastack.yaml",
 			root: "/p",
 		});
 		if (!result.ok) throw result.error;
 		expect(result.value).toMatchObject({
 			name: "shop",
 			root: "/p",
-			filePath: "/p/locainfra.yaml",
+			filePath: "/p/locastack.yaml",
 		});
-		const defaulted = await loadStack(files, { filePath: "/p/locainfra.yaml" });
+		const defaulted = await loadStack(files, { filePath: "/p/locastack.yaml" });
 		expect(defaulted.ok && defaulted.value.root).toBe("/p");
 	});
 

@@ -90,8 +90,8 @@ describe("Config page: Regenerate and Seed file", () => {
 		);
 		const chosen = (password as HTMLInputElement).value;
 		expect(chosen).not.toBe(first);
-		// Secrets never go into locainfra.yaml.
-		const editor = screen.getByLabelText("locainfra.yaml entry");
+		// Secrets never go into locastack.yaml.
+		const editor = screen.getByLabelText("locastack.yaml entry");
 		expect((editor as HTMLTextAreaElement).value).not.toContain(chosen);
 
 		await user.click(screen.getByRole("button", { name: "Add & start" }));
@@ -129,7 +129,7 @@ describe("Config page: Regenerate and Seed file", () => {
 		);
 		await user.clear(seed);
 		await user.type(seed, "./db/seed.sql");
-		const editor = screen.getByLabelText("locainfra.yaml entry");
+		const editor = screen.getByLabelText("locastack.yaml entry");
 		expect((editor as HTMLTextAreaElement).value).toContain(
 			"seed: db/seed.sql",
 		);

@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { SocketLocator } from "@locainfra/core";
+import type { SocketLocator } from "@locastack/core";
 import {
 	BunCommandRunner,
 	type CommandRunner,

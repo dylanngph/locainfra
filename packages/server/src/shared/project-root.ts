@@ -1,5 +1,5 @@
 import { dirname, isAbsolute, join, resolve, sep } from "node:path";
-import { type FileStore, OpError, type Paths } from "@locainfra/core";
+import { type FileStore, OpError, type Paths } from "@locastack/core";
 
 /** Ports {@link checkProjectRoot} reads. */
 export interface ProjectRootPorts {

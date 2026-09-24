@@ -12,7 +12,7 @@ import {
 
 let dir: string;
 beforeAll(async () => {
-	dir = await mkdtemp(join(tmpdir(), "locainfra-dash-"));
+	dir = await mkdtemp(join(tmpdir(), "locastack-dash-"));
 });
 afterAll(async () => {
 	await rm(dir, { recursive: true, force: true });

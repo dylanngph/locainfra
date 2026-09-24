@@ -1,4 +1,4 @@
-import type { ServiceDetail } from "@locainfra/server";
+import type { ServiceDetail } from "@locastack/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DownloadIcon, Loader2Icon } from "lucide-react";
 import { useState } from "react";

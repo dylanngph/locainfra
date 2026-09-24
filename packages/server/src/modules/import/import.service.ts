@@ -6,7 +6,7 @@ import {
 	PROJECT_STACK_FILE_NAME,
 	type PreviewImportDeps,
 	type StateReader,
-} from "@locainfra/core";
+} from "@locastack/core";
 import type { ServerOps, ServerPorts } from "../../deps";
 import type { OpAccepted } from "../../models/common.model";
 import { checkProjectRoot } from "../../shared/project-root";
@@ -68,10 +68,10 @@ export class ImportService {
 	}
 
 	/**
-	 * Creates the project from the reviewed preview (folder, `locainfra.yaml`,
+	 * Creates the project from the reviewed preview (folder, `locastack.yaml`,
 	 * secrets, registration, optional start) as a long-running operation.
 	 * Pre-checks: the folder rules of New project, a free project name, no
-	 * existing `locainfra.yaml` in the folder, and at least one importable
+	 * existing `locastack.yaml` in the folder, and at least one importable
 	 * item with unique instance names.
 	 *
 	 * @param body - Name, folder, items and start flag.

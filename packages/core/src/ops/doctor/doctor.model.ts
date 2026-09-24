@@ -22,7 +22,7 @@ export const DoctorCheck = Type.Object({
 /** One diagnostic check performed by `doctor`. */
 export type DoctorCheck = Static<typeof DoctorCheck>;
 
-/** Full doctor report (served by `GET /api/doctor`, printed by `locainfra doctor`). */
+/** Full doctor report (served by `GET /api/doctor`, printed by `locastack doctor`). */
 export const DoctorReport = Type.Object({
 	ok: Type.Boolean({ description: "True when no check has status `fail`" }),
 	checks: Type.Array(DoctorCheck),

@@ -19,7 +19,7 @@ import {
 	type Snapshot,
 	type SnapshotRecord,
 	type Stack,
-} from "@locainfra/core";
+} from "@locastack/core";
 import {
 	createProjectStack,
 	createTestPaths,
@@ -43,7 +43,7 @@ import {
 	postgresDefinition,
 	SequentialSecretGenerator,
 	StaticCatalogSource,
-} from "@locainfra/core/testing";
+} from "@locastack/core/testing";
 import type { ServerDeps } from "../../app";
 import type { ServerOps, ServerPorts } from "../../deps";
 
@@ -64,7 +64,7 @@ export const stack: Stack = createProjectStack(PROJECT, {
 /** Status of {@link PROJECT}. */
 export const status: ProjectStatus = {
 	project: PROJECT,
-	network: `li-${PROJECT}`,
+	network: `ls-${PROJECT}`,
 	services: [
 		{
 			name: "main-db",
@@ -73,7 +73,7 @@ export const status: ProjectStatus = {
 			image: "postgres:17-alpine",
 			hostPort: 5433,
 			containerPort: 5432,
-			containerName: `li-${PROJECT}-main-db`,
+			containerName: `ls-${PROJECT}-main-db`,
 			containerId: CONTAINER,
 			persist: "volume",
 			state: "running",
@@ -86,12 +86,12 @@ export const status: ProjectStatus = {
 /** Detail of `main-db`. */
 export const detail: ServiceDetail = {
 	...(status.services[0] as ProjectStatus["services"][number]),
-	network: `li-${PROJECT}`,
+	network: `ls-${PROJECT}`,
 	config: { POSTGRES_USER: "postgres", POSTGRES_DB: "shop" },
 	secretNames: ["POSTGRES_PASSWORD"],
 	volumes: [
 		{
-			name: `li-${PROJECT}-main-db-data`,
+			name: `ls-${PROJECT}-main-db-data`,
 			source: "data",
 			path: "/var/lib/postgresql/data",
 		},
@@ -174,7 +174,7 @@ export const snapshotRecord: SnapshotRecord = {
 	project: PROJECT,
 	service: "main-db",
 	name: "clean-seed",
-	path: `/home/test/.locainfra/snapshots/${PROJECT}/main-db/${SNAPSHOT_ID}.tgz`,
+	path: `/home/test/.locastack/snapshots/${PROJECT}/main-db/${SNAPSHOT_ID}.tgz`,
 	sizeBytes: 12_000_000,
 	createdAt: "2026-09-22T08:00:00.000Z",
 };

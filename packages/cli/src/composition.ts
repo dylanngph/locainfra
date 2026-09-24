@@ -42,28 +42,28 @@ import {
 	updateService,
 	upProject,
 	upStack,
-} from "@locainfra/core";
+} from "@locastack/core";
 import {
 	createEngines,
 	type Engines,
 	resolveBuiltinCatalogDir,
 	resolveDefaultPaths,
-} from "@locainfra/engines";
-import type { ServerOps, ServerPorts } from "@locainfra/server";
+} from "@locastack/engines";
+import type { ServerOps, ServerPorts } from "@locastack/server";
 import { version } from "../package.json";
 import type { CliDeps, DashboardLauncher } from "./cli.types";
 
 /** Environment variable overriding the built dashboard folder. */
-export const DASHBOARD_DIR_ENV = "LOCAINFRA_DASHBOARD_DIR";
+export const DASHBOARD_DIR_ENV = "LOCASTACK_DASHBOARD_DIR";
 
 /** Extra `host:port` values the dashboard accepts (comma-separated), e.g. a Vite dev server. */
-export const EXTRA_HOSTS_ENV = "LOCAINFRA_EXTRA_HOSTS";
+export const EXTRA_HOSTS_ENV = "LOCASTACK_EXTRA_HOSTS";
 
 /**
  * Fixed session token for automation (e2e tests); a random one is generated
  * when unset. Must be at least {@link MIN_SESSION_TOKEN_LENGTH} characters.
  */
-export const SESSION_TOKEN_ENV = "LOCAINFRA_SESSION_TOKEN";
+export const SESSION_TOKEN_ENV = "LOCASTACK_SESSION_TOKEN";
 
 /** Shortest accepted {@link SESSION_TOKEN_ENV} value. */
 export const MIN_SESSION_TOKEN_LENGTH = 16;
@@ -79,7 +79,7 @@ export type CompositionEnv = Readonly<Record<string, string | undefined>>;
 
 /** Overrides for {@link composeDeps} (tests and alternative entry points). */
 export interface ComposeDepsOptions {
-	/** Environment for `LOCAINFRA_HOME` / `LOCAINFRA_CATALOG_DIR` / `LOCAINFRA_DASHBOARD_DIR` (default `process.env`). */
+	/** Environment for `LOCASTACK_HOME` / `LOCASTACK_CATALOG_DIR` / `LOCASTACK_DASHBOARD_DIR` (default `process.env`). */
 	readonly env?: CompositionEnv;
 	/** Home directory (default `os.homedir()`). */
 	readonly home?: string;
@@ -130,7 +130,7 @@ function embeddedCandidates(relativeDir: string): string[] {
 
 /**
  * Directory of the built-in catalog, read in place by the catalog loader:
- * `$LOCAINFRA_CATALOG_DIR` (resolved against the cwd), else the compiled
+ * `$LOCASTACK_CATALOG_DIR` (resolved against the cwd), else the compiled
  * binary's embedded `/$bunfs/root/catalog` when it exists, else the repo
  * `catalog/`. Nothing is copied: the loader lists `/$bunfs` through `node:fs`.
  *
@@ -155,7 +155,7 @@ export function repoDashboardDir(): string {
 }
 
 /**
- * Picks the built SPA folder to serve: `$LOCAINFRA_DASHBOARD_DIR`, else the
+ * Picks the built SPA folder to serve: `$LOCASTACK_DASHBOARD_DIR`, else the
  * compiled binary's embedded copy (`/$bunfs/root/dist`, see
  * {@link embeddedRoot}) when it has an `index.html`, else `packages/dashboard/dist` when built, else `undefined`
  * (development: the Vite dev server serves the SPA).
@@ -267,8 +267,8 @@ export interface DashboardLauncherOptions {
 }
 
 /**
- * The real {@link DashboardLauncher}. `@locainfra/server` (Elysia) is
- * imported only when bare `locainfra` actually probes or starts a server, so
+ * The real {@link DashboardLauncher}. `@locastack/server` (Elysia) is
+ * imported only when bare `locastack` actually probes or starts a server, so
  * `up`/`down`/`env`/`doctor` never load it.
  *
  * @param options - Adapters, catalog, SPA source and environment.
@@ -288,7 +288,7 @@ export function createDashboardLauncher(
 	];
 	return {
 		async findRunning() {
-			const { probeDashboard } = await import("@locainfra/server");
+			const { probeDashboard } = await import("@locastack/server");
 			const running = await probeDashboard(file);
 			return running === null
 				? null
@@ -308,7 +308,7 @@ export function createDashboardLauncher(
 				: randomBytes(24).toString("base64url");
 		},
 		async start({ port, token }) {
-			const { startServer } = await import("@locainfra/server");
+			const { startServer } = await import("@locastack/server");
 			const server = await startServer({
 				port,
 				token,

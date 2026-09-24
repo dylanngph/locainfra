@@ -1,4 +1,4 @@
-import { isOpError } from "@locainfra/core";
+import { isOpError } from "@locastack/core";
 import { Elysia } from "elysia";
 import {
 	isTimeoutError,

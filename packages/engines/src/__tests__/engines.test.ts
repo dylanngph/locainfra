@@ -19,14 +19,14 @@ import type {
 	UpProjectDeps,
 	UpStackDeps,
 	VolumeArchiver,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { createEngines } from "../engines";
 import { resolveDefaultPaths } from "../paths/default-paths";
 
 describe("createEngines", () => {
 	test("wires every adapter under the op-deps field names", () => {
 		const paths = resolveDefaultPaths({
-			env: { LOCAINFRA_HOME: "/tmp/li-test" },
+			env: { LOCASTACK_HOME: "/tmp/ls-test" },
 		});
 		const engines = createEngines(paths);
 		expect(engines.paths).toBe(paths);

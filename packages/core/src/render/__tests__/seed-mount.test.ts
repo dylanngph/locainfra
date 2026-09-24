@@ -61,7 +61,7 @@ describe("seed file bind mount", () => {
 			},
 		}),
 		root: "/Users/dev/Developer/shop",
-		filePath: "/Users/dev/Developer/shop/locainfra.yaml",
+		filePath: "/Users/dev/Developer/shop/locastack.yaml",
 	};
 
 	test("golden: read-only long-syntax bind after the data volume", () => {
@@ -94,7 +94,7 @@ describe("seed file bind mount", () => {
 		});
 		expect(plain.services[0]?.seed).toBeUndefined();
 		expect(toComposeDocument(plain).services["main-db"]?.volumes).toEqual([
-			"li-shop-main-db-data:/var/lib/postgresql/data",
+			"ls-shop-main-db-data:/var/lib/postgresql/data",
 		]);
 	});
 

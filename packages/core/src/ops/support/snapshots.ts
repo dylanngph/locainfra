@@ -40,7 +40,7 @@ export interface SnapshotTarget {
 	readonly entry: StackServiceEntry;
 	/** Its catalog definition. */
 	readonly definition: ServiceDefinition;
-	/** Docker volume name, `li-<project>-<service>-<vol>`. */
+	/** Docker volume name, `ls-<project>-<service>-<vol>`. */
 	readonly volume: string;
 	/** Rendered compose project. */
 	readonly compose: ComposeTarget;

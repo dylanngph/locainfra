@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { type Clock, Progress } from "@locainfra/core";
+import { type Clock, Progress } from "@locastack/core";
 import { Value } from "@sinclair/typebox/value";
 import type {
 	CommandRunner,
@@ -9,7 +9,7 @@ import type {
 import { ComposeRunner, upArgs } from "../compose-runner";
 
 const target = {
-	projectName: "li-demo",
+	projectName: "ls-demo",
 	composeFile: "/tmp/li/docker-compose.yml",
 };
 const clock: Clock = { now: () => new Date("2026-09-23T00:00:00.000Z") };
@@ -90,7 +90,7 @@ describe("ComposeRunner.up", () => {
 			"--progress",
 			"plain",
 			"-p",
-			"li-demo",
+			"ls-demo",
 			"-f",
 			"/tmp/li/docker-compose.yml",
 			"up",
@@ -107,7 +107,7 @@ describe("ComposeRunner.up", () => {
 	test("streams log lines then a single done event", async () => {
 		const runner = scripted(
 			"",
-			" Network li-demo  Creating\n Network li-demo  Created\r\n\n Container li-demo-redis-1  Started",
+			" Network ls-demo  Creating\n Network ls-demo  Created\r\n\n Container ls-demo-redis-1  Started",
 			0,
 		);
 		const events = await collect(
@@ -116,7 +116,7 @@ describe("ComposeRunner.up", () => {
 		expect(events.map((e) => e.kind)).toEqual(["log", "log", "log", "done"]);
 		expect(events[0]).toEqual({
 			kind: "log",
-			message: "Network li-demo  Creating",
+			message: "Network ls-demo  Creating",
 			at: "2026-09-23T00:00:00.000Z",
 		});
 	});
@@ -124,7 +124,7 @@ describe("ComposeRunner.up", () => {
 	test("ends with a typed PORT_CONFLICT error", async () => {
 		const runner = scripted(
 			"",
-			" Container li-demo-postgres-1  Starting\nError response from daemon: Bind for 127.0.0.1:5432 failed: port is already allocated\n",
+			" Container ls-demo-postgres-1  Starting\nError response from daemon: Bind for 127.0.0.1:5432 failed: port is already allocated\n",
 			1,
 		);
 		const events = await collect(

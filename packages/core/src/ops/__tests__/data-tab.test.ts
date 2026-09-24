@@ -44,7 +44,7 @@ describe("listDataObjects", () => {
 			},
 		});
 		const [call] = world.exec.calls;
-		expect(call?.containerId).toBe("li-shop-main-db");
+		expect(call?.containerId).toBe("ls-shop-main-db");
 		expect(call?.argv).toEqual([
 			"psql",
 			"-X",
@@ -199,9 +199,9 @@ describe("runQuery", () => {
 
 	test("a never-started service elsewhere in the project does not block queries", async () => {
 		const world = dataWorld();
-		const text = world.files.files.get("/work/shop/locainfra.yaml") ?? "";
+		const text = world.files.files.get("/work/shop/locastack.yaml") ?? "";
 		world.files.files.set(
-			"/work/shop/locainfra.yaml",
+			"/work/shop/locastack.yaml",
 			text.replace("link:", "  later: { type: postgres }\nlink:"),
 		);
 		world.exec.scripts.set("psql", { stdout: "n\n1\n" });
@@ -360,7 +360,7 @@ describe("runQuery", () => {
 			"COUNT",
 			"100",
 		]);
-		expect(world.exec.calls[0]?.containerId).toBe("li-shop-cache");
+		expect(world.exec.calls[0]?.containerId).toBe("ls-shop-cache");
 
 		world.exec.scripts.set("redis-cli", { stdout: '"a","b","c"\n' });
 		const limited = await runQuery(world, {

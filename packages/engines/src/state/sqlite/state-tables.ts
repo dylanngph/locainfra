@@ -3,7 +3,7 @@ import type {
 	RegistryState,
 	StackState,
 	StateFile,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { asc, eq, inArray, sql } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import type * as schema from "./schema";

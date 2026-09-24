@@ -118,7 +118,7 @@ describe("ServiceDefinition schema", () => {
 			$id: string;
 			type: string;
 		};
-		expect(json.$id).toBe("https://locainfra.dev/schema/service.v1.json");
+		expect(json.$id).toBe("https://locastack.dev/schema/service.v1.json");
 		expect(json.type).toBe("object");
 	});
 });

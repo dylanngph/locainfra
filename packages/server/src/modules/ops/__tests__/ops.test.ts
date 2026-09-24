@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { Progress } from "@locainfra/core";
+import type { Progress } from "@locastack/core";
 import {
 	createTestDeps,
 	HOST,
@@ -54,7 +54,7 @@ function setup() {
 			new Request(`http://${HOST}${path}`, {
 				headers: {
 					host: HOST,
-					...(token ? { "x-locainfra-token": token } : {}),
+					...(token ? { "x-locastack-token": token } : {}),
 				},
 			}),
 		);

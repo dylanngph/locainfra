@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import { renderApp } from "@/test/render-app";
 
 describe("App header", () => {
-	it("renders the LocaInfra mark, not the rotated-square placeholder", async () => {
+	it("renders the LocaStack mark, not the rotated-square placeholder", async () => {
 		const { container } = renderApp("/");
-		const home = await screen.findByRole("link", { name: "LocaInfra" });
+		const home = await screen.findByRole("link", { name: "LocaStack" });
 		expect(home.querySelector("svg")).not.toBeNull();
 		expect(container.querySelector(".rotate-45")).toBeNull();
 	});
@@ -24,7 +24,7 @@ describe("App header", () => {
 
 	it("toggles the palette with ⌘K / Ctrl+K", async () => {
 		renderApp("/");
-		await screen.findByRole("link", { name: "LocaInfra" });
+		await screen.findByRole("link", { name: "LocaStack" });
 		const press = (init: KeyboardEventInit) => {
 			const event = new KeyboardEvent("keydown", {
 				key: "k",

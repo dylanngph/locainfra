@@ -4,7 +4,7 @@ import {
 	ImportItem,
 	ImportPreview,
 	ResourceName,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { t } from "elysia";
 
 /** `POST /api/import/preview` body: compose text pasted or dropped in the dashboard. */
@@ -31,7 +31,7 @@ export const ImportBody = t.Object({
 	root: t.String({
 		minLength: 1,
 		description:
-			"Absolute project folder (created when missing; must not hold a locainfra.yaml)",
+			"Absolute project folder (created when missing; must not hold a locastack.yaml)",
 	}),
 	items: t.Array(ImportItem, {
 		minItems: 1,

@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type Clock, isOpError, Progress } from "@locainfra/core";
+import { type Clock, isOpError, Progress } from "@locastack/core";
 import { Value } from "@sinclair/typebox/value";
 import type {
 	CommandRunner,
@@ -103,7 +103,7 @@ function writeTemp(dir: string, content: string) {
 
 let dir: string;
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "li-arch-"));
+	dir = mkdtempSync(join(tmpdir(), "ls-arch-"));
 });
 afterEach(() => {
 	rmSync(dir, { recursive: true, force: true });
@@ -125,11 +125,11 @@ describe("DockerVolumeArchiver.archive", () => {
 			owner: "501:20",
 		});
 		const events = await collect(
-			archiver.archive("li-shop-db-data", dest, signal()),
+			archiver.archive("ls-shop-db-data", dest, signal()),
 		);
 		expect(events.map((e) => [e.kind, e.message])).toEqual([
-			["log", "Archiving volume li-shop-db-data"],
-			["done", "Archived volume li-shop-db-data"],
+			["log", "Archiving volume ls-shop-db-data"],
+			["done", "Archived volume ls-shop-db-data"],
 		]);
 		expect(readFileSync(dest, "utf8")).toBe("tgz-bytes");
 		expect(readdirSync(snapDir)).toEqual(["abc.tgz"]);
@@ -141,7 +141,7 @@ describe("DockerVolumeArchiver.archive", () => {
 				"inspect",
 				"--format",
 				"{{.Name}}",
-				"li-shop-db-data",
+				"ls-shop-db-data",
 			],
 			[
 				"docker",
@@ -156,13 +156,13 @@ describe("DockerVolumeArchiver.archive", () => {
 				"run",
 				"--rm",
 				"--name",
-				"li-snapshot-helper-s1",
+				"ls-snapshot-helper-s1",
 				"--label",
-				"io.locainfra.helper=snapshot",
+				"io.locastack.helper=snapshot",
 				"--network",
 				"none",
 				"--mount",
-				"type=volume,src=li-shop-db-data,dst=/from,readonly",
+				"type=volume,src=ls-shop-db-data,dst=/from,readonly",
 				"--mount",
 				`type=bind,src=${snapDir},dst=/to`,
 				SNAPSHOT_HELPER_IMAGE,
@@ -289,7 +289,7 @@ describe("DockerVolumeArchiver.archive", () => {
 			"docker",
 			"rm",
 			"-f",
-			"li-snapshot-helper-s2",
+			"ls-snapshot-helper-s2",
 		]);
 	});
 
@@ -316,7 +316,7 @@ describe("DockerVolumeArchiver.archive", () => {
 			"docker",
 			"rm",
 			"-f",
-			"li-snapshot-helper-s3",
+			"ls-snapshot-helper-s3",
 		]);
 	});
 
@@ -343,7 +343,7 @@ describe("DockerVolumeArchiver.archive", () => {
 			"docker",
 			"rm",
 			"-f",
-			"li-snapshot-helper-s4",
+			"ls-snapshot-helper-s4",
 		]);
 	});
 
@@ -375,24 +375,24 @@ describe("DockerVolumeArchiver.restore", () => {
 			newSuffix: () => "r1",
 		});
 		const events = await collect(
-			archiver.restore("li-shop-db-data", src, signal()),
+			archiver.restore("ls-shop-db-data", src, signal()),
 		);
 		expect(events.map((e) => [e.kind, e.message])).toEqual([
-			["log", "Restoring volume li-shop-db-data"],
-			["done", "Restored volume li-shop-db-data"],
+			["log", "Restoring volume ls-shop-db-data"],
+			["done", "Restored volume ls-shop-db-data"],
 		]);
 		expect(calls.at(-1)).toEqual([
 			"docker",
 			"run",
 			"--rm",
 			"--name",
-			"li-snapshot-helper-r1",
+			"ls-snapshot-helper-r1",
 			"--label",
-			"io.locainfra.helper=snapshot",
+			"io.locastack.helper=snapshot",
 			"--network",
 			"none",
 			"--mount",
-			"type=volume,src=li-shop-db-data,dst=/from",
+			"type=volume,src=ls-shop-db-data,dst=/from",
 			"--mount",
 			`type=bind,src=${dir},dst=/to,readonly`,
 			SNAPSHOT_HELPER_IMAGE,
@@ -434,7 +434,7 @@ describe("DockerVolumeArchiver.restore", () => {
 			"docker",
 			"rm",
 			"-f",
-			"li-snapshot-helper-r2",
+			"ls-snapshot-helper-r2",
 		]);
 	});
 });

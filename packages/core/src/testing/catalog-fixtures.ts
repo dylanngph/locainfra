@@ -227,7 +227,7 @@ export function createProjectStack(
 	return {
 		name,
 		root: `/work/${name}`,
-		filePath: `/work/${name}/locainfra.yaml`,
+		filePath: `/work/${name}/locastack.yaml`,
 		file: { version: 1, name, services, ...extra },
 	};
 }

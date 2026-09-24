@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * `locainfra` binary entry and public surface of `@locainfra/cli`.
+ * `locastack` binary entry and public surface of `@locastack/cli`.
  *
  * The composition root is imported dynamically, so `--version` and `--help`
  * never load engines (plan §6, "plain commands skip the server").

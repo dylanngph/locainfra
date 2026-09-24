@@ -8,7 +8,7 @@ import type { CliIo } from "./cli.types";
 import { theme } from "./ui/theme";
 
 /**
- * Builds the bare `locainfra` program: name, version, global `--json`, the
+ * Builds the bare `locastack` program: name, version, global `--json`, the
  * dashboard flags (`--port`, `--no-open`, `--project`) and output/exit
  * wiring. Subcommands are attached by `createProgram`.
  *
@@ -19,7 +19,7 @@ import { theme } from "./ui/theme";
  * @returns The root command.
  */
 export function createRootCommand(io: CliIo) {
-	return new Command("locainfra")
+	return new Command("locastack")
 		.description(
 			"Dashboard-first local Docker dev services. Run without a command to open the dashboard.",
 		)
@@ -37,7 +37,7 @@ export function createRootCommand(io: CliIo) {
 			"register this folder as a project and open it in the dashboard",
 		)
 		.helpOption("-h, --help", "show help")
-		.showHelpAfterError("(run `locainfra --help` for usage)")
+		.showHelpAfterError("(run `locastack --help` for usage)")
 		.configureOutput({
 			writeOut: (text) => {
 				io.stdout.write(text);

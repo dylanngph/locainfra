@@ -17,13 +17,13 @@ import {
 	isOpError,
 	planStack,
 	type StateFile,
-} from "@locainfra/core";
+} from "@locastack/core";
 import {
 	builtinTestDefinitions,
 	createProjectStack,
 	FakePortProbe,
 	FixedClock,
-} from "@locainfra/core/testing";
+} from "@locastack/core/testing";
 import { OPS_RETENTION_PER_PROJECT } from "../schema";
 import {
 	SCHEMA_VERSION_KEY,
@@ -42,7 +42,7 @@ function store(): SqliteStateStore {
 }
 
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "li-sqlite-"));
+	dir = mkdtempSync(join(tmpdir(), "ls-sqlite-"));
 	stateDir = join(dir, "home");
 });
 afterEach(() => {

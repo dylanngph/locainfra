@@ -22,7 +22,7 @@ const describe = (error: unknown): { title: string; message: string } => {
 		return {
 			title:
 				error.status === 0
-					? "Cannot reach the LocaInfra server"
+					? "Cannot reach the LocaStack server"
 					: "Something went wrong",
 			message: error.message,
 		};

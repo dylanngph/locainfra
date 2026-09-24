@@ -14,7 +14,7 @@ import { classifyContainer } from "./support/service-status";
  * One summary per registered project, in registration order. A project whose
  * folder or file is missing or invalid still appears, with `issue` set and
  * counts at 0. Running / error counts come from the containers labelled
- * `locainfra.stack=<project>` (0 when Docker is unreachable). CPU and memory
+ * `locastack.stack=<project>` (0 when Docker is unreachable). CPU and memory
  * are left out: only the server knows them (observer stats), and only while
  * the project is watched.
  *
@@ -26,7 +26,7 @@ export const listProjects: ListProjects = async (deps) => {
 		state = await deps.state.read();
 	} catch (cause) {
 		return err(
-			ioErrorFrom("Could not read the LocaInfra project registry", cause),
+			ioErrorFrom("Could not read the LocaStack project registry", cause),
 		);
 	}
 	const summaries: ProjectSummary[] = [];

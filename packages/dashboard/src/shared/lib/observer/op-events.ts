@@ -1,4 +1,4 @@
-import type { Progress } from "@locainfra/server";
+import type { Progress } from "@locastack/server";
 import { getSessionToken } from "../session-token";
 import { terminalEvent } from "./observer-state";
 import { useObserverStore } from "./observer-store";
@@ -49,7 +49,7 @@ export async function followOp(
 		try {
 			const token = getSessionToken();
 			const response = await fetch(opEventsUrl(opId), {
-				headers: token ? { "x-locainfra-token": token } : {},
+				headers: token ? { "x-locastack-token": token } : {},
 				...(signal ? { signal } : {}),
 			});
 			if (!response.ok || !response.body) {

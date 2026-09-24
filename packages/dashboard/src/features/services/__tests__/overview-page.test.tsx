@@ -1,4 +1,4 @@
-import type { ServicePatch } from "@locainfra/server";
+import type { ServicePatch } from "@locastack/server";
 import { screen, waitFor, within } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
@@ -17,7 +17,7 @@ describe("Project overview", () => {
 	it("shows every row state", async () => {
 		renderApp("/p/shop-api");
 		expect(
-			await screen.findByText("2 of 4 running on network li-shop-api"),
+			await screen.findByText("2 of 4 running on network ls-shop-api"),
 		).toBeInTheDocument();
 		expect(
 			within(await rowOf("main-db")).getByText("Running"),

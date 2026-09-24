@@ -1,4 +1,4 @@
-import { EnvFormatModel, EnvPreview, LinkEnvResult } from "@locainfra/core";
+import { EnvFormatModel, EnvPreview, LinkEnvResult } from "@locastack/core";
 import { t } from "elysia";
 
 /** `GET /api/projects/:project/env` query (the Environment screen's `fmt` + Reveal switch). */

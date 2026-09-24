@@ -29,7 +29,7 @@ export const ContainerHealth = Type.Union([
 /** Container health as surfaced by Docker. */
 export type ContainerHealth = Static<typeof ContainerHealth>;
 
-/** A published port mapping on the host (always bound to 127.0.0.1 for LocaInfra services). */
+/** A published port mapping on the host (always bound to 127.0.0.1 for LocaStack services). */
 export const PortMapping = Type.Object({
 	host: Type.Integer(),
 	container: Type.Integer(),

@@ -1,4 +1,4 @@
-import { OpError } from "@locainfra/core";
+import { OpError } from "@locastack/core";
 import type { Socket } from "bun";
 import { dockerApiError } from "./docker-errors";
 

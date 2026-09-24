@@ -1,14 +1,14 @@
 ---
-"@locainfra/core": patch
-"@locainfra/engines": minor
-"@locainfra/server": minor
-"@locainfra/dashboard": minor
-"@locainfra/cli": minor
+"@locastack/core": patch
+"@locastack/engines": minor
+"@locastack/server": minor
+"@locastack/dashboard": minor
+"@locastack/cli": minor
 ---
 
 M3 part 1: SQLite state, load-once dashboard with opt-in Live mode, Remove service and the ⌘K palette.
 
-- State moves from `~/.locainfra/state.json` to `~/.locainfra/locainfra.db` (SQLite in WAL mode via `bun:sqlite` + Drizzle, mode 0600). Migrations run on first use and are embedded in the binary. An existing `state.json` is imported once and renamed `state.json.migrated`. Concurrent `locainfra` processes are serialized by the database, and two services can never pin the same host port (`PORT_CONFLICT`). Before a schema upgrade the database is copied to `locainfra.db.backup`.
+- State moves from `~/.locastack/state.json` to `~/.locastack/locastack.db` (SQLite in WAL mode via `bun:sqlite` + Drizzle, mode 0600). Migrations run on first use and are embedded in the binary. An existing `state.json` is imported once and renamed `state.json.migrated`. Concurrent `locastack` processes are serialized by the database, and two services can never pin the same host port (`PORT_CONFLICT`). Before a schema upgrade the database is copied to `locastack.db.backup`.
 - The dashboard no longer polls. Pages load once and have a **Refresh** button; after an action only the affected data is refetched.
 - **Live** (a per-project switch, off by default) streams status and CPU/memory over the WebSocket; the socket is opened only while Live, or **Follow** on the Logs tab, is on, and closes when they are turned off.
 - Without Live, the Logs tab shows the last 200 lines (Reload fetches again) and the Metrics tab shows the last-known CPU/memory with a hint to turn Live on for charts.

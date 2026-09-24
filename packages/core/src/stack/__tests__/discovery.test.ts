@@ -6,29 +6,29 @@ const project = (name: string) =>
 	`version: 1\nname: ${name}\nservices:\n  db: { type: postgres, version: "17" }\n`;
 
 describe("findProjectStackFile", () => {
-	test("walks up to the nearest locainfra.yaml", async () => {
+	test("walks up to the nearest locastack.yaml", async () => {
 		const files = new MemoryFiles({
-			"/work/app/locainfra.yaml": project("app"),
-			"/work/locainfra.yaml": project("outer"),
+			"/work/app/locastack.yaml": project("app"),
+			"/work/locastack.yaml": project("outer"),
 		});
 		expect(await findProjectStackFile(files, "/work/app/src/deep")).toBe(
-			"/work/app/locainfra.yaml",
+			"/work/app/locastack.yaml",
 		);
 		expect(await findProjectStackFile(files, "/work/app")).toBe(
-			"/work/app/locainfra.yaml",
+			"/work/app/locastack.yaml",
 		);
 		expect(await findProjectStackFile(files, "/work/other")).toBe(
-			"/work/locainfra.yaml",
+			"/work/locastack.yaml",
 		);
 		expect(await findProjectStackFile(files, "/elsewhere")).toBeNull();
 	});
 
 	test("normalises the start directory", async () => {
 		const files = new MemoryFiles({
-			"/work/app/locainfra.yaml": project("app"),
+			"/work/app/locastack.yaml": project("app"),
 		});
 		expect(await findProjectStackFile(files, "/work/app/src/../lib/")).toBe(
-			"/work/app/locainfra.yaml",
+			"/work/app/locastack.yaml",
 		);
 	});
 });

@@ -2,7 +2,7 @@ import {
 	type OpError,
 	type OpErrorCode,
 	SNAPSHOT_ID_PATTERN,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { Elysia, t } from "elysia";
 
 /**

@@ -1,5 +1,5 @@
 import { log, spinner } from "@clack/prompts";
-import { isOpError, type Progress, toProgressError } from "@locainfra/core";
+import { isOpError, type Progress, toProgressError } from "@locastack/core";
 import type { CliIo } from "../cli.types";
 import { fixHint, writeJson, writeLine } from "./output";
 import { glyph, theme } from "./theme";

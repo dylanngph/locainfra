@@ -95,7 +95,7 @@
 	--chart-4: oklch(0.371 0 0);
 	--chart-5: oklch(0.269 0 0);
 	--radius: 0.375rem;
-	/* LocaInfra status colors (design brief). */
+	/* LocaStack status colors (design brief). */
 	--status-running: #16a34a;
 	--status-running-bg: #f0fdf4;
 	--status-running-border: #bbf7d0;
@@ -175,7 +175,7 @@
 	}
 }
 
-@keyframes li-indeterminate {
+@keyframes ls-indeterminate {
 	from {
 		transform: translateX(-100%);
 	}

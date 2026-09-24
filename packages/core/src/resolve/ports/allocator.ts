@@ -100,7 +100,7 @@ export async function allocatePorts(
 					details: {
 						stack: name,
 						attempts: MAX_PORT_ALLOCATION_ATTEMPTS,
-						fix: "Another LocaInfra process is starting stacks at the same time; run the command again.",
+						fix: "Another LocaStack process is starting stacks at the same time; run the command again.",
 					},
 				},
 			),

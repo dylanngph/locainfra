@@ -13,7 +13,7 @@ export function shellQuote(word: string): string {
  * The string a CLI hint copies: `cd '<root>' && <command>`, or just the
  * command when there is no folder.
  *
- * @param command - A `locainfra …` command.
+ * @param command - A `locastack …` command.
  * @param cwd - Absolute project folder the command runs in.
  * @returns Paste-ready shell line.
  */

@@ -7,7 +7,7 @@ import { stopService } from "../stop-service.op";
 import { applyServicePatch, updateService } from "../update-service.op";
 import { createWorld, SHOP_COMPOSE, SHOP_FILE } from "./world";
 
-const target = { projectName: "li-shop", composeFile: SHOP_COMPOSE };
+const target = { projectName: "ls-shop", composeFile: SHOP_COMPOSE };
 
 describe("updateService", () => {
 	test("the Use port N fix rewrites the port, re-renders and recreates the service", async () => {

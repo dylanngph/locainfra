@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import type { ComposeServiceStatus } from "@locainfra/core";
+import type { ComposeServiceStatus } from "@locastack/core";
 import {
 	parseComposeHealth,
 	parseComposePs,

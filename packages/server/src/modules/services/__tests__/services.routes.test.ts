@@ -1,12 +1,12 @@
 import { describe, expect, it } from "bun:test";
-import { ok, type StackFile, WIPE_NEEDS_FORCE_FIX } from "@locainfra/core";
+import { ok, type StackFile, WIPE_NEEDS_FORCE_FIX } from "@locastack/core";
 import {
 	createProjectStack,
 	postgresDefinition,
 	redisDefinition,
 	StaticCatalogSource,
 	upstashRedisDefinition,
-} from "@locainfra/core/testing";
+} from "@locastack/core/testing";
 import { setupApp, specPaths } from "../../../__tests__/support/client";
 import {
 	createStubOps,
@@ -313,7 +313,7 @@ describe("Add and PATCH with secrets and seed", () => {
 			code: "INVALID_INPUT",
 			details: {
 				field: "seed",
-				fix: "Create ./nope.sql next to locainfra.yaml",
+				fix: "Create ./nope.sql next to locastack.yaml",
 			},
 		});
 		expect((await call("PATCH", `${BASE}/nope`, { seed: "" })).status).toBe(

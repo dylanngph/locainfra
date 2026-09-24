@@ -40,6 +40,6 @@ export const envModule = (service: EnvService) =>
 			detail: {
 				tags: TAGS,
 				summary:
-					"Write the variables into the env file's locainfra marker block",
+					"Write the variables into the env file's locastack marker block",
 			},
 		});

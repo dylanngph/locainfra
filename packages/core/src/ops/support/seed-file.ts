@@ -84,7 +84,7 @@ export async function checkSeedFile(
 						field: "seed",
 						file: seed,
 						reason: "missing",
-						fix: `Create ${shown} next to locainfra.yaml, or change the seed file on the Config page.`,
+						fix: `Create ${shown} next to locastack.yaml, or change the seed file on the Config page.`,
 					},
 				},
 			),

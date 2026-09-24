@@ -1,4 +1,4 @@
-import type { ProjectSummary, ServiceStatus } from "@locainfra/server";
+import type { ProjectSummary, ServiceStatus } from "@locastack/server";
 import { describe, expect, it } from "vitest";
 import { MOCK_CATALOG } from "@/test/msw/catalog.fixture";
 import { buildPaletteGroups } from "../palette-items";
@@ -43,14 +43,14 @@ describe("buildPaletteGroups", () => {
 		]);
 		expect(groups[1]?.items.every((i) => i.cli === undefined)).toBe(true);
 		expect(groups[2]?.items.map((i) => [i.sub, i.cli])).toEqual([
-			["1 service", { command: "locainfra up", cwd: "/Users/dev/shop" }],
-			["2 services", { command: "locainfra up", cwd: "/Users/dev/blog" }],
+			["1 service", { command: "locastack up", cwd: "/Users/dev/shop" }],
+			["2 services", { command: "locastack up", cwd: "/Users/dev/blog" }],
 		]);
 		expect(groups[3]?.items).toEqual([
 			expect.objectContaining({
 				label: "Export .env for blog",
 				to: "/p/blog/env",
-				cli: { command: "locainfra env", cwd: "/Users/dev/blog" },
+				cli: { command: "locastack env", cwd: "/Users/dev/blog" },
 			}),
 		]);
 	});

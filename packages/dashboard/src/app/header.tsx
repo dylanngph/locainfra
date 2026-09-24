@@ -65,7 +65,7 @@ export function AppHeader() {
 				className="flex items-center gap-[9px] font-semibold text-[14px] tracking-[-0.01em]"
 			>
 				<LogoMark size={18} />
-				LocaInfra
+				LocaStack
 			</Link>
 			<nav
 				aria-label="Breadcrumb"
@@ -129,7 +129,7 @@ export function AppHeader() {
 					aria-hidden
 					className="absolute inset-x-0 bottom-[-1px] h-0.5 overflow-hidden bg-transparent"
 				>
-					<div className="h-full w-1/3 animate-[li-indeterminate_1s_ease-in-out_infinite] bg-foreground/60" />
+					<div className="h-full w-1/3 animate-[ls-indeterminate_1s_ease-in-out_infinite] bg-foreground/60" />
 				</div>
 			) : null}
 		</header>

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isOpError } from "@locainfra/core";
+import { isOpError } from "@locastack/core";
 import { negotiateApiVersion } from "../api-version";
 import type { DockerTransport } from "../transport";
 import { UnixSocketTransport } from "../unix-socket-transport";
@@ -47,7 +47,7 @@ function startFakeDaemon(socket: string, apiVersion: string) {
 describe("UnixSocketTransport over a real unix socket", () => {
 	let dir: string;
 	beforeAll(() => {
-		dir = mkdtempSync(join(tmpdir(), "li-transport-"));
+		dir = mkdtempSync(join(tmpdir(), "ls-transport-"));
 	});
 	afterAll(() => {
 		rmSync(dir, { recursive: true, force: true });
@@ -105,7 +105,7 @@ describe("DockerTransport contract", () => {
 	let dir: string;
 	let stop: () => void = () => {};
 	beforeAll(() => {
-		dir = mkdtempSync(join(tmpdir(), "li-contract-"));
+		dir = mkdtempSync(join(tmpdir(), "ls-contract-"));
 		const { server } = startFakeDaemon(join(dir, "d.sock"), "1.44");
 		stop = () => server.stop(true);
 	});

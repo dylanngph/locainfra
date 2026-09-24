@@ -54,7 +54,7 @@ describe("seedService", () => {
 		]);
 		expect(events.every((e) => e.service === "main-db")).toBe(true);
 		const [call] = world.exec.calls;
-		expect(call?.containerId).toBe("li-shop-main-db");
+		expect(call?.containerId).toBe("ls-shop-main-db");
 		expect(call?.argv).toEqual([
 			"psql",
 			"-X",

@@ -1,8 +1,8 @@
 ---
-"@locainfra/core": patch
-"@locainfra/engines": patch
-"@locainfra/server": patch
-"@locainfra/dashboard": patch
+"@locastack/core": patch
+"@locastack/engines": patch
+"@locastack/server": patch
+"@locastack/dashboard": patch
 ---
 
 M3b review fixes: snapshots, the Data tab, seed files, rotation and the stack `.env` are safer.
@@ -16,4 +16,4 @@ M3b review fixes: snapshots, the Data tab, seed files, rotation and the stack `.
 - The stack `.env` and `docker-compose.yml` are written atomically, so they are never seen empty.
 - The Snapshots tab is shown only for services with exactly one data volume.
 - Restore and seed refresh the Data tab's table list, and so does every successful Run.
-- An import opens the new project only once its `locainfra.yaml` has been written.
+- An import opens the new project only once its `locastack.yaml` has been written.

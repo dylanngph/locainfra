@@ -50,13 +50,13 @@ const param = (args: LoaderFunctionArgs, name: string): string => {
 	return value;
 };
 
-/** Query parameter `locainfra --project <dir>` adds so the dashboard opens that project. */
+/** Query parameter `locastack --project <dir>` adds so the dashboard opens that project. */
 export const PROJECT_QUERY_PARAM = "project";
 
 const PROJECT_NAME = /^[a-z][a-z0-9-]*$/;
 
 /**
- * `/?project=<name>` (from `locainfra --project`) → `/p/<name>`.
+ * `/?project=<name>` (from `locastack --project`) → `/p/<name>`.
  *
  * @param request - Loader request.
  * @returns A redirect, or `undefined` when there is no valid project param.

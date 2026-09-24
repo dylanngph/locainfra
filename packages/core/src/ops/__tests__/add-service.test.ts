@@ -30,10 +30,10 @@ describe("addService", () => {
 			"MAIN_DB__POSTGRES_PASSWORD",
 		]);
 		const compose = parse(world.files.files.get(SHOP_COMPOSE) ?? "");
-		expect(compose.services["main-db"].container_name).toBe("li-shop-main-db");
+		expect(compose.services["main-db"].container_name).toBe("ls-shop-main-db");
 		expect(world.lifecycle.upCalls).toEqual([
 			{
-				projectName: "li-shop",
+				projectName: "ls-shop",
 				composeFile: SHOP_COMPOSE,
 				services: ["main-db"],
 				wait: true,
@@ -109,7 +109,7 @@ describe("addService", () => {
 		const world = createWorld();
 		world.state.state.projects.push({ name: "shop-api", root: "/work/api" });
 		world.files.files.set(
-			"/work/api/locainfra.yaml",
+			"/work/api/locastack.yaml",
 			"version: 1\nname: shop-api\nservices:\n  db: { type: postgres }\n",
 		);
 		const events = await collect(
@@ -117,7 +117,7 @@ describe("addService", () => {
 		);
 		expect(events.at(-1)?.error).toMatchObject({
 			code: "SERVICE_EXISTS",
-			details: { containerName: "li-shop-api-db", otherProject: "shop-api" },
+			details: { containerName: "ls-shop-api-db", otherProject: "shop-api" },
 		});
 	});
 

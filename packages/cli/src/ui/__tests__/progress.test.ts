@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { Progress } from "@locainfra/core";
-import { OpError } from "@locainfra/core";
+import type { Progress } from "@locastack/core";
+import { OpError } from "@locastack/core";
 import { createFakeIo } from "../../__tests__/support/fakes";
 import {
 	createProgressRenderer,

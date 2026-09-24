@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isOpError, type SnapshotRecord } from "@locainfra/core";
-import { FixedClock } from "@locainfra/core/testing";
+import { isOpError, type SnapshotRecord } from "@locastack/core";
+import { FixedClock } from "@locastack/core/testing";
 import { SqliteSnapshotIndex } from "../snapshot-index";
 import { SqliteStateStore } from "../sqlite-state-store";
 
@@ -12,7 +12,7 @@ let store: SqliteStateStore;
 let index: SqliteSnapshotIndex;
 
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "li-snapidx-"));
+	dir = mkdtempSync(join(tmpdir(), "ls-snapidx-"));
 	store = new SqliteStateStore({
 		stateDir: join(dir, "home"),
 		clock: new FixedClock(),
@@ -30,7 +30,7 @@ function record(overrides: Partial<SnapshotRecord> = {}): SnapshotRecord {
 		project: "shop",
 		service: "db",
 		name: "Before migration",
-		path: "/home/u/.locainfra/snapshots/shop/db/abc123.tgz",
+		path: "/home/u/.locastack/snapshots/shop/db/abc123.tgz",
 		sizeBytes: 2048,
 		createdAt: "2026-09-23T10:00:00.000Z",
 		...overrides,
@@ -112,7 +112,7 @@ describe("SqliteSnapshotIndex", () => {
 		expect(await index.list("shop", "db")).toEqual([]);
 	});
 
-	test("shares locainfra.db with the state store and survives reopening", async () => {
+	test("shares locastack.db with the state store and survives reopening", async () => {
 		await store.update((s) => ({
 			...s,
 			projects: [{ name: "shop", root: "/p/shop" }],

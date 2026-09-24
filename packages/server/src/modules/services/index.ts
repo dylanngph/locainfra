@@ -48,7 +48,7 @@ export const servicesModule = (service: ServicesService) =>
 				detail: {
 					tags: TAGS,
 					summary:
-						"Add a service instance to locainfra.yaml and start it (Add & start)",
+						"Add a service instance to locastack.yaml and start it (Add & start)",
 				},
 			},
 		)

@@ -1,4 +1,4 @@
-import type { Stack } from "@locainfra/core";
+import type { Stack } from "@locastack/core";
 import type { CliDeps, CliIo } from "../../cli.types";
 import { renderOpError } from "../../ui/output";
 
@@ -10,7 +10,7 @@ export interface StackTargetOptions {
 
 /**
  * Runs `discoverStack` for the current directory (walk-up to the nearest
- * `locainfra.yaml`) and renders the failure when there is none.
+ * `locastack.yaml`) and renders the failure when there is none.
  *
  * @param deps - Composition root.
  * @param io - Process boundary.

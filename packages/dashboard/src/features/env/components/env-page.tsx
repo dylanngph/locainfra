@@ -155,7 +155,7 @@ export function EnvPage() {
 			{detail ? (
 				<CliHint
 					cwd={detail.stack.root}
-					command={`locainfra env${format === "dotenv" ? "" : ` --format ${format}`}`}
+					command={`locastack env${format === "dotenv" ? "" : ` --format ${format}`}`}
 				/>
 			) : null}
 		</>

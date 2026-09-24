@@ -612,10 +612,10 @@ export class StaticCatalogSource implements CatalogSource {
 
 /**
  * @param home - Fake home directory.
- * @returns {@link Paths} rooted at `<home>/.locainfra`.
+ * @returns {@link Paths} rooted at `<home>/.locastack`.
  */
 export function createTestPaths(home = "/home/test"): Paths {
-	const stateDir = `${home}/.locainfra`;
+	const stateDir = `${home}/.locastack`;
 	return {
 		home,
 		stateDir,

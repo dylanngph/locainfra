@@ -1,4 +1,4 @@
-import type { ClientMessage, ServerMessage } from "@locainfra/server";
+import type { ClientMessage, ServerMessage } from "@locastack/server";
 
 /** Connection state of the observer socket. */
 export type ConnectionState = "idle" | "connecting" | "open" | "closed";

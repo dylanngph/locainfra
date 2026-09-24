@@ -476,7 +476,7 @@ async function previewItems(): Promise<ImportItem[]> {
 }
 
 describe("importProject", () => {
-	test("writes locainfra.yaml, stores secrets, registers; skips unchecked items", async () => {
+	test("writes locastack.yaml, stores secrets, registers; skips unchecked items", async () => {
 		const items = (await previewItems()).map((item) =>
 			item.name === "vector-db" ? { ...item, include: false } : item,
 		);
@@ -493,10 +493,10 @@ describe("importProject", () => {
 			["step", `Creating ${ROOT}`],
 			["step", "Registering imported"],
 			["step", "Storing secrets"],
-			["step", "Writing locainfra.yaml"],
+			["step", "Writing locastack.yaml"],
 			["done", "Imported 3 services into imported, 1 port remapped"],
 		]);
-		const file = parse(world.files.files.get(`${ROOT}/locainfra.yaml`) ?? "");
+		const file = parse(world.files.files.get(`${ROOT}/locastack.yaml`) ?? "");
 		expect(file).toEqual({
 			version: 1,
 			name: "imported",
@@ -547,7 +547,7 @@ describe("importProject", () => {
 			message: "Imported 1 service into imported",
 		});
 		expect(world.lifecycle.upCalls).toHaveLength(1);
-		expect(world.lifecycle.upCalls[0]?.projectName).toBe("li-imported");
+		expect(world.lifecycle.upCalls[0]?.projectName).toBe("ls-imported");
 
 		const failing = createWorld();
 		failing.lifecycle.upScript = [
@@ -582,7 +582,7 @@ describe("importProject", () => {
 		> = [
 			[() => undefined, { name: "shop" }, "PROJECT_EXISTS"],
 			[
-				(w) => w.files.files.set(`${ROOT}/locainfra.yaml`, "x"),
+				(w) => w.files.files.set(`${ROOT}/locastack.yaml`, "x"),
 				{},
 				"PROJECT_EXISTS",
 			],
@@ -634,7 +634,7 @@ describe("importProject", () => {
 
 	test("a container name clash with another project is PROJECT_EXISTS", async () => {
 		const world = createWorld();
-		// shop + "main-db" → li-shop-main-db; project "shop-main" + "db" → li-shop-main-db.
+		// shop + "main-db" → ls-shop-main-db; project "shop-main" + "db" → ls-shop-main-db.
 		const items = (await previewItems()).filter((i) => i.name === "db");
 		const events = await collect(
 			importProject(world, {
@@ -716,7 +716,7 @@ describe("importProject", () => {
 		const writeFails = createWorld();
 		const write = writeFails.files.writeText.bind(writeFails.files);
 		writeFails.files.writeText = async (path, content, options) => {
-			if (path.endsWith("locainfra.yaml")) throw new Error("EROFS");
+			if (path.endsWith("locastack.yaml")) throw new Error("EROFS");
 			return write(path, content, options);
 		};
 		const b = await collect(
@@ -731,7 +731,7 @@ describe("importProject", () => {
 		expect(writeFails.state.state.projects.map((p) => p.name)).toEqual([
 			"shop",
 		]);
-		expect(writeFails.files.files.has(`${ROOT}/locainfra.yaml`)).toBe(false);
+		expect(writeFails.files.files.has(`${ROOT}/locastack.yaml`)).toBe(false);
 
 		const mkdirFails = createWorld();
 		mkdirFails.files.mkdirp = async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isOpError } from "@locainfra/core";
+import { isOpError } from "@locastack/core";
 import {
 	DockerContainerExec,
 	EXEC_KILL_SCRIPT,
@@ -109,7 +109,7 @@ describe("DockerContainerExec", () => {
 		});
 		const exec = new DockerContainerExec(transport, { newTag: () => "tag1" });
 		const result = await exec.run(
-			"li-shop-db",
+			"ls-shop-db",
 			["psql", "-c", "select 1; -- $(rm -rf /)"],
 			LIMITS,
 		);
@@ -121,7 +121,7 @@ describe("DockerContainerExec", () => {
 			timedOut: false,
 		});
 		expect(transport.calls).toEqual([
-			"/containers/li-shop-db/exec",
+			"/containers/ls-shop-db/exec",
 			"/exec/e1/start",
 			"/exec/e1/json",
 		]);

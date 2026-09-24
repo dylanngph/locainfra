@@ -4,7 +4,7 @@ import type {
 	ServiceDefinition,
 	ServiceStatus,
 	StackServiceEntry,
-} from "@locainfra/server";
+} from "@locastack/server";
 import { normalizeSeedPath } from "./seed-path";
 
 /** Pattern of service instance names. */
@@ -261,7 +261,7 @@ export function portSuggestion(
 }
 
 /**
- * The `locainfra.yaml` entry the form describes. Config keys equal to their
+ * The `locastack.yaml` entry the form describes. Config keys equal to their
  * (resolved) defaults are omitted so the file stays minimal.
  *
  * @param values - Form values.

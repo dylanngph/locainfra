@@ -116,7 +116,7 @@ function notProvisioned(stack: Stack, service: string, what: string): OpError {
 				stack: stack.name,
 				service,
 				reason: "unprovisioned",
-				fix: "Start the stack once (locainfra up) so ports and secrets are provisioned.",
+				fix: "Start the stack once (locastack up) so ports and secrets are provisioned.",
 			},
 		},
 	);

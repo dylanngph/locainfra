@@ -6,7 +6,7 @@ import { createProgressRenderer, renderProgress } from "../../ui/progress";
 import { theme } from "../../ui/theme";
 import { resolveStackTarget } from "../shared/stack-target";
 
-/** Parsed flags of `locainfra down`. */
+/** Parsed flags of `locastack down`. */
 export interface DownCommandOptions {
 	/** Also delete named volumes (data loss). */
 	readonly volumes: boolean;
@@ -17,7 +17,7 @@ export interface DownCommandOptions {
 }
 
 /**
- * `locainfra down`: stop the stack. `--volumes` is destructive: it needs an
+ * `locastack down`: stop the stack. `--volumes` is destructive: it needs an
  * interactive confirmation, or `--yes` when running with `--json` or without a TTY.
  *
  * @param ctx - IO and deps loader.
@@ -71,7 +71,7 @@ export function registerDownCommand(
 	program
 		.command("down")
 		.description(
-			"stop the services of the project in this folder (nearest locainfra.yaml)",
+			"stop the services of the project in this folder (nearest locastack.yaml)",
 		)
 		.option("--volumes", "also delete the project's volumes (data loss)")
 		.option("-y, --yes", "confirm destructive actions without prompting")

@@ -1,10 +1,10 @@
 import { OpError } from "../../shared/op-error";
 import { err, ok, type Result } from "../../shared/result";
 
-/** Line that opens the LocaInfra-managed block in a linked env file. */
-export const LINK_START_MARKER = "# locainfra:start";
-/** Line that closes the LocaInfra-managed block in a linked env file. */
-export const LINK_END_MARKER = "# locainfra:end";
+/** Line that opens the LocaStack-managed block in a linked env file. */
+export const LINK_START_MARKER = "# locastack:start";
+/** Line that closes the LocaStack-managed block in a linked env file. */
+export const LINK_END_MARKER = "# locastack:end";
 
 interface MarkerSpan {
 	readonly start: number;

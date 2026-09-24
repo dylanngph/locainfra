@@ -30,7 +30,7 @@ export type ComposeServiceStatus = Static<typeof ComposeServiceStatus>;
 
 /** Identifies a compose project on disk. */
 export interface ComposeTarget {
-	/** Compose project name (`li-<stack>`). */
+	/** Compose project name (`ls-<stack>`). */
 	readonly projectName: string;
 	/** Absolute path to the rendered `docker-compose.yml`. */
 	readonly composeFile: string;
@@ -67,7 +67,7 @@ export interface ComposeRemoveInput extends ComposeServicesInput {
 	readonly volumes?: readonly string[];
 	/**
 	 * Docker networks to delete after the containers and volumes, e.g. the
-	 * project network `li-<project>` when its last service is removed
+	 * project network `ls-<project>` when its last service is removed
 	 * (`docker compose down` finds nothing to remove once no service is
 	 * left). Missing networks are ignored. Best effort: a network that is
 	 * still in use is reported as a `log` event and the run still ends with

@@ -252,7 +252,7 @@ export function ServiceDetailPage() {
 			{projectDetail && !active ? (
 				<CliHint
 					cwd={projectDetail.stack.root}
-					command={`locainfra up --service ${service.name}`}
+					command={`locastack up --service ${service.name}`}
 				/>
 			) : null}
 		</>

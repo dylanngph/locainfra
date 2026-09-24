@@ -71,7 +71,7 @@ import type {
 export interface ProjectReadDeps {
 	/** Persisted state (`projects` registry). */
 	readonly state: StateReader;
-	/** File access (`<root>/locainfra.yaml`). */
+	/** File access (`<root>/locastack.yaml`). */
 	readonly files: FileStore;
 }
 
@@ -192,7 +192,7 @@ export type CatalogList = (
 
 /** Ports required by {@link ListProjects}. */
 export interface ListProjectsDeps extends ProjectReadDeps {
-	/** Container listing (running / error counts by `locainfra.stack` label). */
+	/** Container listing (running / error counts by `locastack.stack` label). */
 	readonly containers: ContainerReader;
 }
 
@@ -207,15 +207,15 @@ export type ListProjects = (
 
 /** Input of {@link RegisterProject}. */
 export interface RegisterProjectInput {
-	/** Project name; must equal the `name` in `<root>/locainfra.yaml`. */
+	/** Project name; must equal the `name` in `<root>/locastack.yaml`. */
 	readonly name: string;
-	/** Absolute project folder containing `locainfra.yaml`. */
+	/** Absolute project folder containing `locastack.yaml`. */
 	readonly root: string;
 }
 
 /**
  * Registers an existing project folder in `state.json`. `STACK_NOT_FOUND`
- * when `<root>/locainfra.yaml` is missing, `INVALID_STACK` when invalid,
+ * when `<root>/locastack.yaml` is missing, `INVALID_STACK` when invalid,
  * `INVALID_INPUT` when `name` differs from the file's name, `PROJECT_EXISTS`
  * when another folder holds the name or a container name would collide.
  * Re-registering the same folder is a no-op success.
@@ -236,7 +236,7 @@ export interface CreateProjectInput {
 }
 
 /**
- * Creates the folder (if needed) and `<root>/locainfra.yaml`, then registers
+ * Creates the folder (if needed) and `<root>/locastack.yaml`, then registers
  * it. `PROJECT_EXISTS` when the name is registered or the file already
  * exists (callers register an existing file with {@link RegisterProject});
  * `INVALID_INPUT` for a bad name or a relative root.
@@ -262,7 +262,7 @@ export type UnregisterProject = (
 ) => Promise<Result<ProjectEntry, OpError>>;
 
 /**
- * Loads and validates a registered project's `locainfra.yaml`.
+ * Loads and validates a registered project's `locastack.yaml`.
  * `PROJECT_NOT_FOUND` when not registered, `STACK_NOT_FOUND` when the file is
  * gone, `INVALID_STACK` when it does not validate.
  */
@@ -311,7 +311,7 @@ export type StatusForProjectDeps = ProjectViewDeps & ContainerViewDeps;
 
 /**
  * Live status of every service of a project, joined from the stack file,
- * pinned ports, catalog and containers (label `locainfra.stack=<project>`).
+ * pinned ports, catalog and containers (label `locastack.stack=<project>`).
  * A service whose pinned port is busy while its container is not running, or
  * whose container reports "port is already allocated", is `port-conflict`
  * with `problem.suggestedPort` set.
@@ -335,7 +335,7 @@ export type GetService = (
 ) => Promise<Result<ServiceDetail, OpError>>;
 
 /**
- * Detail of every service of a project, in `locainfra.yaml` order (the
+ * Detail of every service of a project, in `locastack.yaml` order (the
  * `GET …/services` list). Same data as {@link GetService} per service.
  */
 export type ListServices = (
@@ -373,7 +373,7 @@ export interface AddServiceInput extends ServiceRef {
 /**
  * Validates the input against the catalog (`INVALID_INPUT` for unknown
  * type/version/config key, `SERVICE_EXISTS` for a taken name), writes the
- * entry to `locainfra.yaml` (comments kept), resolves (secrets generated,
+ * entry to `locastack.yaml` (comments kept), resolves (secrets generated,
  * port pinned; `PORT_CONFLICT` with a `fix` port when an explicit port is
  * busy), renders compose, then `compose up -d --wait <name>` (plus its
  * dependencies). Streams progress.
@@ -401,7 +401,7 @@ export interface RemoveServiceInput extends ServiceRef {
 
 /**
  * Stops and removes the service's container (`LifecycleRunner.remove`),
- * deletes its volumes when asked, removes the entry from `locainfra.yaml`,
+ * deletes its volumes when asked, removes the entry from `locastack.yaml`,
  * unpins its port and re-renders compose. Secrets and snapshots are kept
  * unless volumes are deleted. Refuses (`INVALID_INPUT`) while another service `uses` it.
  */
@@ -420,7 +420,7 @@ export interface UpdateServiceInput extends ServiceRef {
 }
 
 /**
- * Rewrites the entry in `locainfra.yaml` (e.g. the "Use port N" fix),
+ * Rewrites the entry in `locastack.yaml` (e.g. the "Use port N" fix),
  * re-resolves, re-renders and re-`up`s that service (recreating the
  * container). Switching `persist` to `ephemeral` never deletes volumes.
  */
@@ -491,8 +491,8 @@ export interface LinkEnvInput extends ProjectRef {
 }
 
 /**
- * Writes the revealed dotenv variables between the `# locainfra:start` /
- * `# locainfra:end` markers of the env file (rest of the file untouched).
+ * Writes the revealed dotenv variables between the `# locastack:start` /
+ * `# locastack:end` markers of the env file (rest of the file untouched).
  * `INVALID_INPUT` when `file` escapes the project root.
  */
 export type LinkEnv = (
@@ -615,7 +615,7 @@ export interface DiscoverStackInput {
 
 /**
  * Finds and validates the project stack for `cwd` (walk-up to
- * `locainfra.yaml`). `STACK_NOT_FOUND` when none is found.
+ * `locastack.yaml`). `STACK_NOT_FOUND` when none is found.
  */
 export type DiscoverStack = (
 	deps: DiscoverStackDeps,
@@ -937,7 +937,7 @@ export type ImportProjectDeps = ResolveDeps & LifecycleDeps;
 export interface ImportProjectInput {
 	/** New project name (`^[a-z][a-z0-9-]*$`, not registered). */
 	readonly name: string;
-	/** Absolute project folder; created when missing. Must not already hold `locainfra.yaml`. */
+	/** Absolute project folder; created when missing. Must not already hold `locastack.yaml`. */
 	readonly root: string;
 	/** Preview items; only `supported && include` ones are imported (at least one). */
 	readonly items: readonly ImportItem[];
@@ -948,14 +948,14 @@ export interface ImportProjectInput {
 /**
  * Re-validates the items against the catalog (type, version, config keys,
  * instance names unique), then: "Creating <root>" (mkdir when missing),
- * "Writing locainfra.yaml" (one entry per included item: type, version,
+ * "Writing locastack.yaml" (one entry per included item: type, version,
  * `port: hostPort` or auto, `persist: volume`, config), "Storing secrets"
  * (supplied values; the rest are generated on resolve), "Registering <name>",
  * optionally "Starting N services" (`upStack`), then `done` ("Imported N
  * services into <name>[, M ports remapped]"). `PROJECT_EXISTS` when the name
- * is registered or `<root>/locainfra.yaml` exists; `PORT_CONFLICT` when a
+ * is registered or `<root>/locastack.yaml` exists; `PORT_CONFLICT` when a
  * `hostPort` became busy since the preview; `INVALID_INPUT` otherwise. A
- * failure before registration leaves no `locainfra.yaml` behind.
+ * failure before registration leaves no `locastack.yaml` behind.
  */
 export type ImportProject = (
 	deps: ImportProjectDeps,

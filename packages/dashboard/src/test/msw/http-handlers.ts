@@ -4,7 +4,7 @@ import type {
 	EnvPreview,
 	Progress,
 	ServicePatch,
-} from "@locainfra/server";
+} from "@locastack/server";
 import { HttpResponse, http } from "msw";
 import { SEED_PATH_PATTERN } from "@/features/config/lib/seed-path";
 import type { ImportRequest } from "@/features/import/api/import.api";
@@ -260,7 +260,7 @@ export const createHttpHandlers = (db: MockDb = mockDb) => [
 			db.runOp(
 				[
 					{
-						message: `Added ${service.name} to locainfra.yaml`,
+						message: `Added ${service.name} to locastack.yaml`,
 						service: service.name,
 						delay: 100,
 						percent: 5,
@@ -292,7 +292,7 @@ export const createHttpHandlers = (db: MockDb = mockDb) => [
 			return accepted(
 				db.runOp(
 					[
-						{ message: "Updated locainfra.yaml", delay: 100, service: s.name },
+						{ message: "Updated locastack.yaml", delay: 100, service: s.name },
 						...db.startSteps(p, s),
 					],
 					`${s.name} recreated`,
@@ -465,7 +465,7 @@ export const createHttpHandlers = (db: MockDb = mockDb) => [
 						[
 							...(wasRunning ? db.stopSteps(p, s) : []),
 							{
-								message: `Archiving li-${p.name}-${s.name}-data`,
+								message: `Archiving ls-${p.name}-${s.name}-data`,
 								delay: 300,
 								service: s.name,
 								run: () => {
@@ -596,7 +596,7 @@ export const createHttpHandlers = (db: MockDb = mockDb) => [
 							...(baked
 								? [
 										{
-											message: `Deleting li-${p.name}-${s.name}-data`,
+											message: `Deleting ls-${p.name}-${s.name}-data`,
 											delay: 200,
 											service: s.name,
 										},
@@ -670,8 +670,8 @@ export const createHttpHandlers = (db: MockDb = mockDb) => [
 			(i) => i.wantedPort !== undefined && i.hostPort !== i.wantedPort,
 		).length;
 		// Like the real op: the project is readable (GET /api/projects/:name)
-		// only once locainfra.yaml is written, i.e. from the event after
-		// "Writing locainfra.yaml" on (the next step, or `done`).
+		// only once locastack.yaml is written, i.e. from the event after
+		// "Writing locastack.yaml" on (the next step, or `done`).
 		const register = () => {
 			if (db.projects.includes(project)) return;
 			project.services = services;
@@ -684,7 +684,7 @@ export const createHttpHandlers = (db: MockDb = mockDb) => [
 					{ message: `Creating ${root}`, delay: 100 },
 					{ message: `Registering ${body.name}`, delay: 100 },
 					{ message: "Storing secrets", delay: 100 },
-					{ message: "Writing locainfra.yaml", delay: 100 },
+					{ message: "Writing locastack.yaml", delay: 100 },
 					...(body.start
 						? [
 								{

@@ -51,18 +51,18 @@ interface ImportPlanned {
  * items (`supported && include`, at least one) against the catalog (type,
  * version, config keys and patterns, secret names and values, unique
  * instance names, `dependsOn` satisfied), the registry (`PROJECT_EXISTS`
- * when the name is registered, `<root>/locainfra.yaml` exists or a
+ * when the name is registered, `<root>/locastack.yaml` exists or a
  * container name clashes) and the host (`PORT_CONFLICT` when a `hostPort`
  * is pinned by another project or busy on 127.0.0.1 since the preview).
  *
  * Steps: "Creating <root>" (mkdir when missing), "Registering <name>",
  * "Storing secrets" (the supplied values; the rest are generated on the
- * first `up`), "Writing locainfra.yaml" (one entry per item: type, version,
+ * first `up`), "Writing locastack.yaml" (one entry per item: type, version,
  * `port: hostPort` or auto, `persist: volume`, config), then with `start`
  * "Starting N services" (`upStack`), then `done` "Imported N services into
  * <name>[, M ports remapped]". The project is registered before the file is
  * written and unregistered again when storing secrets or writing fails, so
- * a failed import leaves no registration and no `locainfra.yaml` behind.
+ * a failed import leaves no registration and no `locastack.yaml` behind.
  */
 export const importProject: ImportProject = async function* (deps, input) {
 	const clock = deps.clock;
@@ -273,7 +273,7 @@ function checkItem(
 				{
 					service: item.name,
 					key: name,
-					fix: "Leave it out: LocaInfra generates one.",
+					fix: "Leave it out: LocaStack generates one.",
 				},
 			);
 		}
@@ -330,7 +330,7 @@ async function checkRegistry(
 			return err(containerNameClashError(clash, "PROJECT_EXISTS"));
 	} catch (cause) {
 		return err(
-			ioErrorFrom("Could not read the LocaInfra project registry", cause),
+			ioErrorFrom("Could not read the LocaStack project registry", cause),
 		);
 	}
 	return ok(undefined);
@@ -345,7 +345,7 @@ async function checkPorts(
 	try {
 		reserved = portsReservedByOtherStacks(await deps.state.read(), stack.name);
 	} catch (cause) {
-		return err(ioErrorFrom("Could not read LocaInfra state", cause));
+		return err(ioErrorFrom("Could not read LocaStack state", cause));
 	}
 	const claimed = new Map<number, string>();
 	for (const item of items) {

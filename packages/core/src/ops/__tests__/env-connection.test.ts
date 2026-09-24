@@ -129,11 +129,11 @@ describe("linkEnv", () => {
 		});
 		const text = world.files.files.get(`${SHOP_ROOT}/.env`) ?? "";
 		expect(text).toStartWith(
-			"MINE=1\n\n# locainfra:start\n# main-db (postgres)\n",
+			"MINE=1\n\n# locastack:start\n# main-db (postgres)\n",
 		);
 		expect(text).toContain(SHOP_SECRETS.MAIN_DB__POSTGRES_PASSWORD);
 		expect(text).toContain("EVENTS_DATABASE_URL=");
-		expect(text).toEndWith("# locainfra:end\n");
+		expect(text).toEndWith("# locastack:end\n");
 		expect(world.files.modes.get(`${SHOP_ROOT}/.env`)).toBe(0o600);
 	});
 
@@ -161,7 +161,7 @@ describe("linkEnv", () => {
 
 	test("unbalanced markers are IO; unknown project is PROJECT_NOT_FOUND", async () => {
 		const world = createWorld({ provisioned: true });
-		world.files.files.set(`${SHOP_ROOT}/.env`, "# locainfra:start\n");
+		world.files.files.set(`${SHOP_ROOT}/.env`, "# locastack:start\n");
 		const result = await linkEnv(world, { project: "shop" });
 		expect(!result.ok && result.error.code).toBe("IO");
 		const missing = await linkEnv(world, { project: "nope" });
@@ -202,7 +202,7 @@ describe("getConnection", () => {
 			{ k: "User", v: "postgres" },
 			{ k: "Database", v: "shop" },
 			{ k: "Password", v: MASKED_SECRET },
-			{ k: "Container", v: "li-shop-events" },
+			{ k: "Container", v: "ls-shop-events" },
 		]);
 		expect(result.value.snippets.node).toContain(
 			"process.env.EVENTS_DATABASE_URL",

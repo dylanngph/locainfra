@@ -4,8 +4,8 @@ import {
 	ok,
 	type ProjectStatus,
 	type StatsSample,
-} from "@locainfra/core";
-import { FakeContainerStreams } from "@locainfra/core/testing";
+} from "@locastack/core";
+import { FakeContainerStreams } from "@locastack/core/testing";
 import {
 	CONTAINER,
 	status as fixtureStatus,
@@ -280,7 +280,7 @@ describe("ObserverService status", () => {
 			action: "die",
 			id: CONTAINER,
 			at: new Date().toISOString(),
-			attributes: { "locainfra.stack": PROJECT },
+			attributes: { "locastack.stack": PROJECT },
 		});
 		await waitFor(() => sink.of("delta").length === 2);
 		expect(sink.of("delta")[1]?.payload).toMatchObject({

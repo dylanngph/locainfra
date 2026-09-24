@@ -1,7 +1,7 @@
 import { type Static, Type } from "@sinclair/typebox";
 
 /** File name of a project stack inside its project folder. */
-export const PROJECT_STACK_FILE_NAME = "locainfra.yaml";
+export const PROJECT_STACK_FILE_NAME = "locastack.yaml";
 
 /**
  * Pattern of project names and service instance names: lowercase letters,
@@ -17,7 +17,7 @@ export const PersistMode = Type.Union(
 	[Type.Literal("volume"), Type.Literal("ephemeral")],
 	{
 		description:
-			"volume: named Docker volumes li-<project>-<service>-<vol> survive restarts and `down`; ephemeral: no named volumes, data is lost when the container is removed",
+			"volume: named Docker volumes ls-<project>-<service>-<vol> survive restarts and `down`; ephemeral: no named volumes, data is lost when the container is removed",
 	},
 );
 /** Whether a service keeps its data in named volumes (`volume`, the default) or not. */
@@ -100,7 +100,7 @@ export const StackLink = Type.Object({
 export type StackLink = Static<typeof StackLink>;
 
 /**
- * Schema of `locainfra.yaml`. Secrets never appear here.
+ * Schema of `locastack.yaml`. Secrets never appear here.
  * `services` keys are instance names; several instances may share a `type`.
  */
 export const StackFile = Type.Object(
@@ -108,7 +108,7 @@ export const StackFile = Type.Object(
 		version: Type.Literal(1),
 		name: Type.String({
 			pattern: NAME_PATTERN,
-			description: "Project name; compose project and network become li-<name>",
+			description: "Project name; compose project and network become ls-<name>",
 		}),
 		services: Type.Record(
 			Type.String({ pattern: NAME_PATTERN }),
@@ -120,17 +120,17 @@ export const StackFile = Type.Object(
 		),
 		link: Type.Optional(StackLink),
 	},
-	{ $id: "https://locainfra.dev/schema/v1.json" },
+	{ $id: "https://locastack.dev/schema/v1.json" },
 );
 /** Parsed stack file. */
 export type StackFile = Static<typeof StackFile>;
 
-/** A validated project stack: a folder containing `locainfra.yaml`. */
+/** A validated project stack: a folder containing `locastack.yaml`. */
 export const Stack = Type.Object({
 	name: Type.String({ description: "Project name (= file.name)" }),
 	root: Type.String({ description: "Absolute path of the project folder" }),
 	filePath: Type.String({
-		description: "Absolute path of <root>/locainfra.yaml",
+		description: "Absolute path of <root>/locastack.yaml",
 	}),
 	file: StackFile,
 });

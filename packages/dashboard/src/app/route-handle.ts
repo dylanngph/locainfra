@@ -1,7 +1,7 @@
 /** Breadcrumb kind a route contributes after the project switcher. */
 export type CrumbKind = "catalog" | "config" | "service" | "env";
 
-/** `handle` of LocaInfra route objects. */
+/** `handle` of LocaStack route objects. */
 export interface RouteHandle {
 	readonly crumb?: CrumbKind;
 }

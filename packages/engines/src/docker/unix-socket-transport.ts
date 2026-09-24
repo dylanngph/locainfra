@@ -1,4 +1,4 @@
-import { OpError, type SocketLocator } from "@locainfra/core";
+import { OpError, type SocketLocator } from "@locastack/core";
 import {
 	negotiateApiVersion,
 	PREFERRED_DOCKER_API_VERSION,

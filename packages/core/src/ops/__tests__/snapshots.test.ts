@@ -12,8 +12,8 @@ import { listSnapshots } from "../list-snapshots.op";
 import { restoreSnapshot } from "../restore-snapshot.op";
 import { createWorld, SHOP_COMPOSE, SHOP_SECRETS } from "./world";
 
-const ARCHIVES = "/home/test/.locainfra/snapshots/shop/main-db";
-const VOLUME = "li-shop-main-db-data";
+const ARCHIVES = "/home/test/.locastack/snapshots/shop/main-db";
+const VOLUME = "ls-shop-main-db-data";
 const MAIN_DB = { project: "shop", name: "main-db" };
 
 function row(fields: Partial<SnapshotRecord> & { id: string }): SnapshotRecord {
@@ -43,7 +43,7 @@ function snapshotWorld(
 		world.lifecycle.psRows = [
 			{
 				service: "main-db",
-				name: "li-shop-main-db",
+				name: "ls-shop-main-db",
 				state: "running",
 				image: "postgres",
 				publishers: [],
@@ -150,7 +150,7 @@ describe("createSnapshot", () => {
 			{ volume: VOLUME, path: `${ARCHIVES}/${id}.tgz` },
 		]);
 		const target = {
-			projectName: "li-shop",
+			projectName: "ls-shop",
 			composeFile: SHOP_COMPOSE,
 			services: ["main-db"],
 		};
@@ -328,7 +328,7 @@ describe("restoreSnapshot", () => {
 		]);
 		expect(world.lifecycle.upCalls).toEqual([
 			{
-				projectName: "li-shop",
+				projectName: "ls-shop",
 				composeFile: SHOP_COMPOSE,
 				services: ["main-db"],
 				wait: true,
@@ -371,7 +371,7 @@ describe("restoreSnapshot", () => {
 			OLD,
 		);
 		// The compose `.env` (and so DATABASE_URL) matches the restored data.
-		const env = world.files.files.get("/home/test/.locainfra/stacks/shop/.env");
+		const env = world.files.files.get("/home/test/.locastack/stacks/shop/.env");
 		expect(env).toContain(OLD);
 		expect(env).not.toContain(NEW);
 		const text = JSON.stringify(events);

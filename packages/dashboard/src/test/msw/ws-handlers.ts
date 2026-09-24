@@ -1,4 +1,4 @@
-import type { ClientMessage, ServerMessage } from "@locainfra/server";
+import type { ClientMessage, ServerMessage } from "@locastack/server";
 import { ws } from "msw";
 import { type MockDb, mockDb } from "./mock-db";
 

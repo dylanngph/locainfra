@@ -40,7 +40,7 @@ import {
  *    unmet `dependsOn`;
  *    `SERVICE_EXISTS` for a taken name or a container name another project
  *    uses) and the compose version;
- * 2. writes the entry to `locainfra.yaml` (comments kept, `seed`
+ * 2. writes the entry to `locastack.yaml` (comments kept, `seed`
  *    included) and stores the client-chosen `secrets` (a stored
  *    `bakedIntoVolume` value of a previous instance with that name is kept,
  *    reported as a `log` event without the value);
@@ -151,7 +151,7 @@ async function prepare(
 		}
 	} catch (cause) {
 		return err(
-			ioErrorFrom("Could not read the LocaInfra project registry", cause),
+			ioErrorFrom("Could not read the LocaStack project registry", cause),
 		);
 	}
 	const compose = await checkComposeVersion(deps.compose);

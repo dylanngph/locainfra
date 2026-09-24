@@ -1,4 +1,4 @@
-import type { Progress } from "@locainfra/server";
+import type { Progress } from "@locastack/server";
 import type {
 	InvalidateQueryFilters,
 	QueryClient,

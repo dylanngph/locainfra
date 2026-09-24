@@ -26,7 +26,7 @@ function isInside(root: string, file: string): boolean {
 
 /**
  * Writes the project's revealed variables (dotenv, grouped by service)
- * between the `# locainfra:start` / `# locainfra:end` markers of
+ * between the `# locastack:start` / `# locastack:end` markers of
  * `<root>/<file>` (default `link.file`, else the registry's `envFile`, else
  * `.env`), leaving the rest of the file untouched; the file gets mode 0600.
  * Every service must have been started once (`INVALID_STACK` otherwise, so

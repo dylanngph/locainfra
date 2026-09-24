@@ -8,7 +8,7 @@ import {
 } from "../catalog-dir";
 
 describe("resolveBuiltinCatalogDir", () => {
-	test("LOCAINFRA_CATALOG_DIR wins over everything", () => {
+	test("LOCASTACK_CATALOG_DIR wins over everything", () => {
 		expect(
 			resolveBuiltinCatalogDir({
 				env: { [CATALOG_DIR_ENV]: "  /opt/catalog " },
@@ -21,10 +21,10 @@ describe("resolveBuiltinCatalogDir", () => {
 		expect(
 			resolveBuiltinCatalogDir({
 				env: { [CATALOG_DIR_ENV]: " " },
-				embeddedDir: "/home/me/.locainfra/catalog-builtin/0.1.0",
+				embeddedDir: "/home/me/.locastack/catalog-builtin/0.1.0",
 			}),
 		).toEqual({
-			dir: "/home/me/.locainfra/catalog-builtin/0.1.0",
+			dir: "/home/me/.locastack/catalog-builtin/0.1.0",
 			source: "embedded",
 		});
 	});

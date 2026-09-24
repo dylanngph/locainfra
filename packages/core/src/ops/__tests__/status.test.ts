@@ -7,7 +7,7 @@ import { addContainer, createWorld } from "./world";
 
 const summary = {
 	id: "c1",
-	name: "li-shop-main-db",
+	name: "ls-shop-main-db",
 	image: "postgres:17-alpine",
 	state: "running",
 	labels: {},
@@ -92,7 +92,7 @@ describe("statusForProject", () => {
 		const result = await statusForProject(world, { project: "shop" });
 		if (!result.ok) throw result.error;
 		expect(result.value.project).toBe("shop");
-		expect(result.value.network).toBe("li-shop");
+		expect(result.value.network).toBe("ls-shop");
 		expect(result.value.services.map((s) => [s.name, s.state])).toEqual([
 			["main-db", "running"],
 			["events", "stopped"],
@@ -106,7 +106,7 @@ describe("statusForProject", () => {
 			image: "postgres:17-alpine",
 			hostPort: 5433,
 			containerPort: 5432,
-			containerName: "li-shop-main-db",
+			containerName: "ls-shop-main-db",
 			containerId: "id-main-db",
 			persist: "volume",
 			state: "running",
@@ -184,12 +184,12 @@ describe("getService and listServices", () => {
 		if (!result.ok) throw result.error;
 		expect(result.value).toMatchObject({
 			name: "main-db",
-			network: "li-shop",
+			network: "ls-shop",
 			config: { POSTGRES_USER: "postgres", POSTGRES_DB: "shop" },
 			secretNames: ["POSTGRES_PASSWORD"],
 			volumes: [
 				{
-					name: "li-shop-main-db-data",
+					name: "ls-shop-main-db-data",
 					source: "data",
 					path: "/var/lib/postgresql/data",
 				},

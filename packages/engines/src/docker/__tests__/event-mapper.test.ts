@@ -6,10 +6,10 @@ function filters(query: string): unknown {
 }
 
 describe("buildEventsQuery", () => {
-	test("defaults to container events of LocaInfra containers", () => {
+	test("defaults to container events of LocaStack containers", () => {
 		expect(filters(buildEventsQuery({}))).toEqual({
 			type: ["container"],
-			label: ["locainfra.stack"],
+			label: ["locastack.stack"],
 		});
 	});
 
@@ -17,12 +17,12 @@ describe("buildEventsQuery", () => {
 		expect(
 			filters(
 				buildEventsQuery({
-					labels: { "locainfra.stack": "shop", "locainfra.service": "" },
+					labels: { "locastack.stack": "shop", "locastack.service": "" },
 				}),
 			),
 		).toEqual({
 			type: ["container"],
-			label: ["locainfra.stack=shop", "locainfra.service"],
+			label: ["locastack.stack=shop", "locastack.service"],
 		});
 	});
 });
@@ -43,8 +43,8 @@ describe("toDockerEvent", () => {
 						ID: "42c9",
 						Attributes: {
 							image: "redis:7-alpine",
-							name: "li-shop-cache",
-							"locainfra.stack": "shop",
+							name: "ls-shop-cache",
+							"locastack.stack": "shop",
 							exitCode: 0,
 						},
 					},
@@ -60,8 +60,8 @@ describe("toDockerEvent", () => {
 			at: "2026-09-23T06:00:00.123Z",
 			attributes: {
 				image: "redis:7-alpine",
-				name: "li-shop-cache",
-				"locainfra.stack": "shop",
+				name: "ls-shop-cache",
+				"locastack.stack": "shop",
 			},
 		});
 	});

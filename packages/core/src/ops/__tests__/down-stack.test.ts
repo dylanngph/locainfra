@@ -20,10 +20,10 @@ function deps(
 }
 
 describe("downStack", () => {
-	test("runs compose down for li-<stack> and forwards progress", async () => {
+	test("runs compose down for ls-<stack> and forwards progress", async () => {
 		const lifecycle = new FakeLifecycleRunner();
 		lifecycle.downScript = [
-			{ kind: "log", message: "Container li-shop-postgres Removed" },
+			{ kind: "log", message: "Container ls-shop-postgres Removed" },
 			{ kind: "done", message: "Stopped" },
 		];
 		const events = await collect(
@@ -31,8 +31,8 @@ describe("downStack", () => {
 		);
 		expect(lifecycle.downCalls).toEqual([
 			{
-				projectName: "li-shop",
-				composeFile: "/home/test/.locainfra/stacks/shop/docker-compose.yml",
+				projectName: "ls-shop",
+				composeFile: "/home/test/.locastack/stacks/shop/docker-compose.yml",
 				volumes: true,
 			},
 		]);
@@ -55,7 +55,7 @@ describe("downStack", () => {
 			stacks: {},
 		});
 		const files = new InMemoryFileStore({
-			"/work/other/locainfra.yaml": "version: 1\nname: shop\n",
+			"/work/other/locastack.yaml": "version: 1\nname: shop\n",
 		});
 		const events = await collect(
 			downStack(deps(lifecycle, state, files), { stack, volumes: true }),

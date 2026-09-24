@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { LogLine } from "@locainfra/core";
+import type { LogLine } from "@locastack/core";
 import { LogGate, type ObserverSink } from "../backpressure";
 import type { ServerMessage } from "../observer.model";
 

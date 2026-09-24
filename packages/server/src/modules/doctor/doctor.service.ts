@@ -3,7 +3,7 @@ import {
 	type RunDoctor,
 	type RunDoctorDeps,
 	runDoctor,
-} from "@locainfra/core";
+} from "@locastack/core";
 
 /** The doctor op and the ports it reads, injected by the composition root. */
 export interface DoctorRunner {

@@ -26,7 +26,7 @@ interface ServiceRow {
 async function api(method: string, path: string): Promise<Response> {
 	return fetch(`http://127.0.0.1:${E2E_PORT}${path}`, {
 		method,
-		headers: { "x-locainfra-token": E2E_TOKEN },
+		headers: { "x-locastack-token": E2E_TOKEN },
 	});
 }
 
@@ -59,7 +59,7 @@ const liveSwitch = (page: Page) => page.getByRole("switch", { name: "Live" });
 /** The CLI under test: the compiled binary when built, else the source entry. */
 function cli(): string[] {
 	const bin =
-		process.env.LOCAINFRA_E2E_BIN ?? join(REPO_ROOT, "dist/locainfra");
+		process.env.LOCASTACK_E2E_BIN ?? join(REPO_ROOT, "dist/locastack");
 	return existsSync(bin)
 		? [bin]
 		: ["bun", join(REPO_ROOT, "packages/cli/src/index.ts")];
@@ -83,7 +83,7 @@ async function addFromCatalog(
 }
 
 test.describe("M3a live smoke: load once, opt-in Live, remove, ⌘K (real Docker)", () => {
-	test.skip(!E2E_ENABLED, "set LOCAINFRA_E2E=1 to run against real Docker");
+	test.skip(!E2E_ENABLED, "set LOCASTACK_E2E=1 to run against real Docker");
 
 	test("no WebSocket until Live; Live streams; remove dialog; palette; SQLite state", async ({
 		page,
@@ -156,13 +156,13 @@ test.describe("M3a live smoke: load once, opt-in Live, remove, ⌘K (real Docker
 				timeout: 15_000,
 			});
 			// Status: a container stopped behind the dashboard's back.
-			docker(["stop", `li-${PROJECT}-cache`]);
+			docker(["stop", `ls-${PROJECT}-cache`]);
 			await expect(overviewRow(page, "cache").getByText("Stopped")).toBeVisible(
 				{
 					timeout: 30_000,
 				},
 			);
-			docker(["start", `li-${PROJECT}-cache`]);
+			docker(["start", `ls-${PROJECT}-cache`]);
 			await expect(overviewRow(page, "cache").getByText("Running")).toBeVisible(
 				{
 					timeout: 60_000,
@@ -216,7 +216,7 @@ test.describe("M3a live smoke: load once, opt-in Live, remove, ⌘K (real Docker
 				"ls",
 				"-q",
 				"--filter",
-				`label=locainfra.stack=${PROJECT}`,
+				`label=locastack.stack=${PROJECT}`,
 			]).filter((v) => v.includes("cache"));
 			expect(volumes.length).toBeGreaterThan(0);
 			await overviewRow(page, "cache")
@@ -243,7 +243,7 @@ test.describe("M3a live smoke: load once, opt-in Live, remove, ⌘K (real Docker
 			await expect(overviewRow(page, "cache")).toHaveCount(0);
 			await expect
 				.poll(() => docker(["ps", "-a", "--format", "{{.Names}}"]))
-				.not.toContain(`li-${PROJECT}-cache`);
+				.not.toContain(`ls-${PROJECT}-cache`);
 			const remaining = docker(["volume", "ls", "--format", "{{.Name}}"]);
 			for (const v of volumes) expect(remaining).not.toContain(v);
 			expect(sockets.length).toBe(afterLive);
@@ -269,7 +269,7 @@ test.describe("M3a live smoke: load once, opt-in Live, remove, ⌘K (real Docker
 		});
 
 		await test.step("state lives in SQLite (0600) and the CLI still reads it", async () => {
-			const db = join(home, "locainfra.db");
+			const db = join(home, "locastack.db");
 			expect(existsSync(db)).toBe(true);
 			expect(statSync(db).mode & 0o777).toBe(0o600);
 			expect(existsSync(join(home, "state.json"))).toBe(false);
@@ -277,7 +277,7 @@ test.describe("M3a live smoke: load once, opt-in Live, remove, ⌘K (real Docker
 			const out = execFileSync(command as string, [...args, "env"], {
 				cwd: root,
 				encoding: "utf8",
-				env: { ...process.env, LOCAINFRA_HOME: home, NO_COLOR: "1" },
+				env: { ...process.env, LOCASTACK_HOME: home, NO_COLOR: "1" },
 			});
 			expect(out).toMatch(
 				/DATABASE_URL=postgres:\/\/[^\s]+@127\.0\.0\.1:5433\//,

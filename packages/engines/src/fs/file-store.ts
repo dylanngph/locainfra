@@ -4,7 +4,7 @@ import type {
 	FileInfo,
 	FileStore,
 	WriteTextOptions,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { writeFileAtomic } from "../state/atomic-write";
 import { readTextIfExists } from "./read-text";
 

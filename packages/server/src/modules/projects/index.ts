@@ -37,7 +37,7 @@ export const projectsModule = (service: ProjectsService) =>
 				detail: {
 					tags: TAGS,
 					summary:
-						"Create a project folder with locainfra.yaml, or register an existing one",
+						"Create a project folder with locastack.yaml, or register an existing one",
 				},
 			},
 		)

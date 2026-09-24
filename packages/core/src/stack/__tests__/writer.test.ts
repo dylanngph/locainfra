@@ -10,7 +10,7 @@ import {
 	updateStackFile,
 } from "../writer";
 
-const COMMENTED = `# yaml-language-server: $schema=https://locainfra.dev/schema/v1.json
+const COMMENTED = `# yaml-language-server: $schema=https://locastack.dev/schema/v1.json
 # Stack for the shop app.
 version: 1 # schema version
 name: shop
@@ -29,7 +29,7 @@ link:
 `;
 
 const COMMENTS = [
-	"# yaml-language-server: $schema=https://locainfra.dev/schema/v1.json",
+	"# yaml-language-server: $schema=https://locastack.dev/schema/v1.json",
 	"# Stack for the shop app.",
 	"# schema version",
 	"# main database",
@@ -242,8 +242,8 @@ describe("stack writer", () => {
 
 describe("updateStackFile", () => {
 	test("reads, edits, validates and writes through the FileStore", async () => {
-		const files = new MemoryFiles({ "/p/locainfra.yaml": COMMENTED });
-		const result = await updateStackFile(files, "/p/locainfra.yaml", (text) =>
+		const files = new MemoryFiles({ "/p/locastack.yaml": COMMENTED });
+		const result = await updateStackFile(files, "/p/locastack.yaml", (text) =>
 			addStackService(text, "files", { type: "minio" }),
 		);
 		expect(result.ok && Object.keys(result.value.services)).toEqual([
@@ -252,51 +252,51 @@ describe("updateStackFile", () => {
 			"events",
 			"files",
 		]);
-		expect(await files.readText("/p/locainfra.yaml")).toContain(
+		expect(await files.readText("/p/locastack.yaml")).toContain(
 			"# main database",
 		);
 	});
 
 	test("missing file: STACK_NOT_FOUND unless initial contents are given", async () => {
 		const files = new MemoryFiles();
-		const missing = await updateStackFile(files, "/p/locainfra.yaml", (text) =>
+		const missing = await updateStackFile(files, "/p/locastack.yaml", (text) =>
 			addStackService(text, "cache", { type: "redis" }),
 		);
 		expect(!missing.ok && missing.error.code).toBe("STACK_NOT_FOUND");
 		const created = await updateStackFile(
 			files,
-			"/p/locainfra.yaml",
+			"/p/locastack.yaml",
 			(text) => addStackService(text, "cache", { type: "redis" }),
 			renderStackFile({ version: 1, name: "p", services: {} }),
 		);
 		expect(created.ok).toBe(true);
-		expect(await files.readText("/p/locainfra.yaml")).toContain(
+		expect(await files.readText("/p/locastack.yaml")).toContain(
 			"cache: { type: redis }",
 		);
 	});
 
 	test("edit failures become INVALID_STACK and nothing is written", async () => {
-		const files = new MemoryFiles({ "/p/locainfra.yaml": COMMENTED });
-		const result = await updateStackFile(files, "/p/locainfra.yaml", (text) =>
+		const files = new MemoryFiles({ "/p/locastack.yaml": COMMENTED });
+		const result = await updateStackFile(files, "/p/locastack.yaml", (text) =>
 			removeStackService(text, "nope"),
 		);
 		expect(!result.ok && result.error.code).toBe("INVALID_STACK");
-		expect(await files.readText("/p/locainfra.yaml")).toBe(COMMENTED);
+		expect(await files.readText("/p/locastack.yaml")).toBe(COMMENTED);
 	});
 
 	test("read and write failures become IO", async () => {
-		const files = new MemoryFiles({ "/p/locainfra.yaml": COMMENTED });
+		const files = new MemoryFiles({ "/p/locastack.yaml": COMMENTED });
 		files.writeText = async () => {
 			throw new Error("EROFS");
 		};
-		const result = await updateStackFile(files, "/p/locainfra.yaml", (text) =>
+		const result = await updateStackFile(files, "/p/locastack.yaml", (text) =>
 			addStackService(text, "files", { type: "minio" }),
 		);
 		expect(!result.ok && result.error.code).toBe("IO");
 		files.readText = async () => {
 			throw new Error("EACCES");
 		};
-		const read = await updateStackFile(files, "/p/locainfra.yaml", (text) =>
+		const read = await updateStackFile(files, "/p/locastack.yaml", (text) =>
 			addStackService(text, "files", { type: "minio" }),
 		);
 		expect(!read.ok && read.error.code).toBe("IO");

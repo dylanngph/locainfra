@@ -1,4 +1,4 @@
-import type { ServiceDetail } from "@locainfra/server";
+import type { ServiceDetail } from "@locastack/server";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { projectQuery } from "@/features/projects/api/projects.queries";
 import { serviceQuery } from "@/features/services/api/services.queries";

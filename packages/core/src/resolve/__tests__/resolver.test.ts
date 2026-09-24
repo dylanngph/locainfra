@@ -58,12 +58,12 @@ describe("resolveStack", () => {
 		});
 		if (!result.ok) throw result.error;
 		const [pg] = result.value.services;
-		expect(result.value.projectName).toBe("li-shop");
-		expect(result.value.network).toBe("li-shop");
+		expect(result.value.projectName).toBe("ls-shop");
+		expect(result.value.network).toBe("ls-shop");
 		expect(pg).toMatchObject({
 			name: "postgres",
 			type: "postgres",
-			containerName: "li-shop-postgres",
+			containerName: "ls-shop-postgres",
 			persist: "volume",
 			version: "16",
 			image: "postgres:16-alpine",
@@ -83,7 +83,7 @@ describe("resolveStack", () => {
 			},
 			volumes: [
 				{
-					name: "li-shop-postgres-data",
+					name: "ls-shop-postgres-data",
 					source: "data",
 					path: "/var/lib/postgresql/data",
 				},
@@ -315,14 +315,14 @@ describe("resolveStack with named instances", () => {
 		const events = byName.get("events");
 		expect(main).toMatchObject({
 			type: "postgres",
-			containerName: "li-shop-main-db",
+			containerName: "ls-shop-main-db",
 			hostPort: 5433,
 			persist: "volume",
 			secrets: { POSTGRES_PASSWORD: "main-db-password-1" },
 			config: { POSTGRES_DB: "shop" },
 			volumes: [
 				{
-					name: "li-shop-main-db-data",
+					name: "ls-shop-main-db-data",
 					source: "data",
 					path: "/var/lib/postgresql/data",
 				},
@@ -330,7 +330,7 @@ describe("resolveStack with named instances", () => {
 		});
 		expect(events).toMatchObject({
 			type: "postgres",
-			containerName: "li-shop-events",
+			containerName: "ls-shop-events",
 			hostPort: 5434,
 			persist: "ephemeral",
 			secrets: { POSTGRES_PASSWORD: "events-password-22" },

@@ -17,7 +17,7 @@ import { BunFileStore } from "../file-store";
 
 let dir: string;
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "li-files-"));
+	dir = mkdtempSync(join(tmpdir(), "ls-files-"));
 });
 afterEach(() => {
 	rmSync(dir, { recursive: true, force: true });

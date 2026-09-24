@@ -140,7 +140,7 @@ export type { BindPortProbeOptions } from "./net/port-probe";
 export { BindPortProbe, LOOPBACK_HOST } from "./net/port-probe";
 export type { DefaultPathsOptions } from "./paths/default-paths";
 export {
-	LOCAINFRA_HOME_ENV,
+	LOCASTACK_HOME_ENV,
 	resolveDefaultPaths,
 } from "./paths/default-paths";
 export type {

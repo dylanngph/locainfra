@@ -10,7 +10,7 @@ import {
 	ServiceDetail,
 	ServicePatch,
 	StatsSample,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { t } from "elysia";
 
 /**

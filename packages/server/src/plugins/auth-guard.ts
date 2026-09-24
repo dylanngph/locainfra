@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 
 export interface AuthGuardOptions {
-	/** Per-session secret; must match `?t=` query or `x-locainfra-token` header. */
+	/** Per-session secret; must match `?t=` query or `x-locastack-token` header. */
 	token: string;
 	/** Hosts the dashboard may be served on, e.g. ["127.0.0.1:4488"]. */
 	allowedHosts: readonly string[];
@@ -23,7 +23,7 @@ export const authGuard = ({ token, allowedHosts }: AuthGuardOptions) =>
 					!allowedHosts.some((h) => origin === `http://${h}`)
 				)
 					return status(403, "Forbidden origin");
-				const presented = request.headers.get("x-locainfra-token") ?? query.t;
+				const presented = request.headers.get("x-locastack-token") ?? query.t;
 				if (presented !== token) return status(401, "Unauthorized");
 			},
 		},

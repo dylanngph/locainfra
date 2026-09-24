@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { log } from "@clack/prompts";
-import type { DoctorReport } from "@locainfra/core";
+import type { DoctorReport } from "@locastack/core";
 import type { CommandContext, ExitCode } from "../../cli.types";
 import { ExitCode as Exit } from "../../cli.types";
 import { renderOpError, writeJson, writeLine } from "../../ui/output";
@@ -38,8 +38,8 @@ export function withProject(url: string, project: string | undefined): string {
 }
 
 /**
- * Bare `locainfra`: run doctor, register `--project` if given, then reuse a
- * live dashboard (`~/.locainfra/dashboard.json` + health probe) or start one
+ * Bare `locastack`: run doctor, register `--project` if given, then reuse a
+ * live dashboard (`~/.locastack/dashboard.json` + health probe) or start one
  * on 127.0.0.1 (first free port ≥ 4488, random session token), print its URL,
  * open the browser unless `--no-open`, and stay in the foreground. Ctrl+C
  * stops only the server; containers keep running.
@@ -150,7 +150,7 @@ export async function runDashboard(
 
 function printDoctor(ctx: CommandContext, report: DoctorReport): void {
 	const output = ctx.io.stdout;
-	log.message(`${theme.strong("LocaInfra")}  ${formatDoctorSummary(report)}`, {
+	log.message(`${theme.strong("LocaStack")}  ${formatDoctorSummary(report)}`, {
 		output,
 	});
 	for (const check of report.checks.filter((c) => c.status === "fail")) {

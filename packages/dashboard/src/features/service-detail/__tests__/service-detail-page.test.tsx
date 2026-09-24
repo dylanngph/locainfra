@@ -12,17 +12,17 @@ describe("Service detail", () => {
 	it("hides the CLI hint while the service runs", async () => {
 		renderApp("/p/shop-api/s/main-db");
 		await screen.findByText("127.0.0.1:5433");
-		expect(screen.queryByText(/locainfra up --service/)).toBeNull();
+		expect(screen.queryByText(/locastack up --service/)).toBeNull();
 		expect(screen.queryByRole("button", { name: "Copy" })).toBeNull();
 	});
 
 	it("shows `up --service` for a stopped service with a short folder", async () => {
 		renderApp("/p/shop-api/s/rest");
 		expect(
-			await screen.findByText("locainfra up --service rest"),
+			await screen.findByText("locastack up --service rest"),
 		).toHaveAttribute(
 			"title",
-			"cd '/Users/dev/Developer/shop-api' && locainfra up --service rest",
+			"cd '/Users/dev/Developer/shop-api' && locastack up --service rest",
 		);
 		expect(screen.getByText("…/shop-api")).toHaveAttribute(
 			"title",
@@ -33,7 +33,7 @@ describe("Service detail", () => {
 	it("shows `up --service` for a port conflict", async () => {
 		renderApp("/p/shop-api/s/events");
 		expect(
-			await screen.findByText("locainfra up --service events"),
+			await screen.findByText("locastack up --service events"),
 		).toBeInTheDocument();
 	});
 });

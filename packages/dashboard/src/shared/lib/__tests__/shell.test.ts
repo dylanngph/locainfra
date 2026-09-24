@@ -13,13 +13,13 @@ describe("shellQuote", () => {
 
 describe("cliCommandLine", () => {
 	it("prefixes a quoted cd when a folder is given", () => {
-		expect(cliCommandLine("locainfra up", "/Users/me/dev/my shop")).toBe(
-			"cd '/Users/me/dev/my shop' && locainfra up",
+		expect(cliCommandLine("locastack up", "/Users/me/dev/my shop")).toBe(
+			"cd '/Users/me/dev/my shop' && locastack up",
 		);
 	});
 
 	it("returns the bare command without a folder", () => {
-		expect(cliCommandLine("locainfra doctor")).toBe("locainfra doctor");
+		expect(cliCommandLine("locastack doctor")).toBe("locastack doctor");
 	});
 });
 

@@ -1,4 +1,4 @@
-import type { ServiceDefinition, ServiceStatus } from "@locainfra/server";
+import type { ServiceDefinition, ServiceStatus } from "@locastack/server";
 import {
 	CpuIcon,
 	EllipsisIcon,

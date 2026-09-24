@@ -14,7 +14,7 @@ import type {
 	ServiceStatus,
 	Stack,
 	StatsBatch,
-} from "@locainfra/server";
+} from "@locastack/server";
 import type { Snapshot } from "@/features/snapshots/api/snapshots.api";
 import { MOCK_CATALOG } from "./catalog.fixture";
 import type { MockPortOwners } from "./mock-import";
@@ -253,7 +253,7 @@ export class MockDb {
 			),
 			hostPort: s.hostPort,
 			containerPort: def?.port.container ?? s.hostPort,
-			containerName: `li-${p.name}-${s.name}`,
+			containerName: `ls-${p.name}-${s.name}`,
 			containerId: this.containerId(p.name, s.name),
 			persist: s.persist,
 			state: s.state,
@@ -276,7 +276,7 @@ export class MockDb {
 	projectStatus(p: MockProject, usage = true): ProjectStatus {
 		return {
 			project: p.name,
-			network: `li-${p.name}`,
+			network: `ls-${p.name}`,
 			services: p.services.map((s) => this.status(p, s, usage)),
 		};
 	}
@@ -301,7 +301,7 @@ export class MockDb {
 		return {
 			name: p.name,
 			root: p.root,
-			filePath: `${p.root}/locainfra.yaml`,
+			filePath: `${p.root}/locastack.yaml`,
 			file: {
 				version: 1,
 				name: p.name,
@@ -340,13 +340,13 @@ export class MockDb {
 		const def = this.definition(s.type);
 		return {
 			...this.status(p, s, false),
-			network: `li-${p.name}`,
+			network: `ls-${p.name}`,
 			config: this.effectiveConfig(p, s),
 			secretNames: def?.secrets ?? [],
 			volumes:
 				s.persist === "volume"
 					? (def?.volumes ?? []).map((v) => ({
-							name: `li-${p.name}-${s.name}-${v.name}`,
+							name: `ls-${p.name}-${s.name}-${v.name}`,
 							source: v.name,
 							path: v.path,
 						}))
@@ -418,7 +418,7 @@ export class MockDb {
 				k: "Secret",
 				v: reveal ? (s.secrets[name] ?? "") : MASKED,
 			})),
-			{ k: "Container", v: `li-${p.name}-${s.name}` },
+			{ k: "Container", v: `ls-${p.name}-${s.name}` },
 		];
 		const key = primary?.key ?? primaryKey;
 		const snippets = def?.snippets ?? {};
@@ -621,7 +621,7 @@ export class MockDb {
 	startSteps(p: MockProject, s: MockService) {
 		return [
 			{
-				message: `Creating container li-${p.name}-${s.name}`,
+				message: `Creating container ls-${p.name}-${s.name}`,
 				delay: 150,
 				percent: 20,
 				service: s.name,
@@ -666,7 +666,7 @@ export class MockDb {
 	stopSteps(p: MockProject, s: MockService) {
 		return [
 			{
-				message: `Stopping li-${p.name}-${s.name}`,
+				message: `Stopping ls-${p.name}-${s.name}`,
 				delay: 400,
 				service: s.name,
 				run: () => {

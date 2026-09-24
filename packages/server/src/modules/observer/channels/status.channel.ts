@@ -4,7 +4,7 @@ import type {
 	ProjectStatus,
 	Result,
 	ServiceStatus,
-} from "@locainfra/core";
+} from "@locastack/core";
 import type { ChannelError, StatusDelta } from "../observer.model";
 import { later, type Timer } from "./channel.types";
 import type { StatsChannel } from "./stats.channel";
@@ -48,13 +48,13 @@ interface StatusEntry {
 	readonly stats: Map<string, () => void>;
 }
 
-/** The label compose puts on every LocaInfra container, naming its project. */
-export const STACK_LABEL = "locainfra.stack";
+/** The label compose puts on every LocaStack container, naming its project. */
+export const STACK_LABEL = "locastack.stack";
 
 /**
  * `status:<project>`: while a project is watched it is reloaded every
  * `intervalMs` and on Docker events of its containers (one shared events
- * subscription for all projects, filtered by the `locainfra.stack` label).
+ * subscription for all projects, filtered by the `locastack.stack` label).
  * A subscriber first gets a `snapshot`, then `delta`s holding only the rows
  * that changed. Running containers of watched projects are kept on the
  * {@link StatsChannel} so rows carry `cpuPercent`/`memBytes`.

@@ -5,12 +5,12 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
-const API_TARGET = process.env.LOCAINFRA_API ?? "http://127.0.0.1:4488";
+const API_TARGET = process.env.LOCASTACK_API ?? "http://127.0.0.1:4488";
 const here = import.meta.dirname;
 
 /** The MSW worker only serves `VITE_MOCK=1` dev sessions; keep it out of the build. */
 const dropMockWorker = (): Plugin => ({
-	name: "locainfra:drop-mock-worker",
+	name: "locastack:drop-mock-worker",
 	apply: "build",
 	async closeBundle() {
 		await rm(path.resolve(here, "dist/mockServiceWorker.js"), { force: true });

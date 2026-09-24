@@ -1,4 +1,4 @@
-import type { ServiceDetail, StatsSample } from "@locainfra/server";
+import type { ServiceDetail, StatsSample } from "@locastack/server";
 import { type ReactNode, useEffect } from "react";
 import { formatCpu, formatMem } from "@/shared/lib/format";
 import { useLiveModeStore } from "@/shared/lib/live/live-mode";

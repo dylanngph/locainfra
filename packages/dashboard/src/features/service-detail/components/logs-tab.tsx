@@ -1,4 +1,4 @@
-import type { ServiceDetail } from "@locainfra/server";
+import type { ServiceDetail } from "@locastack/server";
 import {
 	useCallback,
 	useEffect,

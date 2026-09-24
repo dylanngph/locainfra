@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isOpError } from "@locainfra/core";
+import { isOpError } from "@locastack/core";
 import type {
 	CommandRunner,
 	RunningCommand,

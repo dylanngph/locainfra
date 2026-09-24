@@ -10,7 +10,7 @@ import {
 	type Stack,
 	suggestFreePort,
 	WIPE_NEEDS_FORCE_FIX,
-} from "@locainfra/core";
+} from "@locastack/core";
 import type { ServerOps, ServerPorts } from "../../deps";
 import type { OpAccepted } from "../../models/common.model";
 import { unwrap } from "../../shared/unwrap";
@@ -447,7 +447,7 @@ export class ServicesService {
 						field: "seed",
 						fix:
 							error.details?.reason === "missing"
-								? `Create ./${seed} next to locainfra.yaml`
+								? `Create ./${seed} next to locastack.yaml`
 								: error.details?.fix,
 					},
 				},

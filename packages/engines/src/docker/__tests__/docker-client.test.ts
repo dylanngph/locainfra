@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isOpError } from "@locainfra/core";
+import { isOpError } from "@locastack/core";
 import { DockerClient } from "../docker-client";
 import { FakeTransport } from "./fake-transport";
 
@@ -47,7 +47,7 @@ describe("DockerClient (fake transport)", () => {
 			],
 		]);
 		const list = await new DockerClient(transport).list({
-			labels: { "locainfra.stack": "demo" },
+			labels: { "locastack.stack": "demo" },
 		});
 		expect(list).toEqual([
 			{
@@ -62,7 +62,7 @@ describe("DockerClient (fake transport)", () => {
 		]);
 		expect(transport.calls[0]).toContain("filters=");
 		expect(decodeURIComponent(transport.calls[0] ?? "")).toContain(
-			"locainfra.stack=demo",
+			"locastack.stack=demo",
 		);
 	});
 

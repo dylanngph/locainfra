@@ -5,7 +5,7 @@
 
 ## Context and Problem Statement
 
-Setting up local services for a project (pick images and ports, generate passwords, write compose, copy connection strings) is a repeated ritual. Should LocaInfra primarily be a CLI or an interface?
+Setting up local services for a project (pick images and ports, generate passwords, write compose, copy connection strings) is a repeated ritual. Should LocaStack primarily be a CLI or an interface?
 
 ## Decision Drivers
 
@@ -21,7 +21,7 @@ Setting up local services for a project (pick images and ports, generate passwor
 
 ## Decision Outcome
 
-Chosen option: **dashboard-first with a minimal CLI**. `locainfra` opens a localhost dashboard; the CLI keeps only `up`, `down`, `env`, `doctor` (plus `--version`/`--help`), all with `--json`.
+Chosen option: **dashboard-first with a minimal CLI**. `locastack` opens a localhost dashboard; the CLI keeps only `up`, `down`, `env`, `doctor` (plus `--version`/`--help`), all with `--json`.
 
 ### Consequences
 

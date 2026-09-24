@@ -6,7 +6,7 @@ import {
 	ok,
 	type Progress,
 	type ProjectSummary,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { type App, createApp, createRuntime } from "../app";
 import {
 	CONTAINER,
@@ -36,7 +36,7 @@ function setup(overrides: Parameters<typeof createTestDeps>[0] = {}) {
 				method,
 				headers: {
 					host: HOST,
-					...(token ? { "x-locainfra-token": token } : {}),
+					...(token ? { "x-locastack-token": token } : {}),
 					...(body === undefined ? {} : { "content-type": "application/json" }),
 				},
 				...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -173,7 +173,7 @@ describe("route behaviour", () => {
 			op: "createProject",
 			input: { name: "blog", root: "/home/test/Developer/blog" },
 		});
-		await deps.ports.files.writeText("/work/docs/locainfra.yaml", "x");
+		await deps.ports.files.writeText("/work/docs/locastack.yaml", "x");
 		const registered = await call("POST", "/api/projects", {
 			name: "docs",
 			root: "/work/docs",
@@ -435,7 +435,7 @@ describe("route behaviour", () => {
 	it("types the Eden client from App", async () => {
 		const { app } = setup();
 		const client = treaty(app, {
-			headers: { host: HOST, "x-locainfra-token": TOKEN },
+			headers: { host: HOST, "x-locastack-token": TOKEN },
 		});
 		const { data, error } = await client.api
 			.projects({ project: PROJECT })

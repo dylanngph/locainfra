@@ -1,4 +1,4 @@
-import type { SecretGenerator } from "@locainfra/core";
+import type { SecretGenerator } from "@locastack/core";
 
 /**
  * Encodes bytes as unpadded base64url (RFC 4648 §5): URL-, shell- and dotenv-safe.

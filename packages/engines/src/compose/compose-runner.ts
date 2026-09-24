@@ -12,7 +12,7 @@ import {
 	OpError,
 	type Progress,
 	toProgressError,
-} from "@locainfra/core";
+} from "@locastack/core";
 import {
 	BunCommandRunner,
 	type CommandRunner,
@@ -119,7 +119,7 @@ export function serviceActionArgs(
  * volumes: images such as postgres and redis declare `VOLUME`s, so an
  * `ephemeral` instance (no named volume) would otherwise leave its data
  * behind in a hex-named volume on every add/remove cycle. Named volumes
- * (`li-<project>-<name>-<vol>`) are never touched here; they are deleted
+ * (`ls-<project>-<name>-<vol>`) are never touched here; they are deleted
  * separately, and only on request.
  *
  * @param services - Compose service keys.
@@ -134,7 +134,7 @@ export function removeArgs(services: readonly string[]): string[] {
  *
  * @param docker - Docker CLI executable.
  * @param networks - Network names.
- * @returns e.g. `['docker', 'network', 'rm', '--force', 'li-shop']`.
+ * @returns e.g. `['docker', 'network', 'rm', '--force', 'ls-shop']`.
  */
 export function networkRemoveArgv(
 	docker: string,
@@ -148,7 +148,7 @@ export function networkRemoveArgv(
  *
  * @param docker - Docker CLI executable.
  * @param volumes - Volume names.
- * @returns e.g. `['docker', 'volume', 'rm', '--force', 'li-shop-db-data']`.
+ * @returns e.g. `['docker', 'volume', 'rm', '--force', 'ls-shop-db-data']`.
  */
 export function volumeRemoveArgv(
 	docker: string,

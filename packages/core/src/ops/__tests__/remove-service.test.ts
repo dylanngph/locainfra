@@ -5,7 +5,7 @@ import { collect } from "../../testing/collect";
 import { removeService } from "../remove-service.op";
 import { createWorld, SHOP_COMPOSE, SHOP_FILE, SHOP_SECRETS } from "./world";
 
-const target = { projectName: "li-shop", composeFile: SHOP_COMPOSE };
+const target = { projectName: "ls-shop", composeFile: SHOP_COMPOSE };
 
 describe("removeService", () => {
 	test("removes the container, the entry and the pin; keeps secrets and volumes", async () => {
@@ -39,7 +39,7 @@ describe("removeService", () => {
 			removeService(world, { project: "shop", name: "main-db", volumes: true }),
 		);
 		expect(world.lifecycle.removeCalls[0]?.volumes).toEqual([
-			"li-shop-main-db-data",
+			"ls-shop-main-db-data",
 		]);
 		expect(
 			world.secrets.stacks.get("shop")?.MAIN_DB__POSTGRES_PASSWORD,
@@ -50,7 +50,7 @@ describe("removeService", () => {
 	});
 
 	test("volumes: true deletes the service's snapshots (archives, sidecars, rows); without it they stay", async () => {
-		const dir = "/home/test/.locainfra/snapshots/shop/main-db";
+		const dir = "/home/test/.locastack/snapshots/shop/main-db";
 		const rows: SnapshotRecord[] = ["s1", "s2", "e1"].map((id) => ({
 			id,
 			project: "shop",
@@ -100,8 +100,8 @@ describe("removeService", () => {
 		expect(events.at(-1)).toMatchObject({ kind: "done" });
 		expect(world.lifecycle.removeCalls.at(-1)).toMatchObject({
 			services: ["main-db"],
-			volumes: ["li-shop-main-db-data"],
-			networks: ["li-shop"],
+			volumes: ["ls-shop-main-db-data"],
+			networks: ["ls-shop"],
 		});
 	});
 

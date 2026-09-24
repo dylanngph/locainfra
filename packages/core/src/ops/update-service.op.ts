@@ -25,7 +25,7 @@ import {
 /**
  * Changes a service's version, port, persistence, config or seed file (the
  * "Use port N" fix is `patch: { port: N }`; `seed: ""` removes the seed): validates the patch (`INVALID_INPUT`),
- * rewrites the entry in `locainfra.yaml` (comments kept; `config` replaces
+ * rewrites the entry in `locastack.yaml` (comments kept; `config` replaces
  * the whole map, an empty map removes it), re-pins ports (`PORT_CONFLICT`
  * with `details.suggestedPort`), re-renders compose and re-`up`s the service,
  * which recreates its container. Switching to `ephemeral` never deletes

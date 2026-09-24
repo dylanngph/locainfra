@@ -1,5 +1,5 @@
 /**
- * Per-stack secret storage (`~/.locainfra/secrets/<stack>.env`, mode 0600).
+ * Per-stack secret storage (`~/.locastack/secrets/<stack>.env`, mode 0600).
  * Implementations must never log values.
  */
 export interface SecretStore {

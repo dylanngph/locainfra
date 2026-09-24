@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import type { FolderPicker, FolderPickOptions } from "@locainfra/core";
+import type { FolderPicker, FolderPickOptions } from "@locastack/core";
 import {
 	BunCommandRunner,
 	type CommandRunner,

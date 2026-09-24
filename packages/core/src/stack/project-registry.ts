@@ -52,7 +52,7 @@ export function findProjectEntry(
 
 /** Two projects whose Docker container names would be equal. */
 export interface ContainerNameClash {
-	/** The shared container name, e.g. `li-shop-api-db`. */
+	/** The shared container name, e.g. `ls-shop-api-db`. */
 	readonly containerName: string;
 	/** Service instance of the project being checked. */
 	readonly service: string;
@@ -76,8 +76,8 @@ export interface ContainerNameCandidate {
 
 /**
  * Finds a container name the candidate would share with another registered
- * project: containers are named `li-<project>-<service>`, so `shop` + `api-db`
- * and `shop-api` + `db` both give `li-shop-api-db`. Projects whose file is
+ * project: containers are named `ls-<project>-<service>`, so `shop` + `api-db`
+ * and `shop-api` + `db` both give `ls-shop-api-db`. Projects whose file is
  * missing or invalid are skipped.
  *
  * @param deps - State and file access.
@@ -143,7 +143,7 @@ export function containerNameClashError(
 				service: clash.service,
 				otherProject: clash.otherProject,
 				otherRoot: clash.otherRoot,
-				fix: `Rename the service "${clash.service}" (or the project) so li-<project>-<service> differs from ${clash.containerName}.`,
+				fix: `Rename the service "${clash.service}" (or the project) so ls-<project>-<service> differs from ${clash.containerName}.`,
 			},
 		},
 	);
@@ -151,7 +151,7 @@ export function containerNameClashError(
 
 /**
  * Whether a registration of `name` at `root` no longer holds: the folder has
- * no `locainfra.yaml` any more, or its file now names another stack. An
+ * no `locastack.yaml` any more, or its file now names another stack. An
  * unreadable or invalid file keeps the claim (fail safe).
  */
 async function isStaleClaim(
@@ -178,14 +178,14 @@ function nameTaken(stack: Stack, owner: string): OpError {
 				root: stack.root,
 				registeredRoot: owner,
 				filePath: stack.filePath,
-				fix: `Rename "name:" in ${stack.filePath} to a name no other project uses. Stack names are shared by all projects: they key the compose project li-<name>, its volumes, secrets and pinned ports.`,
+				fix: `Rename "name:" in ${stack.filePath} to a name no other project uses. Stack names are shared by all projects: they key the compose project ls-<name>, its volumes, secrets and pinned ports.`,
 			},
 		},
 	);
 }
 
 function ioError(stack: Stack, cause: unknown): OpError {
-	return ioErrorFrom("Could not read the LocaInfra project registry", cause, {
+	return ioErrorFrom("Could not read the LocaStack project registry", cause, {
 		stack: stack.name,
 	});
 }

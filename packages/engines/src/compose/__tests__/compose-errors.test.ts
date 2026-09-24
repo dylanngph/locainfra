@@ -5,8 +5,8 @@ describe("classifyComposeFailure", () => {
 	test("port is already allocated → PORT_CONFLICT with port", () => {
 		const error = classifyComposeFailure(
 			[
-				" Container li-demo-postgres-1  Starting",
-				"Error response from daemon: driver failed programming external connectivity on endpoint li-demo-postgres-1 (abc): Bind for 127.0.0.1:5432 failed: port is already allocated",
+				" Container ls-demo-postgres-1  Starting",
+				"Error response from daemon: driver failed programming external connectivity on endpoint ls-demo-postgres-1 (abc): Bind for 127.0.0.1:5432 failed: port is already allocated",
 			],
 			1,
 			"up",

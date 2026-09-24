@@ -1,4 +1,4 @@
-import { OpError } from "@locainfra/core";
+import { OpError } from "@locastack/core";
 
 /**
  * Reads the `message` of an Engine API error body, falling back to the raw

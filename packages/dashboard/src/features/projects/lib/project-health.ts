@@ -1,4 +1,4 @@
-import type { ProjectStatus, ProjectSummary } from "@locainfra/server";
+import type { ProjectStatus, ProjectSummary } from "@locastack/server";
 import type { StatusTone } from "@/shared/components/status";
 
 /** Numbers a project card shows, from its summary or live status. */

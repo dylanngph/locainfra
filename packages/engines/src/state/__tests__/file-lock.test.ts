@@ -15,7 +15,7 @@ import { acquireFileLock, isProcessAlive } from "../file-lock";
 let dir: string;
 let lockPath: string;
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "li-lock-"));
+	dir = mkdtempSync(join(tmpdir(), "ls-lock-"));
 	lockPath = join(dir, "state.json.lock");
 });
 afterEach(() => {

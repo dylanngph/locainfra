@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "https://locainfra.dev/schema/v1.json",
+	"$id": "https://locastack.dev/schema/v1.json",
 	"type": "object",
 	"required": ["version", "name"],
 	"properties": {
@@ -10,7 +10,7 @@
 		},
 		"name": {
 			"pattern": "^[a-z][a-z0-9-]*$",
-			"description": "Project name; compose project and network become li-<name>",
+			"description": "Project name; compose project and network become ls-<name>",
 			"type": "string"
 		},
 		"services": {
@@ -46,7 +46,7 @@
 							]
 						},
 						"persist": {
-							"description": "volume: named Docker volumes li-<project>-<service>-<vol> survive restarts and `down`; ephemeral: no named volumes, data is lost when the container is removed",
+							"description": "volume: named Docker volumes ls-<project>-<service>-<vol> survive restarts and `down`; ephemeral: no named volumes, data is lost when the container is removed",
 							"anyOf": [
 								{
 									"const": "volume",

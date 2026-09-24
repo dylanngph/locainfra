@@ -7,7 +7,7 @@ import {
 	type DockerInfo,
 	type DockerInfoPort,
 	OpError,
-} from "@locainfra/core";
+} from "@locastack/core";
 import {
 	buildContainerListQuery,
 	toContainerDetails,

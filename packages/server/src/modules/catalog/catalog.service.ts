@@ -6,7 +6,7 @@ import {
 	type PortProbe,
 	type StateReader,
 	suggestFreePort,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { unwrap } from "../../shared/unwrap";
 import type { FreePort } from "./catalog.model";
 

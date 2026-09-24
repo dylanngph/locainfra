@@ -3,7 +3,7 @@ import type { FileStore } from "../ports/files.port";
 import { PROJECT_STACK_FILE_NAME, type StackFile } from "./stack.model";
 
 /**
- * Walks up from `cwd` to the filesystem root looking for `locainfra.yaml`.
+ * Walks up from `cwd` to the filesystem root looking for `locastack.yaml`.
  *
  * @param files - File access.
  * @param cwd - Start directory (resolved to an absolute path).

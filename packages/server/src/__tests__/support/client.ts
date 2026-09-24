@@ -22,7 +22,7 @@ export function setupApp(overrides: Parameters<typeof createTestDeps>[0] = {}) {
 				method,
 				headers: {
 					host: HOST,
-					...(token ? { "x-locainfra-token": token } : {}),
+					...(token ? { "x-locastack-token": token } : {}),
 					...(body === undefined ? {} : { "content-type": "application/json" }),
 				},
 				...(body === undefined ? {} : { body: JSON.stringify(body) }),

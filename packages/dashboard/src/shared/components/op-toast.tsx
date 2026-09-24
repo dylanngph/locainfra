@@ -1,4 +1,4 @@
-import type { Progress } from "@locainfra/server";
+import type { Progress } from "@locastack/server";
 import { CircleCheckIcon, Loader2Icon, OctagonXIcon } from "lucide-react";
 import { useObserverStore } from "@/shared/lib/observer/observer-store";
 
@@ -67,7 +67,7 @@ export function OpToast({ opId, title }: OpToastProps) {
 						style={{ width: `${Math.max(4, Math.min(100, percent))}%` }}
 					/>
 				) : (
-					<div className="h-full w-1/3 animate-[li-indeterminate_1.2s_ease-in-out_infinite] bg-white" />
+					<div className="h-full w-1/3 animate-[ls-indeterminate_1.2s_ease-in-out_infinite] bg-white" />
 				)}
 			</div>
 		</div>

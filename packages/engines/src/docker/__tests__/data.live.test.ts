@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isOpError, type Progress } from "@locainfra/core";
+import { isOpError, type Progress } from "@locastack/core";
 import { DockerContainerExec } from "../container-exec";
 import { UnixSocketHijacker } from "../hijack";
 import { DockerSocketLocator } from "../socket-locator";
@@ -14,7 +14,7 @@ import {
 } from "../volume-archiver";
 
 // SCRATCH ONLY: these tests create their own alpine container, network and
-// volume (all named li-test-<random>), never bind host ports, never touch any
+// volume (all named ls-test-<random>), never bind host ports, never touch any
 // other container, and remove everything they created in afterAll.
 const socket = await new DockerSocketLocator().locate();
 const dockerAvailable =
@@ -24,9 +24,9 @@ const dockerAvailable =
 		.catch(() => false));
 
 const suffix = crypto.randomUUID().slice(0, 8);
-const network = `li-test-net-${suffix}`;
-const container = `li-test-exec-${suffix}`;
-const volume = `li-test-vol-${suffix}`;
+const network = `ls-test-net-${suffix}`;
+const container = `ls-test-exec-${suffix}`;
+const volume = `ls-test-vol-${suffix}`;
 const IMAGE = SNAPSHOT_HELPER_IMAGE;
 
 async function docker(
@@ -139,7 +139,7 @@ describe.skipIf(!dockerAvailable)(
 
 		test("an unknown container is SERVICE_NOT_FOUND", async () => {
 			const error = await exec
-				.run(`li-test-missing-${suffix}`, ["true"], limits)
+				.run(`ls-test-missing-${suffix}`, ["true"], limits)
 				.then(
 					() => undefined,
 					(e: unknown) => e,
@@ -156,7 +156,7 @@ describe.skipIf(!dockerAvailable)(
 		let home: string;
 
 		beforeAll(async () => {
-			home = mkdtempSync(join(tmpdir(), "li-test-home-"));
+			home = mkdtempSync(join(tmpdir(), "ls-test-home-"));
 			await ensureImage();
 			expect((await docker("volume", "create", volume)).code).toBe(0);
 			const seed = await docker(

@@ -2,7 +2,7 @@ import type {
 	ProjectSummary,
 	ServiceDefinition,
 	ServiceStatus,
-} from "@locainfra/server";
+} from "@locastack/server";
 
 /** Leading visual of a palette item. */
 export type PaletteIcon =
@@ -10,9 +10,9 @@ export type PaletteIcon =
 	| { readonly kind: "initial"; readonly name: string }
 	| { readonly kind: "env" };
 
-/** A real `locainfra` command equivalent to a palette item. */
+/** A real `locastack` command equivalent to a palette item. */
 export interface PaletteCli {
-	/** e.g. `locainfra up`. */
+	/** e.g. `locastack up`. */
 	readonly command: string;
 	/** Project folder it runs in. */
 	readonly cwd: string;
@@ -53,8 +53,8 @@ export interface PaletteInput {
  * Palette groups, as the prototype's `paletteItems()`: "Add to <project>"
  * (catalog → Config page of the current project, else the first project),
  * "Services" (every service of every project → detail), "Projects"
- * (→ overview, `locainfra up`) and, inside a project, "Actions" ("Export
- * .env for <project>" → Environment, `locainfra env`). Empty groups are
+ * (→ overview, `locastack up`) and, inside a project, "Actions" ("Export
+ * .env for <project>" → Environment, `locastack env`). Empty groups are
  * left out; cmdk filters by the typed query.
  *
  * @param input - Current project, projects, catalog and loaded services.
@@ -105,7 +105,7 @@ export function buildPaletteGroups(input: PaletteInput): PaletteGroup[] {
 				keywords: [],
 				icon: { kind: "initial", name: p.name },
 				to: `/p/${p.name}`,
-				cli: { command: "locainfra up", cwd: p.root },
+				cli: { command: "locastack up", cwd: p.root },
 			})),
 		});
 	}
@@ -121,7 +121,7 @@ export function buildPaletteGroups(input: PaletteInput): PaletteGroup[] {
 					keywords: ["env", ".env", "export", "environment"],
 					icon: { kind: "env" },
 					to: `/p/${current.name}/env`,
-					cli: { command: "locainfra env", cwd: current.root },
+					cli: { command: "locastack env", cwd: current.root },
 				},
 			],
 		});

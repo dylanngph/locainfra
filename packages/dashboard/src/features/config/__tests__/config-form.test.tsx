@@ -124,7 +124,7 @@ describe("Config page", () => {
 
 	it("round-trips the YAML side editor into the form", async () => {
 		const { user } = renderApp("/p/shop-api/add/postgres");
-		const editor = await screen.findByLabelText("locainfra.yaml entry");
+		const editor = await screen.findByLabelText("locastack.yaml entry");
 		expect((editor as HTMLTextAreaElement).value).toContain(
 			"db:\n    type: postgres",
 		);

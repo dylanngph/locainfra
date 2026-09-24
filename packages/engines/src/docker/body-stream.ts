@@ -1,4 +1,4 @@
-import { OpError } from "@locainfra/core";
+import { OpError } from "@locastack/core";
 import { dockerApiError } from "./docker-errors";
 import type { DockerTransport } from "./transport";
 

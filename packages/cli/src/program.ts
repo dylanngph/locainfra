@@ -16,7 +16,7 @@ import { writeLine } from "./ui/output";
 import { theme } from "./ui/theme";
 
 /**
- * Builds the full `locainfra` program. Deps are loaded lazily by each action,
+ * Builds the full `locastack` program. Deps are loaded lazily by each action,
  * so `--help`/`--version` stay instant and tests inject fakes via `loadDeps`.
  *
  * @param loadDeps - Composition root (real: `composeDeps` from `composition.ts`).

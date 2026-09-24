@@ -3,7 +3,7 @@ import {
 	type OpJournal,
 	type Progress,
 	toProgressError,
-} from "@locainfra/core";
+} from "@locastack/core";
 
 /** Tuning of {@link OpRegistry}. */
 export interface OpRegistryOptions {
@@ -122,7 +122,7 @@ const DEFAULTS = { capacity: 50, retentionMs: 60_000, maxEvents: 2000 };
  * event per operation, even when the op throws or ends without one.
  *
  * Operations on one project are serialized (a per-project promise chain):
- * every op loads `locainfra.yaml`, re-renders compose (`up` runs with
+ * every op loads `locastack.yaml`, re-renders compose (`up` runs with
  * `--remove-orphans`) and read-modify-writes the stack file, so two ops
  * interleaving on stale snapshots could remove a sibling's new container, or
  * both conclude that neither removes the last service (leaking the project

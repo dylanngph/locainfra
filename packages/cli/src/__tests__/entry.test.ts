@@ -20,7 +20,7 @@ async function runEntry(
 	return { code, stdout, stderr };
 }
 
-describe("locainfra entry (spawned)", () => {
+describe("locastack entry (spawned)", () => {
 	test("--version prints the package version and exits 0", async () => {
 		const { code, stdout } = await runEntry(["--version"]);
 		expect(code).toBe(0);
@@ -30,7 +30,7 @@ describe("locainfra entry (spawned)", () => {
 	test("--help lists the commands and exits 0", async () => {
 		const { code, stdout } = await runEntry(["--help"]);
 		expect(code).toBe(0);
-		expect(stdout).toContain("Usage: locainfra");
+		expect(stdout).toContain("Usage: locastack");
 		for (const name of ["up", "down", "env", "doctor", "--json"]) {
 			expect(stdout).toContain(name);
 		}

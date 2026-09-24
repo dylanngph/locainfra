@@ -29,7 +29,7 @@ describe("addService: client-chosen secrets and seed", () => {
 		expect(world.files.files.get(SHOP_FILE)).toContain("seed: db/seed.sql");
 		const compose = parse(world.files.files.get(SHOP_COMPOSE) ?? "");
 		expect(compose.services["main-db"].volumes).toEqual([
-			"li-shop-main-db-data:/var/lib/postgresql/data",
+			"ls-shop-main-db-data:/var/lib/postgresql/data",
 			{
 				type: "bind",
 				source: "/work/shop/db/seed.sql",
@@ -185,7 +185,7 @@ describe("updateService: seed", () => {
 		expect(world.files.files.get(SHOP_FILE)).not.toContain("seed:");
 		compose = parse(world.files.files.get(SHOP_COMPOSE) ?? "");
 		expect(compose.services["main-db"].volumes).toEqual([
-			"li-shop-main-db-data:/var/lib/postgresql/data",
+			"ls-shop-main-db-data:/var/lib/postgresql/data",
 		]);
 
 		const refused = await collect(

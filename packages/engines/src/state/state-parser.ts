@@ -1,4 +1,4 @@
-import { OpError, StateFile } from "@locainfra/core";
+import { OpError, StateFile } from "@locastack/core";
 import { Value } from "@sinclair/typebox/value";
 
 /** Turns a JSON pointer (`/stacks/a/ports/x`) into a dotted path (`stacks.a.ports.x`). */

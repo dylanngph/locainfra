@@ -1,4 +1,4 @@
-import type { PersistMode } from "@locainfra/server";
+import type { PersistMode } from "@locastack/server";
 import { useForm, useStore } from "@tanstack/react-form";
 import {
 	useQuery,
@@ -110,7 +110,7 @@ function ConfigForm({ ctx }: ConfigFormProps) {
 					queryClient,
 					invalidate: invalidationFor({ kind: "service-set", project }),
 				});
-				// The op writes locainfra.yaml shortly after the 202 (or after
+				// The op writes locastack.yaml shortly after the 202 (or after
 				// other ops of the project); open the detail page once its
 				// "Added" event arrives (stay here if the op fails first).
 				if (!(await waitForService(project, value.name, opId, settled))) return;
@@ -470,7 +470,7 @@ function ConfigForm({ ctx }: ConfigFormProps) {
 							{values.persist === "ephemeral"
 								? "Data is wiped every time the container is removed."
 								: volume
-									? `Data survives restarts in volume li-${project}-${values.name || "unnamed"}-${volume}.`
+									? `Data survives restarts in volume ls-${project}-${values.name || "unnamed"}-${volume}.`
 									: "This service keeps no data on disk."}
 						</span>
 					</div>

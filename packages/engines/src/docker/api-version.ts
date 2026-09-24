@@ -1,6 +1,6 @@
-import { compareVersions } from "@locainfra/core";
+import { compareVersions } from "@locastack/core";
 
-/** Engine API version LocaInfra targets by default (Docker 25+). */
+/** Engine API version LocaStack targets by default (Docker 25+). */
 export const PREFERRED_DOCKER_API_VERSION = "1.44";
 
 /**

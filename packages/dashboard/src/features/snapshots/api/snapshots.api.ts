@@ -16,7 +16,7 @@ export const fetchSnapshots = (project: string, name: string) =>
 	unwrap(service(project, name).snapshots.get());
 
 /** One snapshot: `{ id, service, name, sizeBytes, createdAt }`. */
-export type { Snapshot } from "@locainfra/server";
+export type { Snapshot } from "@locastack/server";
 
 /**
  * Key of a service's snapshot list (under the service key, so Refresh

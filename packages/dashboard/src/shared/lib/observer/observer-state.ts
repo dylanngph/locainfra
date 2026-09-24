@@ -6,7 +6,7 @@ import type {
 	ServerMessage,
 	ServiceStatus,
 	StatsSample,
-} from "@locainfra/server";
+} from "@locastack/server";
 
 /** Most samples kept per container (≈ 5 min at one per 1.5 s). */
 export const MAX_STATS_SAMPLES = 200;

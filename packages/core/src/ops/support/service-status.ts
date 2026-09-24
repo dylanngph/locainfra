@@ -163,7 +163,7 @@ export function portConflictProblem(
 
 /**
  * @param container - A container of the project.
- * @returns Its service instance name from the LocaInfra labels.
+ * @returns Its service instance name from the LocaStack labels.
  */
 function instanceOf(container: ContainerSummary): string | undefined {
 	return container.labels[LABEL_INSTANCE] ?? container.labels[LABEL_SERVICE];
@@ -195,7 +195,7 @@ export async function collectProjectStatus(
 			new OpError("DOCKER_UNREACHABLE", "Docker is not reachable", {
 				cause,
 				details: {
-					fix: "Start Docker Desktop (or your Docker daemon) and run `locainfra doctor`.",
+					fix: "Start Docker Desktop (or your Docker daemon) and run `locastack doctor`.",
 				},
 			}),
 		);

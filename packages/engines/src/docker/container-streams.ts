@@ -6,7 +6,7 @@ import type {
 	LogLine,
 	LogOptions,
 	StatsSample,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { SystemClock } from "../util/clock";
 import { openDockerStream, parseJsonLines } from "./body-stream";
 import { buildEventsQuery, toDockerEvent } from "./event-mapper";
@@ -122,7 +122,7 @@ export class DockerContainerStreams implements ContainerStreams {
 	/**
 	 * `GET /events?filters={"type":["container"],"label":[…]}` as JSON lines.
 	 * See {@link buildEventsQuery} for label semantics (default: every
-	 * container carrying `locainfra.stack`).
+	 * container carrying `locastack.stack`).
 	 *
 	 * @param filter - Label filter.
 	 * @param signal - Aborts the stream.

@@ -8,7 +8,7 @@ import { checkProjectInput, registerStack } from "./support/registration";
 
 /**
  * Registers an existing project folder (containing a valid
- * `locainfra.yaml` whose `name` equals `input.name`) in `state.json`.
+ * `locastack.yaml` whose `name` equals `input.name`) in `state.json`.
  * Re-registering the same folder is a no-op success; a folder registered
  * under another name is re-registered under its current one.
  *

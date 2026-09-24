@@ -14,14 +14,14 @@ export function docker(args: readonly string[]): string[] {
 }
 
 /**
- * Everything Docker still holds for a LocaInfra project: containers,
- * volumes and networks named `li-<project>…`.
+ * Everything Docker still holds for a LocaStack project: containers,
+ * volumes and networks named `ls-<project>…`.
  *
  * @param project - Project name.
  * @returns Leftover resource names.
  */
 export function leftovers(project: string): string[] {
-	const prefix = `li-${project}`;
+	const prefix = `ls-${project}`;
 	return [
 		...docker(["ps", "-a", "--format", "{{.Names}}"]),
 		...docker(["volume", "ls", "--format", "{{.Name}}"]),
@@ -36,18 +36,18 @@ export function leftovers(project: string): string[] {
  * @param project - Project name.
  */
 export function forceCleanup(project: string): void {
-	const label = `label=locainfra.stack=${project}`;
+	const label = `label=locastack.stack=${project}`;
 	const containers = docker(["ps", "-aq", "--filter", label]);
 	if (containers.length) docker(["rm", "-f", ...containers]);
 	const volumes = docker(["volume", "ls", "-q", "--filter", label]);
 	if (volumes.length) docker(["volume", "rm", "-f", ...volumes]);
-	const network = `li-${project}`;
+	const network = `ls-${project}`;
 	if (docker(["network", "ls", "--format", "{{.Name}}"]).includes(network))
 		docker(["network", "rm", network]);
 }
 
 /**
- * Snapshot helper containers (`docker run --rm`, label `io.locainfra.helper`)
+ * Snapshot helper containers (`docker run --rm`, label `io.locastack.helper`)
  * still present; there should never be any once an op settled.
  *
  * @returns Helper container names.
@@ -57,7 +57,7 @@ export function helperContainers(): string[] {
 		"ps",
 		"-a",
 		"--filter",
-		"label=io.locainfra.helper",
+		"label=io.locastack.helper",
 		"--format",
 		"{{.Names}}",
 	]);

@@ -114,7 +114,7 @@ export const createApp = (
 	const launcher = runtime.ops;
 	const observer = runtime.observer;
 	const app = new Elysia({
-		name: "LocaInfra.App",
+		name: "LocaStack.App",
 		websocket: { backpressureLimit: WS_BACKPRESSURE_LIMIT },
 	})
 		.use(errorHandler)
@@ -128,19 +128,19 @@ export const createApp = (
 				specPath: "/docs/json",
 				documentation: {
 					info: {
-						title: "LocaInfra dashboard API",
+						title: "LocaStack dashboard API",
 						version: deps.version ?? "0.0.0",
 						description:
-							"Localhost-only API of the LocaInfra dashboard. Every route except /api/health needs the session token (?t= or x-locainfra-token).",
+							"Localhost-only API of the LocaStack dashboard. Every route except /api/health needs the session token (?t= or x-locastack-token).",
 					},
 					components: {
 						securitySchemes: {
 							sessionToken: {
 								type: "apiKey",
 								in: "header",
-								name: "x-locainfra-token",
+								name: "x-locastack-token",
 								description:
-									"Session token printed by `locainfra` (also accepted as ?t=).",
+									"Session token printed by `locastack` (also accepted as ?t=).",
 							},
 						},
 					},

@@ -7,7 +7,7 @@ import { writeMarkerBlock } from "./marker-writer";
 export const LINKED_ENV_FILE_MODE = 0o600;
 
 /**
- * Rewrites the `# locainfra:start` / `# locainfra:end` block of an env file
+ * Rewrites the `# locastack:start` / `# locastack:end` block of an env file
  * (creating the file, or appending the block, when needed) and leaves every
  * other line untouched. The file is written with mode
  * {@link LINKED_ENV_FILE_MODE}.

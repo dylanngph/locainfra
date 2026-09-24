@@ -21,7 +21,7 @@ export interface TemplateServiceContext {
  * `{{services.redis.secrets.REDIS_PASSWORD}}`.
  */
 export interface TemplateContext {
-	/** Instance name of the service (the `services` key in `locainfra.yaml`). */
+	/** Instance name of the service (the `services` key in `locastack.yaml`). */
 	readonly name: string;
 	/** Selected image version of the service. */
 	readonly version: string;

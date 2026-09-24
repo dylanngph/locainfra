@@ -1,4 +1,4 @@
-import type { AddServiceBody, Progress, ServicePatch } from "@locainfra/server";
+import type { AddServiceBody, Progress, ServicePatch } from "@locastack/server";
 import { api, unwrap } from "@/shared/lib/api";
 import { ApiRequestError } from "@/shared/lib/api-error";
 import { terminalEvent } from "@/shared/lib/observer/observer-state";
@@ -48,7 +48,7 @@ export const patchService = async (
 ) => (await unwrap(service(project, name).patch(patch))).opId;
 
 /**
- * Adds an instance to `locainfra.yaml` and starts it.
+ * Adds an instance to `locastack.yaml` and starts it.
  *
  * @param project - Project name.
  * @param body - Instance entry.
@@ -58,7 +58,7 @@ export const addService = async (project: string, body: AddServiceBody) =>
 	(await unwrap(api.api.projects({ project }).services.post(body))).opId;
 
 /**
- * Removes an instance from `locainfra.yaml` and deletes its container.
+ * Removes an instance from `locastack.yaml` and deletes its container.
  *
  * @param project - Project name.
  * @param name - Service instance name.
@@ -91,7 +91,7 @@ export const revealedPrimaryUrl = async (project: string, name: string) =>
 	).primary.value;
 
 /**
- * Whether an add op's events show that `name` is in `locainfra.yaml` (the
+ * Whether an add op's events show that `name` is in `locastack.yaml` (the
  * `Added <name> to <file>` step) or that the op settled.
  */
 const addSettledOrWritten = (
@@ -107,7 +107,7 @@ const addSettledOrWritten = (
 	);
 
 /**
- * Resolves once the add op `opId` has written `name` to `locainfra.yaml`,
+ * Resolves once the add op `opId` has written `name` to `locastack.yaml`,
  * then confirms with a single `GET …/services/:name`: `true` when it exists,
  * `false` when the op failed before writing it. Nothing is polled: it waits
  * on the op's events (followed over NDJSON by `trackOp`, which fills the

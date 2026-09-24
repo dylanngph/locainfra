@@ -15,22 +15,22 @@ import {
 
 /**
  * Starts the dashboard for the live smoke: the compiled binary
- * (`dist/locainfra`, or `LOCAINFRA_E2E_BIN`) when present, else the CLI from
- * source (which serves `packages/dashboard/dist`). `LOCAINFRA_HOME` points at
- * a scratch folder (`LOCAINFRA_E2E_SCRATCH` or a new temp dir), so the
- * user's `~/.locainfra` is never touched. Returns the teardown.
+ * (`dist/locastack`, or `LOCASTACK_E2E_BIN`) when present, else the CLI from
+ * source (which serves `packages/dashboard/dist`). `LOCASTACK_HOME` points at
+ * a scratch folder (`LOCASTACK_E2E_SCRATCH` or a new temp dir), so the
+ * user's `~/.locastack` is never touched. Returns the teardown.
  */
 export default async function globalSetup(): Promise<() => Promise<void>> {
 	if (!E2E_ENABLED) return async () => {};
 	const scratch =
 		process.env[E2E_SCRATCH_ENV] ??
-		(await mkdtemp(join(tmpdir(), "locainfra-e2e-")));
+		(await mkdtemp(join(tmpdir(), "locastack-e2e-")));
 	await rm(scratch, { recursive: true, force: true });
 	await mkdir(join(scratch, "home"), { recursive: true });
 	process.env[E2E_SCRATCH_ENV] = scratch;
 
 	const bin =
-		process.env.LOCAINFRA_E2E_BIN ?? join(REPO_ROOT, "dist/locainfra");
+		process.env.LOCASTACK_E2E_BIN ?? join(REPO_ROOT, "dist/locastack");
 	const command = existsSync(bin)
 		? [bin]
 		: ["bun", join(REPO_ROOT, "packages/cli/src/index.ts")];
@@ -41,8 +41,8 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
 			cwd: scratch,
 			env: {
 				...process.env,
-				LOCAINFRA_HOME: join(scratch, "home"),
-				LOCAINFRA_SESSION_TOKEN: E2E_TOKEN,
+				LOCASTACK_HOME: join(scratch, "home"),
+				LOCASTACK_SESSION_TOKEN: E2E_TOKEN,
 				NO_COLOR: "1",
 			},
 			stdio: ["ignore", "inherit", "inherit"],

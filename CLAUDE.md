@@ -1,10 +1,11 @@
-# LocaInfra
+# LocaStack
 
 Dashboard-first tool for local Docker dev services. Bun workspaces monorepo: `packages/{core,engines,server,dashboard,cli}`. Architecture: `docs/architecture.md`; decisions: `docs/adr/`.
 
 ## Commands
-- `bun run dev` — Bun's workspace runner (`bun run --filter '*' dev`) starts the server via the CLI (`bun --watch`, port 4488) and Vite (5173, HMR) together. Dev-only env comes from `.env.development` (fixed session token, allowed Vite hosts; Vite reads `VITE_LOCAINFRA_TOKEN` via `envDir` = repo root, so no `?t=` is needed on 5173). `bun run dev:ui` runs the dashboard alone against MSW mocks.
-- `bun run cli -- <args>` runs the CLI from source; `bun run build` compiles `dist/locainfra`; `bun run e2e` runs the Playwright smoke (needs `LOCAINFRA_E2E=1`).
+- `bun run dev` — Bun's workspace runner (`bun run --filter '*' dev`) starts the server via the CLI (`bun --watch`, port 4488) and Vite (5173, HMR) together. Dev-only env comes from `.env.development` (fixed session token, allowed Vite hosts; Vite reads `VITE_LOCASTACK_TOKEN` via `envDir` = repo root, so no `?t=` is needed on 5173). `bun run dev:ui` runs the dashboard alone against MSW mocks.
+- `bun run cli -- <args>` runs the CLI from source; `bun run build` compiles `dist/locastack`; `bun run build:targets` the six release targets; `bun run e2e` runs the Playwright smokes (`LOCASTACK_E2E=1 LOCASTACK_E2E_CHANNEL=chrome`); `bun test npm` covers install.sh and the npm launcher.
+- Releases: `bun run release:version` (changesets) → commit → `bun run release:tag` → push the tag; see docs/release.md. CI: `.github/workflows/ci.yml` (lint/typecheck/tests + binary size and startup budgets), `release.yml` on `v*` tags, `e2e.yml` nightly.
 
 - `bun install` — only at the repo root.
 - `bun add <dep>` / `bun add -d <dep>` — only inside the target package directory. Never hand-edit dependencies in `package.json`.

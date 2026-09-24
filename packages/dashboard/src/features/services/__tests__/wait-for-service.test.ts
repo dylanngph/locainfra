@@ -1,4 +1,4 @@
-import type { Progress } from "@locainfra/server";
+import type { Progress } from "@locastack/server";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { useObserverStore } from "@/shared/lib/observer/observer-store";
@@ -51,7 +51,7 @@ describe("waitForService", () => {
 		written = true;
 		emit({
 			kind: "step",
-			message: `Added ${NAME} to /p/shop-api/locainfra.yaml`,
+			message: `Added ${NAME} to /p/shop-api/locastack.yaml`,
 			service: NAME,
 		});
 		await expect(result).resolves.toBe(true);

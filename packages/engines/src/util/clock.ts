@@ -1,4 +1,4 @@
-import type { Clock } from "@locainfra/core";
+import type { Clock } from "@locastack/core";
 
 /** {@link Clock} backed by the system wall clock. */
 export class SystemClock implements Clock {

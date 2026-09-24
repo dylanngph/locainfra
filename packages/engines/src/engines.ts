@@ -1,4 +1,4 @@
-import type { Paths } from "@locainfra/core";
+import type { Paths } from "@locastack/core";
 import { ComposeRunner } from "./compose/compose-runner";
 import { SystemBrowserOpener } from "./desktop/browser-opener";
 import { NativeFolderPicker } from "./desktop/folder-picker";
@@ -42,15 +42,15 @@ export interface Engines {
 	readonly compose: ComposeRunner;
 	/** `docker compose` lifecycle (`LifecycleRunner`). */
 	readonly lifecycle: ComposeRunner;
-	/** `locainfra.db`, SQLite (`StateReader` + `StateWriter`; opened lazily). */
+	/** `locastack.db`, SQLite (`StateReader` + `StateWriter`; opened lazily). */
 	readonly state: SqliteStateStore;
 	/** `docker exec` over the Engine API (`ContainerExec`; stdin via a hijacked connection). */
 	readonly exec: DockerContainerExec;
 	/** Volume tar/untar with a `docker run --rm` helper (`VolumeArchiver`). */
 	readonly archiver: DockerVolumeArchiver;
-	/** Snapshot index on `locainfra.db` (`SnapshotIndex`; shares {@link Engines.state}'s connection). */
+	/** Snapshot index on `locastack.db` (`SnapshotIndex`; shares {@link Engines.state}'s connection). */
 	readonly snapshots: SqliteSnapshotIndex;
-	/** Operation history on `locainfra.db` (`OpJournal`; shares {@link Engines.state}'s connection). */
+	/** Operation history on `locastack.db` (`OpJournal`; shares {@link Engines.state}'s connection). */
 	readonly journal: SqliteOpJournal;
 	/** Per-stack secrets (0600). */
 	readonly secrets: FileSecretStore;
@@ -74,7 +74,7 @@ export interface Engines {
  * not an engine: composition roots resolve its folder with
  * `resolveBuiltinCatalogDir` (from this package) and build the catalog source in core.
  *
- * @param paths - Filesystem layout (default {@link resolveDefaultPaths}, honouring `LOCAINFRA_HOME`).
+ * @param paths - Filesystem layout (default {@link resolveDefaultPaths}, honouring `LOCASTACK_HOME`).
  * @returns The adapter set.
  */
 export function createEngines(paths: Paths = resolveDefaultPaths()): Engines {

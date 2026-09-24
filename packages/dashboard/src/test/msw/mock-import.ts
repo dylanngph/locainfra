@@ -1,4 +1,4 @@
-import type { ServiceDefinition } from "@locainfra/server";
+import type { ServiceDefinition } from "@locastack/server";
 import { parse } from "yaml";
 import type {
 	ImportItem,

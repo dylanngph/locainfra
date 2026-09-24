@@ -3,7 +3,7 @@ import { cliCommandLine, shortPath } from "@/shared/lib/shell";
 
 /** Props of {@link CliHint}. */
 export interface CliHintProps {
-	/** A command that exists in the `locainfra` CLI, e.g. `locainfra up`. */
+	/** A command that exists in the `locastack` CLI, e.g. `locastack up`. */
 	readonly command: string;
 	/** Project folder the command runs in; shown short, copied quoted. */
 	readonly cwd?: string;

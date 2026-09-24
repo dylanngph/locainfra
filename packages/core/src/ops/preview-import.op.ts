@@ -28,7 +28,7 @@ export const previewImport: PreviewImport = async (deps, input) => {
 	try {
 		state = await deps.state.read();
 	} catch (cause) {
-		return err(ioErrorFrom("Could not read LocaInfra state", cause));
+		return err(ioErrorFrom("Could not read LocaStack state", cause));
 	}
 	const reserved = new Map<number, string>();
 	for (const [stack, entry] of Object.entries(state.stacks)) {

@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isOpError } from "@locainfra/core";
+import { isOpError } from "@locastack/core";
 import {
 	EMBEDDED_MIGRATIONS_DIRS,
 	resolveMigrationsFolder,
@@ -32,7 +32,7 @@ const journal = JSON.parse(
 ) as Journal;
 
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "li-migrate-"));
+	dir = mkdtempSync(join(tmpdir(), "ls-migrate-"));
 });
 afterEach(() => {
 	rmSync(dir, { recursive: true, force: true });
@@ -194,7 +194,7 @@ describe("applyMigrations via SqliteStateStore", () => {
 		const error = await older.read().catch((e: unknown) => e);
 		expect(isOpError(error) && error.code).toBe("IO");
 		expect(String((error as Error).message)).toContain(
-			"was created by a newer LocaInfra; update LocaInfra",
+			"was created by a newer LocaStack; update LocaStack",
 		);
 		expect(isOpError(error) && error.details.path).toBe(older.path);
 		expect(isOpError(error) && typeof error.details.fix).toBe("string");

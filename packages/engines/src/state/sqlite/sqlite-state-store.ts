@@ -15,7 +15,7 @@ import {
 	type StateFile,
 	type StateReader,
 	type StateWriter,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { eq } from "drizzle-orm";
 import { type BunSQLiteDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import { parseStateFile } from "../state-parser";
@@ -29,7 +29,7 @@ import {
 } from "./state-tables";
 
 /** File name of the state database inside `stateDir`. */
-export const STATE_DB_FILE = "locainfra.db";
+export const STATE_DB_FILE = "locastack.db";
 
 /** Legacy M1/M2 state file imported once by {@link SqliteStateStore}. */
 export const LEGACY_STATE_FILE = "state.json";
@@ -45,7 +45,7 @@ const BUSY_TIMEOUT_MS = 5000;
 
 /** Options for {@link SqliteStateStore}. */
 export interface SqliteStateStoreOptions {
-	/** State root (`Paths.stateDir`); holds `locainfra.db` (and maybe `state.json`). */
+	/** State root (`Paths.stateDir`); holds `locastack.db` (and maybe `state.json`). */
 	readonly stateDir: string;
 	/** Migrations folder (default {@link resolveMigrationsFolder}). */
 	readonly migrationsFolder?: string;
@@ -53,7 +53,7 @@ export interface SqliteStateStoreOptions {
 	readonly clock?: Clock;
 }
 
-/** Drizzle handle over `locainfra.db` (all tables of `schema.ts`). */
+/** Drizzle handle over `locastack.db` (all tables of `schema.ts`). */
 export type StateDatabase = BunSQLiteDatabase<typeof schema>;
 
 interface OpenDatabase {
@@ -130,7 +130,7 @@ export function portConflictError(state: StateFile): OpError {
 							service,
 							port,
 							reservedBy: owner,
-							fix: "Another LocaInfra process pinned this port first; run the command again.",
+							fix: "Another LocaStack process pinned this port first; run the command again.",
 						},
 					},
 				);
@@ -140,13 +140,13 @@ export function portConflictError(state: StateFile): OpError {
 	}
 	return new OpError("PORT_CONFLICT", "A host port is pinned twice", {
 		details: {
-			fix: "Another LocaInfra process pinned this port first; run the command again.",
+			fix: "Another LocaStack process pinned this port first; run the command again.",
 		},
 	});
 }
 
 /**
- * {@link StateReader} + {@link StateWriter} over `<stateDir>/locainfra.db`
+ * {@link StateReader} + {@link StateWriter} over `<stateDir>/locastack.db`
  * (SQLite in WAL mode via `bun:sqlite` + Drizzle; ADR 0008).
  *
  * - Opening is lazy (first `read`/`update`): creates the folder (0700) and
@@ -233,7 +233,7 @@ export class SqliteStateStore implements StateReader, StateWriter {
 	/**
 	 * Runs `work` synchronously against the open (and migrated) database.
 	 * Lets sibling adapters such as `SqliteSnapshotIndex` share
-	 * `locainfra.db` and its single connection.
+	 * `locastack.db` and its single connection.
 	 *
 	 * @param message - Prefix of the `IO` error on failure, e.g. "Could not list snapshots".
 	 * @param work - Synchronous queries (do not await inside).
@@ -266,7 +266,7 @@ export class SqliteStateStore implements StateReader, StateWriter {
 		return new OpError(
 			"IO",
 			busy
-				? `${message}: it stayed locked by another LocaInfra process for ${BUSY_TIMEOUT_MS / 1000}s`
+				? `${message}: it stayed locked by another LocaStack process for ${BUSY_TIMEOUT_MS / 1000}s`
 				: `${message} ${this.path}`,
 			{
 				cause,

@@ -1,4 +1,4 @@
-import type { ServerMessage, ServiceState } from "@locainfra/server";
+import type { ServerMessage, ServiceState } from "@locastack/server";
 import { create } from "zustand";
 import {
 	EMPTY_LOG_BUFFER,

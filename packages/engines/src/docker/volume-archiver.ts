@@ -7,7 +7,7 @@ import {
 	type Progress,
 	toProgressError,
 	type VolumeArchiver,
-} from "@locainfra/core";
+} from "@locastack/core";
 import {
 	BunCommandRunner,
 	type CommandRunner,
@@ -21,7 +21,7 @@ import { SystemClock } from "../util/clock";
 export const SNAPSHOT_HELPER_IMAGE = "alpine:3.20";
 
 /** Label set on every helper container (`<key>=snapshot`), for diagnostics and cleanup. */
-export const SNAPSHOT_HELPER_LABEL = "io.locainfra.helper";
+export const SNAPSHOT_HELPER_LABEL = "io.locastack.helper";
 
 /**
  * Helper script writing the archive. `$1` is the archive path inside the
@@ -32,7 +32,7 @@ export const ARCHIVE_SCRIPT =
 	'umask 077 && tar czf "$1" -C /from . && if [ -n "$2" ]; then chown "$2" "$1" 2>/dev/null || true; fi';
 
 /** Staging folder inside the volume that {@link RESTORE_SCRIPT} extracts into. */
-export const RESTORE_STAGING_DIR = ".locainfra-restore";
+export const RESTORE_STAGING_DIR = ".locastack-restore";
 
 /**
  * Helper script restoring the archive `$1` without ever leaving the volume
@@ -124,7 +124,7 @@ export function classifyHelperFailure(
 			{
 				details: {
 					exitCode,
-					fix: "Make sure LOCAINFRA_HOME is inside a folder Docker shares with its VM (Docker Desktop: Settings → Resources → File sharing), then try again.",
+					fix: "Make sure LOCASTACK_HOME is inside a folder Docker shares with its VM (Docker Desktop: Settings → Resources → File sharing), then try again.",
 				},
 			},
 		);
@@ -345,7 +345,7 @@ export class DockerVolumeArchiver implements VolumeArchiver {
 		mounts: readonly string[],
 		command: readonly string[],
 	): { readonly name: string; readonly argv: readonly string[] } {
-		const name = `li-snapshot-helper-${suffix}`;
+		const name = `ls-snapshot-helper-${suffix}`;
 		return {
 			name,
 			argv: [

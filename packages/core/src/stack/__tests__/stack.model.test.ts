@@ -68,7 +68,7 @@ describe("StackFile schema", () => {
 			Value.Check(Stack, {
 				name: "shop",
 				root: "/work/shop",
-				filePath: "/work/shop/locainfra.yaml",
+				filePath: "/work/shop/locastack.yaml",
 				file: shopExample,
 			}),
 		).toBe(true);
@@ -81,11 +81,11 @@ describe("StackFile schema", () => {
 describe("StackError", () => {
 	test("carries file path and issues", () => {
 		const error = new StackError("bad", {
-			filePath: "/x/locainfra.yaml",
+			filePath: "/x/locastack.yaml",
 			issues: ["/name"],
 		});
 		expect(error.name).toBe("StackError");
-		expect(error.filePath).toBe("/x/locainfra.yaml");
+		expect(error.filePath).toBe("/x/locastack.yaml");
 		expect(error.issues).toEqual(["/name"]);
 	});
 });

@@ -21,7 +21,7 @@ function withEmptyServicesAsDefault(data: unknown): unknown {
 }
 
 /**
- * Parses and validates stack file text (`locainfra.yaml`).
+ * Parses and validates stack file text (`locastack.yaml`).
  *
  * Uses the yaml Document API (so the same parse can drive comment-preserving
  * edits) and the {@link StackFile} schema with `Value.Parse` semantics

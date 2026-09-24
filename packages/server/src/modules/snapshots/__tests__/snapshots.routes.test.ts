@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import { OpError, ok, type StackFile } from "@locainfra/core";
+import { OpError, ok, type StackFile } from "@locastack/core";
 import {
 	createProjectStack,
 	postgresDefinition,
 	redisDefinition,
 	StaticCatalogSource,
-} from "@locainfra/core/testing";
+} from "@locastack/core/testing";
 import { setupApp, specPaths } from "../../../__tests__/support/client";
 import {
 	createStubOps,

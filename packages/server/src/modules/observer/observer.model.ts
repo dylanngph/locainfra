@@ -4,7 +4,7 @@ import {
 	ProjectStatus,
 	ServiceStatus,
 	StatsSample,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { t } from "elysia";
 
 /**

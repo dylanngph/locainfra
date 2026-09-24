@@ -1,4 +1,4 @@
-import type { EnvPreview, LinkEnvResult } from "@locainfra/core";
+import type { EnvPreview, LinkEnvResult } from "@locastack/core";
 import type { ServerOps, ServerPorts } from "../../deps";
 import { unwrap } from "../../shared/unwrap";
 import type { EnvQuery, WriteEnvBody } from "./env.model";

@@ -3,7 +3,7 @@ import {
 	DATA_QUERY_MAX_ROWS,
 	type DataObjects,
 	type DataQueryResult,
-} from "@locainfra/core";
+} from "@locastack/core";
 import type { ServerOps, ServerPorts } from "../../deps";
 import { unwrap } from "../../shared/unwrap";
 import type { DataQueryBody } from "./data.model";

@@ -1,4 +1,4 @@
-import type { EnvPreview } from "@locainfra/server";
+import type { EnvPreview } from "@locastack/server";
 import { queryOptions } from "@tanstack/react-query";
 import { PROJECTS_KEY } from "@/features/projects/api/projects.queries";
 import { api, unwrap } from "@/shared/lib/api";

@@ -1,4 +1,4 @@
-import { DoctorCheck, DoctorReport } from "@locainfra/core";
+import { DoctorCheck, DoctorReport } from "@locastack/core";
 
 export { DoctorCheck, DoctorReport };
 

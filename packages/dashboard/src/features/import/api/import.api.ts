@@ -1,4 +1,4 @@
-import type { ImportItem, ImportPreview } from "@locainfra/server";
+import type { ImportItem, ImportPreview } from "@locastack/server";
 import { api, unwrap } from "@/shared/lib/api";
 import { ApiRequestError } from "@/shared/lib/api-error";
 import { terminalEvent } from "@/shared/lib/observer/observer-state";
@@ -38,10 +38,10 @@ export const importProject = async (body: ImportRequest) =>
 	(await unwrap(api.api.import.post({ ...body, items: [...body.items] }))).opId;
 
 /**
- * Whether the import op wrote the project's `locainfra.yaml` (or settled).
+ * Whether the import op wrote the project's `locastack.yaml` (or settled).
  * The op registers the project before it stores the secrets and writes the
  * stack file (and unregisters it again when either fails), so a
- * `GET /api/projects/:name` only finds it once the "Writing locainfra.yaml"
+ * `GET /api/projects/:name` only finds it once the "Writing locastack.yaml"
  * step is followed by another event ("Starting N services", or `done`).
  */
 const writtenOrSettled = (
@@ -56,8 +56,8 @@ const writtenOrSettled = (
 };
 
 /**
- * Resolves once the import op `opId` wrote `name`'s `locainfra.yaml` (an
- * event followed its "Writing locainfra.yaml" step) or settled, then
+ * Resolves once the import op `opId` wrote `name`'s `locastack.yaml` (an
+ * event followed its "Writing locastack.yaml" step) or settled, then
  * confirms with one `GET /api/projects/:name`. Like `waitForService`,
  * nothing is polled: it waits on the op's events, which `trackOp` follows
  * over NDJSON.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { DOCTOR_CHECK_IDS } from "@locainfra/core";
+import { DOCTOR_CHECK_IDS } from "@locastack/core";
 import { createApp } from "../app";
 import { createTestDeps, HOST } from "./support/fixtures";
 

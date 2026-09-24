@@ -180,14 +180,14 @@ describe("merging", () => {
 			"/cat/postgres.yaml": definition("postgres", "Builtin PG"),
 			"/cat/redis.yaml": definition("redis"),
 			"/cat/upstash-redis.yaml": definition("upstash-redis"),
-			"/home/.locainfra/catalog/postgres.yaml": definition("postgres", "My PG"),
-			"/home/.locainfra/catalog/extra.yaml": definition("extra"),
+			"/home/.locastack/catalog/postgres.yaml": definition("postgres", "My PG"),
+			"/home/.locastack/catalog/extra.yaml": definition("extra"),
 		});
 		const source = createCatalogSource({
 			files,
 			lister: files,
 			catalogDir: "/cat",
-			overrideDirs: ["/home/.locainfra/registry", "/home/.locainfra/catalog"],
+			overrideDirs: ["/home/.locastack/registry", "/home/.locastack/catalog"],
 		});
 		const defs = await source.definitions();
 		expect(defs.map((d) => [d.id, d.name])).toEqual([

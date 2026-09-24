@@ -91,7 +91,7 @@ describe("Import docker-compose.yml", () => {
 		const rows = within(review).getAllByRole("row").slice(1);
 		expect(rows).toHaveLength(5);
 		const [web, db, cache, , mailhog] = rows as HTMLElement[];
-		expect(web).toHaveTextContent("Your app, runs outside LocaInfra");
+		expect(web).toHaveTextContent("Your app, runs outside LocaStack");
 		expect(web).toHaveTextContent("Skipped");
 		expect(
 			within(web as HTMLElement).getByRole("checkbox", { name: "Import web" }),

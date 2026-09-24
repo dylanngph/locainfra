@@ -1,4 +1,4 @@
-import type { ServiceDetail } from "@locainfra/server";
+import type { ServiceDetail } from "@locastack/server";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";

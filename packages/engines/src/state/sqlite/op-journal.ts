@@ -1,10 +1,10 @@
-import type { OpFinish, OpJournal, OpStart } from "@locainfra/core";
+import type { OpFinish, OpJournal, OpStart } from "@locastack/core";
 import { eq } from "drizzle-orm";
 import { ops } from "./schema";
 import type { SqliteStateStore } from "./sqlite-state-store";
 
 /**
- * {@link OpJournal} on the `ops` table of `locainfra.db`, sharing the
+ * {@link OpJournal} on the `ops` table of `locastack.db`, sharing the
  * {@link SqliteStateStore}'s connection. The `ops_retention` trigger keeps the
  * newest 200 rows per project. `error_json` holds the secret-free
  * `ProgressError` of the op's terminal event. Starting an id twice replaces
@@ -13,7 +13,7 @@ import type { SqliteStateStore } from "./sqlite-state-store";
 export class SqliteOpJournal implements OpJournal {
 	readonly #store: SqliteStateStore;
 
-	/** @param store - The state store owning `locainfra.db`. */
+	/** @param store - The state store owning `locastack.db`. */
 	constructor(store: SqliteStateStore) {
 		this.#store = store;
 	}

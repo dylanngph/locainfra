@@ -60,7 +60,7 @@ export async function checkComposeVersion(
 			new OpError("COMPOSE_MISSING", "docker compose is not installed", {
 				details: {
 					minimum: MIN_COMPOSE_VERSION,
-					fix: `Install Docker Desktop (or the docker compose plugin ${MIN_COMPOSE_VERSION}+) and run \`locainfra doctor\`.`,
+					fix: `Install Docker Desktop (or the docker compose plugin ${MIN_COMPOSE_VERSION}+) and run \`locastack doctor\`.`,
 				},
 			}),
 		);
@@ -93,7 +93,7 @@ export interface ComposeWriteDeps {
 
 /**
  * Writes `docker-compose.yml` and its secret `.env` (mode
- * {@link SECRET_FILE_MODE}) to `~/.locainfra/stacks/<name>/`, both
+ * {@link SECRET_FILE_MODE}) to `~/.locastack/stacks/<name>/`, both
  * atomically. Seed bind mounts are verified on disk first
  * (`verifySeedMounts`: no symlink out of the project, regular files only).
  *

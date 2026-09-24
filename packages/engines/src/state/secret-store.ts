@@ -5,7 +5,7 @@ import {
 	type Paths,
 	type SecretStore,
 	secretsFilePath,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { readTextIfExists } from "../fs/read-text";
 import { writeFileAtomic } from "./atomic-write";
 import { acquireFileLock, type FileLockOptions } from "./file-lock";
@@ -14,7 +14,7 @@ const STACK_NAME = /^[a-z0-9][a-z0-9_-]*$/;
 const ENV_KEY = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const BARE_VALUE = /^[A-Za-z0-9_\-.:@/+=%,]*$/;
 const HEADER =
-	"# Managed by LocaInfra. Contains secrets: do not commit or share.\n";
+	"# Managed by LocaStack. Contains secrets: do not commit or share.\n";
 
 /**
  * Serialises secrets as a dotenv file. Values are written bare when safe,

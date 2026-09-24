@@ -13,31 +13,31 @@ import {
 
 const paths: Paths = {
 	home: "/h",
-	stateDir: "/h/.locainfra",
-	stacksDir: "/h/.locainfra/stacks",
-	secretsDir: "/h/.locainfra/secrets",
-	registryDir: "/h/.locainfra/registry",
-	catalogOverridesDir: "/h/.locainfra/catalog",
+	stateDir: "/h/.locastack",
+	stacksDir: "/h/.locastack/stacks",
+	secretsDir: "/h/.locastack/secrets",
+	registryDir: "/h/.locastack/registry",
+	catalogOverridesDir: "/h/.locastack/catalog",
 };
 
 describe("layout", () => {
 	test("derives well-known paths", () => {
-		expect(composeProjectName("shop")).toBe("li-shop");
-		expect(stateFilePath(paths)).toBe("/h/.locainfra/state.json");
-		expect(dashboardFilePath(paths)).toBe("/h/.locainfra/dashboard.json");
-		expect(stackDir(paths, "shop")).toBe("/h/.locainfra/stacks/shop");
+		expect(composeProjectName("shop")).toBe("ls-shop");
+		expect(stateFilePath(paths)).toBe("/h/.locastack/state.json");
+		expect(dashboardFilePath(paths)).toBe("/h/.locastack/dashboard.json");
+		expect(stackDir(paths, "shop")).toBe("/h/.locastack/stacks/shop");
 		expect(composeFilePath(paths, "shop")).toBe(
-			"/h/.locainfra/stacks/shop/docker-compose.yml",
+			"/h/.locastack/stacks/shop/docker-compose.yml",
 		);
 		expect(secretsFilePath(paths, "shop")).toBe(
-			"/h/.locainfra/secrets/shop.env",
+			"/h/.locastack/secrets/shop.env",
 		);
 	});
 
 	test("names containers and volumes per instance", () => {
-		expect(serviceContainerName("shop", "main-db")).toBe("li-shop-main-db");
+		expect(serviceContainerName("shop", "main-db")).toBe("ls-shop-main-db");
 		expect(serviceVolumeName("shop", "main-db", "data")).toBe(
-			"li-shop-main-db-data",
+			"ls-shop-main-db-data",
 		);
 		// The documented collision: registration has to refuse one of these.
 		expect(serviceContainerName("shop", "api-db")).toBe(

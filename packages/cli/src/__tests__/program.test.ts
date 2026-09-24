@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { DoctorReport, Progress } from "@locainfra/core";
+import type { DoctorReport, Progress } from "@locastack/core";
 import { version } from "../../package.json";
 import { ExitCode } from "../cli.types";
 import { runCli } from "../program";
@@ -177,7 +177,7 @@ describe("default action (dashboard)", () => {
 		expect(io.out.text).toContain("/?t=tok&project=acme");
 	});
 
-	test("--project creates locainfra.yaml in a folder without one", async () => {
+	test("--project creates locastack.yaml in a folder without one", async () => {
 		const io = createFakeIo({ cwd: "/work" });
 		const { loadDeps, calls } = createFakeDeps({
 			running: { pid: 42, port: 4488, url: "http://127.0.0.1:4488/?t=old" },
@@ -276,7 +276,7 @@ describe("up", () => {
 			ok: false,
 			error: {
 				code: "STACK_NOT_FOUND",
-				message: "No locainfra.yaml found",
+				message: "No locastack.yaml found",
 				details: { cwd: "/work/acme" },
 			},
 		});

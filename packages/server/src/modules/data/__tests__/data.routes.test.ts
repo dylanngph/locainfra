@@ -6,7 +6,7 @@ import {
 	err,
 	OpError,
 	ok,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { setupApp, specPaths } from "../../../__tests__/support/client";
 import {
 	createStubOps,

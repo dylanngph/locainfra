@@ -1,4 +1,4 @@
-import { OpError } from "@locainfra/core";
+import { OpError } from "@locastack/core";
 
 const PORT_PATTERNS: readonly RegExp[] = [
 	/port is already allocated/i,

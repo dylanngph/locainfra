@@ -5,7 +5,7 @@ import {
 	type ProjectStatus,
 	type ProjectSummary,
 	type Stack,
-} from "@locainfra/core";
+} from "@locastack/core";
 import type { ServerOps, ServerPorts } from "../../deps";
 import type { OpAccepted } from "../../models/common.model";
 import { checkProjectRoot } from "../../shared/project-root";
@@ -71,14 +71,14 @@ export class ProjectsService {
 	}
 
 	/**
-	 * Creates `<root>/locainfra.yaml` or, when the file exists, registers it
+	 * Creates `<root>/locastack.yaml` or, when the file exists, registers it
 	 * as-is. A leading `~` in `root` means the home folder.
 	 *
 	 * The folder must be an existing directory, or a missing leaf whose parent
 	 * is an existing directory (a typo such as `~/Develper/shop` is refused
 	 * instead of creating a new tree). The home folder itself, its ancestors
 	 * and hidden folders (any `.name` segment, e.g. `~/.ssh`) are refused:
-	 * `locainfra.yaml` and later `.env` are written into the root, and a
+	 * `locastack.yaml` and later `.env` are written into the root, and a
 	 * project at `~` would capture every folder below it.
 	 *
 	 * @param body - Name and folder.

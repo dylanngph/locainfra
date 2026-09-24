@@ -1,5 +1,5 @@
 /**
- * Public API of `@locainfra/core`. The only barrel in the package (plus the
+ * Public API of `@locastack/core`. The only barrel in the package (plus the
  * `./testing` entry): features import each other by module path.
  */
 

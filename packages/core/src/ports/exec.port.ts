@@ -40,7 +40,7 @@ export interface ExecResult {
  */
 export interface ContainerExec {
 	/**
-	 * @param containerId - Container id or name (`li-<project>-<service>`).
+	 * @param containerId - Container id or name (`ls-<project>-<service>`).
 	 * @param argv - Command and arguments, passed verbatim (no shell).
 	 * @param options - Deadline, output cap, stdin and abort signal.
 	 * @returns Exit code and captured output.

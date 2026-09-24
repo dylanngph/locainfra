@@ -2,7 +2,7 @@ import type {
 	ContainerStreams,
 	ProjectStatus,
 	ServiceStatus,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { LogGate, type ObserverSink } from "./backpressure";
 import {
 	DEFAULT_LOG_TAIL,

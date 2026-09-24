@@ -1,4 +1,4 @@
-import type { Progress } from "@locainfra/core";
+import type { Progress } from "@locastack/core";
 import type { OpRegistry } from "../observer/op-registry";
 
 /**

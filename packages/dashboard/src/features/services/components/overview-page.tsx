@@ -144,7 +144,7 @@ export function OverviewPage() {
 			/>
 			<CliHint
 				cwd={data.stack.root}
-				command={`locainfra ${anyActive ? "down" : "up"}`}
+				command={`locastack ${anyActive ? "down" : "up"}`}
 			/>
 		</>
 	);

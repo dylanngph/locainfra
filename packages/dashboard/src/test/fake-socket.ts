@@ -1,4 +1,4 @@
-import type { ClientMessage, ServerMessage } from "@locainfra/server";
+import type { ClientMessage, ServerMessage } from "@locastack/server";
 import { vi } from "vitest";
 import { configureObserver } from "@/shared/lib/observer/observer";
 import type { SocketLike } from "@/shared/lib/observer/socket";

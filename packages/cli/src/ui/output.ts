@@ -1,5 +1,5 @@
 import type { Writable } from "node:stream";
-import type { OpError } from "@locainfra/core";
+import type { OpError } from "@locastack/core";
 import type { CliIo } from "../cli.types";
 import { glyph, theme } from "./theme";
 

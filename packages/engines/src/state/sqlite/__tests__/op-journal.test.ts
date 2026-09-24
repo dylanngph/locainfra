@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { FixedClock } from "@locainfra/core/testing";
+import { FixedClock } from "@locastack/core/testing";
 import { SqliteOpJournal } from "../op-journal";
 import { ops } from "../schema";
 import { SqliteStateStore } from "../sqlite-state-store";
@@ -12,7 +12,7 @@ let store: SqliteStateStore;
 let journal: SqliteOpJournal;
 
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "li-opjournal-"));
+	dir = mkdtempSync(join(tmpdir(), "ls-opjournal-"));
 	store = new SqliteStateStore({
 		stateDir: join(dir, "home"),
 		clock: new FixedClock(),

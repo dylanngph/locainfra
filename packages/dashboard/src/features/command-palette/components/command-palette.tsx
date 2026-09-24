@@ -89,7 +89,7 @@ function usePaletteGroups(open: boolean) {
  * ⌘K command palette (shadcn Command in a Dialog): "Add to <project>",
  * "Services", "Projects" and "Actions", keyboard-navigable through cmdk.
  * The footer shows the real CLI equivalent of the highlighted row when one
- * exists (`locainfra up` / `locainfra env`), otherwise nothing. The
+ * exists (`locastack up` / `locastack env`), otherwise nothing. The
  * highlight resets to the first row every time the palette opens.
  */
 export function CommandPalette() {

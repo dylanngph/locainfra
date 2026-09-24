@@ -11,7 +11,7 @@ export interface DirectoryCatalogSourceOptions extends SafetyOptions {
 	readonly files: FileStore;
 	/** Directory listing. */
 	readonly lister: DirectoryLister;
-	/** Directory of `*.yaml` / `*.yml` definitions (e.g. `~/.locainfra/catalog`). */
+	/** Directory of `*.yaml` / `*.yml` definitions (e.g. `~/.locastack/catalog`). */
 	readonly dir: string;
 	/**
 	 * Called for each invalid file, which is then skipped. When omitted, the

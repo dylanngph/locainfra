@@ -1,4 +1,4 @@
-import type { ServiceState } from "@locainfra/server";
+import type { ServiceState } from "@locastack/server";
 import { cn } from "@/shared/lib/utils";
 
 /** Visual tone of a status indicator. */

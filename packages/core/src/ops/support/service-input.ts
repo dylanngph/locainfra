@@ -160,7 +160,7 @@ export function checkSecretValues(
 			return invalid(`The value of ${name} is not a valid secret`, {
 				key: name,
 				pattern: SECRET_VALUE_PATTERN,
-				fix: "Use 16-256 characters from A-Z a-z 0-9 . _ ~ - (or let LocaInfra generate it).",
+				fix: "Use 16-256 characters from A-Z a-z 0-9 . _ ~ - (or let LocaStack generate it).",
 			});
 		}
 	}

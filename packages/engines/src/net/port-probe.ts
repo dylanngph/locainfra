@@ -1,6 +1,6 @@
-import type { PortProbe } from "@locainfra/core";
+import type { PortProbe } from "@locastack/core";
 
-/** Loopback address every probe (and every LocaInfra service) uses. */
+/** Loopback address every probe (and every LocaStack service) uses. */
 export const LOOPBACK_HOST = "127.0.0.1";
 
 /** Options for {@link BindPortProbe}. */

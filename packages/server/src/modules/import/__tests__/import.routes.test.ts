@@ -6,7 +6,7 @@ import {
 	OpError,
 	ok,
 	type PreviewImportDeps,
-} from "@locainfra/core";
+} from "@locastack/core";
 import { setupApp, specPaths } from "../../../__tests__/support/client";
 import {
 	createStubOps,
@@ -138,13 +138,13 @@ describe("POST /api/import", () => {
 		});
 	});
 
-	it("409s a registered name or a folder that already holds locainfra.yaml", async () => {
+	it("409s a registered name or a folder that already holds locastack.yaml", async () => {
 		const ports = createTestPorts();
 		await ports.state.update((s) => ({
 			...s,
 			projects: [{ name: PROJECT, root: "/home/test/Developer/shop-api" }],
 		}));
-		await ports.files.writeText(`${ROOT}/locainfra.yaml`, "version: 1\n");
+		await ports.files.writeText(`${ROOT}/locastack.yaml`, "version: 1\n");
 		const { call, deps } = setupApp({ ports });
 		const taken = await call(
 			"POST",

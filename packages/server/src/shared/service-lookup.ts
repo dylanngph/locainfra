@@ -3,7 +3,7 @@ import {
 	type ServiceDefinition,
 	type Stack,
 	type StackServiceEntry,
-} from "@locainfra/core";
+} from "@locastack/core";
 import type { ServerOps, ServerPorts } from "../deps";
 import { unwrap } from "./unwrap";
 
@@ -11,7 +11,7 @@ import { unwrap } from "./unwrap";
 export interface ServiceContext {
 	/** The loaded project stack. */
 	readonly stack: Stack;
-	/** The instance's `locainfra.yaml` entry. */
+	/** The instance's `locastack.yaml` entry. */
 	readonly entry: StackServiceEntry;
 	/** Its catalog definition; `undefined` when the type is not in the catalog (the op reports it). */
 	readonly definition: ServiceDefinition | undefined;

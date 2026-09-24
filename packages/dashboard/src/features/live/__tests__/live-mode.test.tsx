@@ -34,7 +34,7 @@ describe("Live mode", () => {
 		const toggle = await liveSwitch();
 		expect(toggle).toHaveAttribute("aria-checked", "false");
 		expect(
-			await screen.findByText("2 of 4 running on network li-shop-api"),
+			await screen.findByText("2 of 4 running on network ls-shop-api"),
 		).toBeInTheDocument();
 		// Give any stray effect a chance to connect.
 		await new Promise((resolve) => setTimeout(resolve, 50));
@@ -51,7 +51,7 @@ describe("Live mode", () => {
 		});
 		const { user } = renderApp(`/p/${PROJECT}`);
 		expect(
-			await screen.findByText("2 of 4 running on network li-shop-api"),
+			await screen.findByText("2 of 4 running on network ls-shop-api"),
 		).toBeInTheDocument();
 		await user.click(screen.getByRole("button", { name: "Stop all" }));
 		expect(
@@ -91,7 +91,7 @@ describe("Live mode", () => {
 			},
 		});
 		expect(
-			await screen.findByText("4 of 4 running on network li-shop-api"),
+			await screen.findByText("4 of 4 running on network ls-shop-api"),
 		).toBeInTheDocument();
 
 		await user.click(await liveSwitch());
@@ -103,7 +103,7 @@ describe("Live mode", () => {
 		expect(useObserverStore.getState().status[PROJECT]).toBeUndefined();
 		// The last snapshot stays on screen without a refetch.
 		expect(
-			screen.getByText("4 of 4 running on network li-shop-api"),
+			screen.getByText("4 of 4 running on network ls-shop-api"),
 		).toBeInTheDocument();
 		expect(factory).toHaveBeenCalledTimes(1);
 	});
@@ -135,7 +135,7 @@ describe("Live mode", () => {
 
 		// Another project keeps its own (default off) choice.
 		await router.navigate("/p/blog");
-		await screen.findByText(/running on network li-blog|Empty project/);
+		await screen.findByText(/running on network ls-blog|Empty project/);
 		expect(await liveSwitch()).toHaveAttribute("aria-checked", "false");
 		await waitFor(() => expect(sockets[0]?.closed).toBe(true));
 		expect(sockets[0]?.sent).toContainEqual({
@@ -154,7 +154,7 @@ describe("Live mode", () => {
 		const gets = countGets(`/api/projects/${PROJECT}`);
 		const system = countGets("/api/system");
 		const { user } = renderApp(`/p/${PROJECT}`);
-		await screen.findByText("2 of 4 running on network li-shop-api");
+		await screen.findByText("2 of 4 running on network ls-shop-api");
 		const before = gets.count;
 		const systemBefore = system.count;
 		expect(before).toBeGreaterThan(0);
@@ -164,7 +164,7 @@ describe("Live mode", () => {
 		mockDb.setState(shop(), rest, "running");
 		await user.click(screen.getByRole("button", { name: "Refresh" }));
 		expect(
-			await screen.findByText("3 of 4 running on network li-shop-api"),
+			await screen.findByText("3 of 4 running on network ls-shop-api"),
 		).toBeInTheDocument();
 		expect(gets.count).toBe(before + 1);
 		await waitFor(() => expect(system.count).toBe(systemBefore + 1));

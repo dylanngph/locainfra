@@ -61,7 +61,7 @@ describe("Projects page", () => {
 	});
 });
 
-describe("?project= from `locainfra --project`", () => {
+describe("?project= from `locastack --project`", () => {
 	it("opens the preselected project", async () => {
 		const { router } = renderApp("/?project=blog");
 		await waitFor(() => expect(router.state.location.pathname).toBe("/p/blog"));

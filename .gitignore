@@ -33,11 +33,11 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Finder (MacOS) folder config
 .DS_Store
 
-# locainfra
+# locastack
 dist/
 coverage/
 packages/dashboard/src/routeTree.gen.ts
-.locainfra/
+.locastack/
 
 # Playwright output
 test-results/

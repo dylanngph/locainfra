@@ -4,7 +4,7 @@ import type { PersistMode } from "../stack/stack.model";
 /** A named volume of a resolved service. */
 export interface ResolvedVolume {
 	/**
-	 * Docker volume name, `li-<stack>-<instance>-<source>` (see
+	 * Docker volume name, `ls-<stack>-<instance>-<source>` (see
 	 * `serviceVolumeName`); also the compose volume key.
 	 */
 	readonly name: string;
@@ -43,11 +43,11 @@ export interface ResolvedHealthcheck {
 
 /** A fully resolved service instance: no templates, no `auto`, nothing missing. */
 export interface ResolvedService {
-	/** Instance name: the `services` key in `locainfra.yaml`, the compose service key and its network hostname. */
+	/** Instance name: the `services` key in `locastack.yaml`, the compose service key and its network hostname. */
 	readonly name: string;
 	/** Catalog definition id (`type` in the stack entry). */
 	readonly type: string;
-	/** Docker container name, `li-<stack>-<name>` (see `serviceContainerName`). */
+	/** Docker container name, `ls-<stack>-<name>` (see `serviceContainerName`). */
 	readonly containerName: string;
 	/** Data persistence (entry `persist`, default `volume`). */
 	readonly persist: PersistMode;
@@ -88,9 +88,9 @@ export interface ResolvedService {
 export interface ResolvedStack {
 	/** Project name. */
 	readonly name: string;
-	/** Compose project name, `li-<name>`. */
+	/** Compose project name, `ls-<name>`. */
 	readonly projectName: string;
-	/** Compose network name, `li-<name>`. */
+	/** Compose network name, `ls-<name>`. */
 	readonly network: string;
 	/** Services in dependency order. */
 	readonly services: readonly ResolvedService[];
