@@ -278,11 +278,21 @@ jobs:
             if npm view "@locastack/cli-$TARGET@$VERSION" version >/dev/null 2>&1; then
               echo "@locastack/cli-$TARGET@$VERSION already published, skipping"
             else
-              (cd "$dir" && npm publish --provenance --access public --tag "$tag")
+              (cd "$dir" && npm publish --provenance --access public --tag "$tag") || {
+                # A 403 "cannot publish over" means a previous run published it but it was not visible yet.
+                npm view "@locastack/cli-$TARGET@$VERSION" version >/dev/null 2>&1 || exit 1
+              }
             fi
           done
+          # New packages take a little while to appear on the registry's read path.
+          visible() { npm view "$1@$VERSION" version >/dev/null 2>&1; }
           for TARGET in $TARGETS; do
-            npm view "@locastack/cli-$TARGET@$VERSION" version >/dev/null || { echo "::error::@locastack/cli-$TARGET@$VERSION missing on the registry"; exit 1; }
+            pkg="@locastack/cli-$TARGET"
+            for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              visible "$pkg" && break
+              [ "$attempt" -eq 12 ] && { echo "::error::$pkg@$VERSION not visible on the registry after 2 minutes"; exit 1; }
+              echo "waiting for $pkg@$VERSION to become visible ($attempt/12)"; sleep 10
+            done
           done
           if npm view "locastack@$VERSION" version >/dev/null 2>&1; then echo "locastack@$VERSION already published"; exit 0; fi
           mkdir -p npm-out/locastack
