@@ -86,6 +86,97 @@ describe("Docker unavailable screen", () => {
 		expect(await screen.findByText("Docker 27.1.1")).toBeInTheDocument();
 	});
 
+	it("renders the native-Homebrew plan for an Intel Homebrew on Apple silicon", async () => {
+		mockDb.docker = "missing";
+		const missing = mockSystemSetup("missing");
+		const reason =
+			"Docker is not installed. Homebrew at /usr/local is the Intel build running under Rosetta; Colima needs the native one at /opt/homebrew.";
+		server.use(
+			http.get("*/api/system/setup", () =>
+				HttpResponse.json({
+					doctor: missing.doctor,
+					plan: {
+						kind: "install",
+						provider: "colima",
+						alternatives: ["docker-desktop", "orbstack"],
+						reason,
+						steps: [
+							{
+								id: "homebrew.uninstall-intel-formulae",
+								title:
+									"Removing the Intel colima, lima installed by the Homebrew at /usr/local",
+								argv: ["/usr/local/bin/brew", "uninstall", "colima", "lima"],
+							},
+							{
+								id: "homebrew.download-installer",
+								title: "Downloading the Homebrew installer",
+								argv: [
+									"curl",
+									"-fsSL",
+									"--create-dirs",
+									"-o",
+									"/tmp/x/brew-install.sh",
+									"https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh",
+								],
+								remoteScript: {
+									url: "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh",
+									path: "/tmp/x/brew-install.sh",
+									inspectHint: "less /tmp/x/brew-install.sh",
+								},
+							},
+							{
+								id: "homebrew.run-installer",
+								title: "Installing the native Homebrew at /opt/homebrew",
+								argv: ["arch", "-arm64", "/bin/bash", "/tmp/x/brew-install.sh"],
+								attached: true,
+							},
+							{
+								id: "colima.install",
+								title:
+									"Installing Colima, the Docker CLI and Compose with the native Homebrew",
+								argv: [
+									"/opt/homebrew/bin/brew",
+									"install",
+									"colima",
+									"docker",
+									"docker-compose",
+								],
+							},
+							{
+								id: "colima.start",
+								title: "Starting Colima (the first start downloads a VM image)",
+								argv: ["/opt/homebrew/bin/colima", "start"],
+								env: { PATH: "/opt/homebrew/bin:/usr/bin:/bin" },
+								tee: true,
+							},
+						],
+						postNotes: [
+							"Put the native Homebrew first on your PATH, so /opt/homebrew/bin comes before /usr/local/bin.",
+						],
+						pathAdditions: ["/opt/homebrew/bin", "/opt/homebrew/sbin"],
+						needsTerminal: true,
+					},
+				}),
+			),
+		);
+		renderApp("/");
+		expect(await screen.findByText(reason)).toBeInTheDocument();
+		const steps = screen.getByRole("list", { name: "Setup steps" });
+		expect(within(steps).getAllByRole("listitem")).toHaveLength(5);
+		expect(
+			within(steps).getByText("/usr/local/bin/brew uninstall colima lima"),
+		).toBeInTheDocument();
+		expect(
+			within(steps).getByText("arch -arm64 /bin/bash /tmp/x/brew-install.sh"),
+		).toBeInTheDocument();
+		expect(
+			within(steps).getByText(
+				"PATH=/opt/homebrew/bin:/usr/bin:/bin /opt/homebrew/bin/colima start",
+			),
+		).toBeInTheDocument();
+		expect(screen.getByText("locastack setup")).toBeInTheDocument();
+	});
+
 	it("a running runtime LocaStack cannot reach: named as such, with a hand fix", async () => {
 		mockDb.docker = "stopped";
 		const stopped = mockSystemSetup("stopped");
