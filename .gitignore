@@ -50,3 +50,6 @@ docs/PLAN.md
 
 # e2e smoke screenshots
 packages/dashboard/e2e/.screenshots/
+
+# agent worktrees created by Claude Code
+.claude/worktrees/
