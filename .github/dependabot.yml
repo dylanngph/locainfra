@@ -6,7 +6,9 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
-  - package-ecosystem: npm
+  # Bun workspace: the "bun" ecosystem updates bun.lock together with package.json,
+  # which the "npm" ecosystem cannot do (its PRs always failed --frozen-lockfile).
+  - package-ecosystem: bun
     directory: /
     schedule:
       interval: weekly
@@ -15,3 +17,7 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # Major versions (TypeScript 7, Node types, React, Vite, …) are upgraded deliberately.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
