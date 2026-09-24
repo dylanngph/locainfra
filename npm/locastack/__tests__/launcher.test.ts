@@ -12,9 +12,29 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const pkgDir = join(import.meta.dir, "..");
+/** Input of the launcher's `selectBinary`. */
+interface Host {
+	platform: string;
+	arch: string;
+	musl: boolean;
+	translated: () => boolean;
+	resolve: (request: string) => string;
+}
+
+/** Result of the launcher's `selectBinary`. */
+type Selection =
+	| { kind: "unsupported" }
+	| { kind: "missing"; target: string }
+	| { kind: "found"; target: string; binary: string; warning?: string };
+
 const launcher: {
 	targetFor(platform: string, arch: string, musl: boolean): string | null;
 	isMusl(): boolean;
+	isRosettaTranslated(
+		exec: (file: string, args: string[], options: object) => string,
+	): boolean;
+	selectBinary(host: Host): Selection;
+	ROSETTA_WARNING: string;
 } = createRequire(import.meta.url)("../bin/locastack.js");
 
 const TARGETS = [
@@ -114,6 +134,97 @@ describe("targetFor", () => {
 
 	test("isMusl is false off Linux", () => {
 		if (process.platform !== "linux") expect(launcher.isMusl()).toBe(false);
+	});
+});
+
+describe("Rosetta", () => {
+	/** A fake `require.resolve` that knows only the given platform packages. */
+	const resolver =
+		(...targets: string[]) =>
+		(request: string): string => {
+			const target = targets.find((t) =>
+				request.startsWith(`@locastack/cli-${t}/`),
+			);
+			if (target === undefined) throw new Error(`Cannot find ${request}`);
+			return `/nm/@locastack/cli-${target}/bin/locastack`;
+		};
+	const intelNode = (translated: boolean, ...installed: string[]): Host => ({
+		platform: "darwin",
+		arch: "x64",
+		musl: false,
+		translated: () => translated,
+		resolve: resolver(...installed),
+	});
+
+	test("an Intel Node under Rosetta prefers the arm64 package when it resolves", () => {
+		expect(
+			launcher.selectBinary(intelNode(true, "darwin-x64", "darwin-arm64")),
+		).toEqual({
+			kind: "found",
+			target: "darwin-arm64",
+			binary: "/nm/@locastack/cli-darwin-arm64/bin/locastack",
+		});
+	});
+
+	test("without the arm64 package it runs the x64 binary with one warning line", () => {
+		const selected = launcher.selectBinary(intelNode(true, "darwin-x64"));
+		expect(selected).toEqual({
+			kind: "found",
+			target: "darwin-x64",
+			binary: "/nm/@locastack/cli-darwin-x64/bin/locastack",
+			warning:
+				"locastack: running the Intel build under Rosetta because Node is Intel; install an Apple Silicon Node for a native binary.",
+		});
+		expect(launcher.ROSETTA_WARNING).not.toContain("\n");
+	});
+
+	test("a real Intel Mac and native hosts never ask or warn", () => {
+		let asked = 0;
+		const count = () => {
+			asked += 1;
+			return false;
+		};
+		expect(
+			launcher.selectBinary({
+				...intelNode(false, "darwin-x64", "darwin-arm64"),
+				translated: count,
+			}),
+		).toEqual({
+			kind: "found",
+			target: "darwin-x64",
+			binary: "/nm/@locastack/cli-darwin-x64/bin/locastack",
+		});
+		expect(asked).toBe(1);
+		const native = launcher.selectBinary({
+			platform: "darwin",
+			arch: "arm64",
+			musl: false,
+			translated: () => {
+				throw new Error("must not be called");
+			},
+			resolve: resolver("darwin-arm64"),
+		});
+		expect(native.kind).toBe("found");
+		expect(launcher.selectBinary(intelNode(true)).kind).toBe("missing");
+		expect(
+			launcher.selectBinary({ ...intelNode(false), platform: "win32" }).kind,
+		).toBe("unsupported");
+	});
+
+	test("isRosettaTranslated reads sysctl.proc_translated", () => {
+		const calls: string[][] = [];
+		const answer = (value: string) => (file: string, args: string[]) => {
+			calls.push([file, ...args]);
+			return value;
+		};
+		expect(launcher.isRosettaTranslated(answer("1\n"))).toBe(true);
+		expect(launcher.isRosettaTranslated(answer("0\n"))).toBe(false);
+		expect(
+			launcher.isRosettaTranslated(() => {
+				throw new Error("unknown oid");
+			}),
+		).toBe(false);
+		expect(calls[0]).toEqual(["sysctl", "-n", "sysctl.proc_translated"]);
 	});
 });
 

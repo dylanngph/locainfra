@@ -11,11 +11,15 @@
 
 const fs = require("node:fs");
 const os = require("node:os");
-const { spawn } = require("node:child_process");
+const { execFileSync, spawn } = require("node:child_process");
 
 /** One-line installer shown when no platform package is available. */
 const INSTALLER =
 	"curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | sh";
+
+/** Printed when an Intel Node on Apple silicon can only run the x64 binary. */
+const ROSETTA_WARNING =
+	"locastack: running the Intel build under Rosetta because Node is Intel; install an Apple Silicon Node for a native binary.";
 
 /** Signals forwarded to the child so it can shut down cleanly. */
 const FORWARDED_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"];
@@ -62,6 +66,67 @@ function isMusl() {
 }
 
 /**
+ * Whether this process is an Intel binary translated by Rosetta 2 (an x64
+ * Node on an Apple silicon Mac): `sysctl -n sysctl.proc_translated` prints
+ * `1` then, `0` for a native process, and fails on Intel Macs.
+ *
+ * @param {typeof execFileSync} [exec] runs `sysctl` (injectable for tests)
+ * @returns {boolean}
+ */
+function isRosettaTranslated(exec = execFileSync) {
+	try {
+		const out = exec("sysctl", ["-n", "sysctl.proc_translated"], {
+			encoding: "utf8",
+			stdio: ["ignore", "pipe", "ignore"],
+		});
+		return String(out).trim() === "1";
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Picks the platform binary to run. An Intel Node under Rosetta installs the
+ * `darwin-x64` package, but the Mac is Apple silicon: prefer
+ * `@locastack/cli-darwin-arm64` when it is resolvable (it runs natively),
+ * else run the x64 binary with a one-line warning.
+ *
+ * @param {{
+ *   platform: string,
+ *   arch: string,
+ *   musl: boolean,
+ *   translated: () => boolean,
+ *   resolve: (request: string) => string,
+ * }} host `process.platform`/`arch`, libc, the Rosetta check and `require.resolve`
+ * @returns {{ kind: "unsupported" }
+ *   | { kind: "missing", target: string }
+ *   | { kind: "found", target: string, binary: string, warning?: string }}
+ */
+function selectBinary(host) {
+	const target = targetFor(host.platform, host.arch, host.musl);
+	if (target === null) return { kind: "unsupported" };
+	const find = (name) => {
+		try {
+			return host.resolve(`@locastack/cli-${name}/bin/locastack`);
+		} catch {
+			return null;
+		}
+	};
+	const underRosetta =
+		host.platform === "darwin" && host.arch === "x64" && host.translated();
+	if (underRosetta) {
+		const native = find("darwin-arm64");
+		if (native !== null)
+			return { kind: "found", target: "darwin-arm64", binary: native };
+	}
+	const binary = find(target);
+	if (binary === null) return { kind: "missing", target };
+	return underRosetta
+		? { kind: "found", target, binary, warning: ROSETTA_WARNING }
+		: { kind: "found", target, binary };
+}
+
+/**
  * Prints a message to stderr and exits with status 1.
  *
  * @param {string} message
@@ -74,8 +139,14 @@ function fail(message) {
 
 /** Resolves the platform binary and runs it, mirroring its exit and signals. */
 function main() {
-	const target = targetFor(process.platform, process.arch, isMusl());
-	if (target === null) {
+	const selected = selectBinary({
+		platform: process.platform,
+		arch: process.arch,
+		musl: isMusl(),
+		translated: () => isRosettaTranslated(),
+		resolve: (request) => require.resolve(request),
+	});
+	if (selected.kind === "unsupported") {
 		const planned =
 			process.platform === "win32" ? " (Windows support is planned)" : "";
 		fail(
@@ -84,11 +155,9 @@ function main() {
 		);
 	}
 
-	const pkg = `@locastack/cli-${target}`;
-	let binary;
-	try {
-		binary = require.resolve(`${pkg}/bin/locastack`);
-	} catch {
+	if (selected.kind === "missing") {
+		const target = selected.target;
+		const pkg = `@locastack/cli-${target}`;
 		fail(
 			`the prebuilt binary for ${target} (${pkg}) is not installed.\n` +
 				"npm skips it when optional dependencies are omitted (--omit=optional, --no-optional)\n" +
@@ -97,6 +166,8 @@ function main() {
 				`  ${INSTALLER}\n`,
 		);
 	}
+	const binary = selected.binary;
+	if (selected.warning) process.stderr.write(`${selected.warning}\n`);
 
 	// Some package managers drop the executable bit when unpacking.
 	try {
@@ -136,6 +207,12 @@ function main() {
 	});
 }
 
-module.exports = { targetFor, isMusl };
+module.exports = {
+	targetFor,
+	isMusl,
+	isRosettaTranslated,
+	selectBinary,
+	ROSETTA_WARNING,
+};
 
 if (require.main === module) main();
