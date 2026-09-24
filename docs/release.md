@@ -14,14 +14,18 @@ Enter pre mode once: `bunx changeset pre enter rc`, then `bun run release:versio
 ## Verifying a release
 
 ```sh
-gh attestation verify locastack-0.1.0-darwin-arm64.tar.gz --repo dylanngph/locastack
-VERSION=0.1.0 sh install.sh            # installs to ~/.locastack/bin after checking SHA256SUMS
+gh attestation verify locastack-<version>-darwin-arm64.tar.gz --repo dylanngph/locastack
+curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | VERSION=<version> sh
 ```
+
+The plain `curl … | sh` form installs the latest *stable* release; pre-releases are never "latest", so pass `VERSION=`.
 
 ## One-time setup (owner)
 
+- **Protected `release` environment**: the release, Homebrew and npm jobs run in the GitHub environment `release`. Create it under *Settings → Environments*, add yourself as a required reviewer, and store `HOMEBREW_TAP_TOKEN` (and the Apple secrets) as *environment* secrets rather than repository secrets. Then a leaked token with push rights can tag but cannot publish without your approval. Also add a tag ruleset restricting who may create `v*` tags.
+
 - **Homebrew tap**: create the public repo `dylanngph/homebrew-locastack` (an empty repo is enough). Create a fine-grained personal access token limited to that repository with *Contents: read and write*, and add it to this repository as the secret `HOMEBREW_TAP_TOKEN`. Without it the tap job logs a notice and skips. Users then run `brew install dylanngph/locastack/locastack`.
-- **npm**: create the npm account, the organisation `locastack` (owner of the `@locastack` scope), and configure *trusted publishing* on npmjs.com for the packages `locastack` and `@locastack/cli-*` pointing at repository `dylanngph/locastack`, workflow `release.yml`. Then set the repository variable `NPM_PUBLISH=true`. The job publishes with `--provenance`; no token is stored anywhere. Until the variable is set the job is skipped.
+- **npm**: create the npm account and the organisation `locastack` (owner of the `@locastack` scope). Trusted publishing can only be configured on packages that already exist, so bootstrap each of the seven packages once with a granular access token (`npm publish` of a `0.0.0-bootstrap` placeholder, then revoke the token): `locastack`, `@locastack/cli-darwin-arm64`, `@locastack/cli-darwin-x64`, `@locastack/cli-linux-x64`, `@locastack/cli-linux-arm64`, `@locastack/cli-linux-x64-musl`, `@locastack/cli-linux-arm64-musl`. On each package's settings page add a *trusted publisher*: GitHub, repository `dylanngph/locastack`, workflow `release.yml`, environment `release`. Then set the repository variable `NPM_PUBLISH=true`. The job publishes with `--provenance` through OIDC (npm CLI 11.5+, which the job installs); no token is stored anywhere. Until the variable is set the job is skipped.
 - **Apple signing (optional)**: add the secrets `APPLE_CERTIFICATE_P12` (base64 of the Developer ID Application .p12), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY` (e.g. `Developer ID Application: Name (TEAMID)`), and an App Store Connect API key as `APPLE_API_KEY_P8`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`. The signing step runs only when the certificate secret exists. Bare Mach-O binaries cannot be stapled, so Gatekeeper checks the notarisation online.
 
 ## Rollback

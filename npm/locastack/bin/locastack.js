@@ -6,16 +6,19 @@
  * The `locastack` package ships no binary itself. npm installs exactly one
  * `@locastack/cli-<target>` optional dependency (selected by its `os`, `cpu`
  * and `libc` fields); this script finds that package's `bin/locastack` and
- * runs it with the caller's arguments, stdio, exit code and signal.
+ * runs it with the caller's arguments, stdio, exit code and signals.
  */
 
 const fs = require("node:fs");
 const os = require("node:os");
-const { spawnSync } = require("node:child_process");
+const { spawn } = require("node:child_process");
 
 /** One-line installer shown when no platform package is available. */
 const INSTALLER =
 	"curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | sh";
+
+/** Signals forwarded to the child so it can shut down cleanly. */
+const FORWARDED_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"];
 
 /**
  * Maps a Node platform/arch/libc triple to a release target name.
@@ -69,7 +72,7 @@ function fail(message) {
 	process.exit(1);
 }
 
-/** Resolves the platform binary and runs it, mirroring its exit. */
+/** Resolves the platform binary and runs it, mirroring its exit and signals. */
 function main() {
 	const target = targetFor(process.platform, process.arch, isMusl());
 	if (target === null) {
@@ -102,18 +105,35 @@ function main() {
 		try {
 			fs.chmodSync(binary, 0o755);
 		} catch {
-			// spawnSync reports the real error below
+			// spawn reports the real error below
 		}
 	}
 
-	const result = spawnSync(binary, process.argv.slice(2), { stdio: "inherit" });
-	if (result.error) fail(`could not run ${binary}: ${result.error.message}`);
-	if (result.signal) {
-		// Re-raise so our parent sees the same termination signal.
-		process.kill(process.pid, result.signal);
-		process.exit(128 + (os.constants.signals[result.signal] || 0));
-	}
-	process.exit(result.status === null ? 1 : result.status);
+	const child = spawn(binary, process.argv.slice(2), { stdio: "inherit" });
+
+	// Forward termination signals instead of dying first and orphaning the child.
+	const forward = (signal) => {
+		if (child.exitCode === null && child.signalCode === null)
+			child.kill(signal);
+	};
+	const handlers = FORWARDED_SIGNALS.map((signal) => {
+		const handler = () => forward(signal);
+		process.on(signal, handler);
+		return [signal, handler];
+	});
+
+	child.on("error", (error) =>
+		fail(`could not run ${binary}: ${error.message}`),
+	);
+	child.on("exit", (code, signal) => {
+		for (const [name, handler] of handlers) process.off(name, handler);
+		if (signal) {
+			// Re-raise so our parent sees the same termination signal.
+			process.kill(process.pid, signal);
+			process.exit(128 + (os.constants.signals[signal] || 0));
+		}
+		process.exit(code === null ? 1 : code);
+	});
 }
 
 module.exports = { targetFor, isMusl };

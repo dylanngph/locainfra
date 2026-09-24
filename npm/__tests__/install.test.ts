@@ -124,16 +124,18 @@ describe("install.sh", () => {
 		const binary = join(dir, "locastack");
 		expect(statSync(binary).mode & 0o111).not.toBe(0);
 		expect(result.out).toContain(`${dir} is not on your PATH`);
-		expect(result.out).toContain(`>> ~/.zshrc`);
+		expect(result.out).toContain('export PATH="$HOME/pinned:$PATH"');
 		expect(result.out.trimEnd()).toEndWith(`locastack ${GOOD}`);
 	});
 
-	test("resolves latest through the releases API and skips the PATH hint when on PATH", async () => {
+	test("resolves latest via the redirect then the releases API, and skips the PATH hint when on PATH", async () => {
 		const dir = join(root, "latest");
 		requested.length = 0;
 		const result = await install(dir, { PATH: `${dir}:${process.env.PATH}` });
 		expect(result.exitCode).toBe(0);
-		expect(requested[0]).toBe("/api/latest");
+		// The fake release server has no /latest redirect, so the installer falls back to the API.
+		expect(requested[0]).toBe("/latest");
+		expect(requested).toContain("/api/latest");
 		expect(result.out).toContain(`Installing LocaStack ${GOOD}`);
 		expect(result.out).not.toContain("is not on your PATH");
 		expect(existsSync(join(dir, "locastack"))).toBe(true);

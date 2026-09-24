@@ -87,10 +87,17 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 if [ "$VERSION" = latest ]; then
-	fetch "$API_URL" "$tmp/latest.json" ||
-		die "could not query the latest release; set VERSION=<x.y.z> to pick one"
-	VERSION=$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$tmp/latest.json" | head -n 1)
-	[ -n "$VERSION" ] || die "could not read tag_name from $API_URL"
+	# Follow the /releases/latest redirect first (no API rate limit); fall back to the API.
+	if command -v curl >/dev/null 2>&1; then
+		final=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "$BASE_URL/latest" 2>/dev/null || true)
+		case "$final" in */tag/*) VERSION=${final##*/tag/} ;; esac
+	fi
+	if [ -z "$VERSION" ] || [ "$VERSION" = latest ]; then
+		fetch "$API_URL" "$tmp/latest.json" ||
+			die "could not query the latest release; set VERSION=<x.y.z> to pick one"
+		VERSION=$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$tmp/latest.json" | head -n 1)
+		[ -n "$VERSION" ] || die "could not read tag_name from $API_URL"
+	fi
 fi
 VERSION=${VERSION#v}
 
@@ -118,11 +125,9 @@ case ":${PATH:-}:" in
 	*":$INSTALL_DIR:"*) ;;
 	*)
 		say ""
-		say "$INSTALL_DIR is not on your PATH. Add it with:"
-		case "$(basename "${SHELL:-sh}")" in
-			fish) say "  fish_add_path \"$INSTALL_DIR\"" ;;
-			zsh) say "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> ~/.zshrc" ;;
-			bash) say "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> ~/.bashrc" ;;
+		say "$INSTALL_DIR is not on your PATH. Add this line to your shell profile (~/.zshrc, ~/.bashrc, or run fish_add_path):"
+		case "$INSTALL_DIR" in
+			"$HOME"/*) say "  export PATH=\"\$HOME/${INSTALL_DIR#"$HOME"/}:\$PATH\"" ;;
 			*) say "  export PATH=\"$INSTALL_DIR:\$PATH\"" ;;
 		esac
 		say ""

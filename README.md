@@ -2,17 +2,17 @@
 
 Local Docker dev services, managed from a dashboard.
 
-Type `locastack`, a dashboard opens on `127.0.0.1`, and you add Postgres, Redis and friends from a catalog, start and stop them, read logs, and copy connection strings or link them into your project's `.env.local`. No hand-written compose files, no copied passwords.
+Type `locastack`, a dashboard opens on `127.0.0.1`, and you add Postgres, Redis and friends from a catalog, start and stop them, read logs, and copy connection strings or write them into your project's `.env`. No hand-written compose files, no copied passwords.
 
 > Status: 0.1 release candidate. macOS and Linux; Windows is planned.
 
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | VERSION=0.1.0-rc.0 sh
 ```
 
-Or with Homebrew:
+Until the first stable release, pass `VERSION=` as above (the plain command installs the latest stable release). From 0.1.0 on, Homebrew works too:
 
 ```sh
 brew install dylanngph/locastack/locastack
@@ -40,7 +40,7 @@ locastack --project . --no-open    # register this folder as a project; --port <
 locastack up [--service main-db]   # start the services of the project in this folder (scripts/CI)
 locastack down [--volumes] [--yes]
 locastack env --format shell       # eval "$(locastack env --format shell)"
-locastack doctor
+locastack doctor --json           # --json works on every command; locastack --version prints the version
 ```
 
 A project is a folder with a `locastack.yaml` holding named service instances (`services: { main-db: { type: postgres, port: auto } }`, several per type allowed). Secrets live in `~/.locastack/secrets/` (mode 0600), never in the stack file. Machine-local state (registered projects, pinned ports) lives in `~/.locastack/locastack.db` (SQLite, mode 0600); an older `state.json` is imported once and renamed `state.json.migrated`. All services and the dashboard bind to `127.0.0.1`.
@@ -49,7 +49,7 @@ Each service page has a **Data** tab (run SQL or Redis commands in the running c
 
 The dashboard loads data once and has a **Refresh** button; it never polls. Turn on **Live** (per project) to stream status and CPU/memory, or **Follow** on the Logs tab to stream logs; only then does it open a WebSocket.
 
-Build the standalone binary with `bun run build`. It builds the dashboard, then runs Bun's native `bun build --compile` with `--asset` to embed the dashboard, the catalog and the migrations into `dist/locastack`. `bun run build:targets` compiles the six release targets into `dist/<target>/locastack`.
+Build the standalone binary with `bun run build`. It builds the dashboard, then runs Bun's native `bun build --compile` with `--asset` to embed the dashboard, the catalog and the migrations into `dist/locastack`. `bun run build:targets` compiles the six release targets into `dist/bun-<target>/locastack`.
 
 ## Development
 
@@ -62,7 +62,7 @@ bun run dev:ui       # dashboard only, against MSW mocks
 bun run cli -- doctor
 bun run test && bun run typecheck && bun run lint
 bun run build        # vite build + bun build --compile → dist/locastack
-bun run build:targets  # the six release targets → dist/<target>/locastack
+bun run build:targets  # the six release targets → dist/bun-<target>/locastack
 bun test npm         # installer + npm launcher tests
 ```
 
