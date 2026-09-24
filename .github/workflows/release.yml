@@ -278,10 +278,15 @@ jobs:
             if npm view "@locastack/cli-$TARGET@$VERSION" version >/dev/null 2>&1; then
               echo "@locastack/cli-$TARGET@$VERSION already published, skipping"
             else
-              (cd "$dir" && npm publish --provenance --access public --tag "$tag") || {
-                # A 403 "cannot publish over" means a previous run published it but it was not visible yet.
-                npm view "@locastack/cli-$TARGET@$VERSION" version >/dev/null 2>&1 || exit 1
-              }
+              if ! (cd "$dir" && npm publish --provenance --access public --tag "$tag" 2>&1 | tee publish.log); then
+                # E409 "previously staged version": a previous run published it and the registry is still
+                # propagating it (npm view cannot see staged versions yet). Treat as already published.
+                if grep -qE 'E409|previously (staged|published) version' publish.log; then
+                  echo "@locastack/cli-$TARGET@$VERSION was already published by an earlier run"
+                else
+                  exit 1
+                fi
+              fi
             fi
           done
           # New packages take a little while to appear on the registry's read path.
@@ -296,8 +301,11 @@ jobs:
             done
           done
           if npm view "locastack@$VERSION" version >/dev/null 2>&1; then echo "locastack@$VERSION already published"; exit 0; fi
+          publish_launcher() { (cd npm-out/locastack && npm publish --provenance --access public --tag "$tag" 2>&1 | tee launcher.log); }
           mkdir -p npm-out/locastack
           cp -R npm/locastack/bin npm/locastack/README.md LICENSE npm-out/locastack/
           jq --arg v "$VERSION" '.version = $v | .optionalDependencies |= map_values($v)' \
             npm/locastack/package.json > npm-out/locastack/package.json
-          (cd npm-out/locastack && npm publish --provenance --access public --tag "$tag")
+          if ! publish_launcher; then
+            grep -qE 'E409|previously (staged|published) version' launcher.log && echo "locastack@$VERSION was already published by an earlier run" || exit 1
+          fi
