@@ -150,7 +150,7 @@ export class FakeProcessRunner implements ProcessRunner {
 			exitCode: answer.exitCode ?? 0,
 			timedOut: answer.timedOut ?? false,
 		};
-		if (answer.output !== undefined && !options.attached)
+		if (answer.output !== undefined && (!options.attached || step.tee === true))
 			return { ...result, output: answer.output };
 		return result;
 	}

@@ -15,7 +15,12 @@ import {
 	type SetupPlan,
 } from "../../ops.model";
 import { buildSetupPlan } from "../build-setup-plan.op";
-import { outputLines, runSetupPlan } from "../run-setup-plan.op";
+import {
+	outputLines,
+	ROSETTA_COLIMA_FIX,
+	runSetupPlan,
+	stepFailureFix,
+} from "../run-setup-plan.op";
 import { SETUP_STEP } from "../setup-steps";
 import { DOWN, reportWith, setupWorld } from "./setup-world";
 
@@ -491,5 +496,63 @@ describe("runSetupPlan: fresh Homebrew off PATH (review fix)", () => {
 		expect(String(end.error?.details?.fix)).toContain("brew shellenv");
 		expect(end.error?.details?.notes).toEqual(plan.postNotes);
 		expect(w.runner.pathPrepends).toEqual([]);
+	});
+});
+
+describe("runSetupPlan: Colima under Rosetta", () => {
+	const ROSETTA_OUTPUT =
+		"FATA[0000] limactl is running under rosetta, please reinstall lima with native arch\nFATA[0002] lima compatibility error: error checking Lima version: exit status 1\n";
+
+	test("a failed colima start that mentions Rosetta gets the native-Homebrew fix, also in a terminal", async () => {
+		const facts = createPlatformFacts({ installedRuntimes: ["colima"] });
+		const plan = planFor(facts, DOWN);
+		expect(plan.steps.map((s) => s.id)).toEqual([SETUP_STEP.colimaStart]);
+		const w = setupWorld(facts);
+		w.down();
+		w.runner.on(SETUP_STEP.colimaStart, {
+			exitCode: 1,
+			output: ROSETTA_OUTPUT.toUpperCase(),
+		});
+		const events = await collect(
+			runSetupPlan(w.deps, { plan, attached: true }),
+		);
+		const end = expectOneTerminal(events);
+		expect(end.error?.code).toBe("SETUP_STEP_FAILED");
+		expect(end.error?.details?.fix).toBe(ROSETTA_COLIMA_FIX);
+		expect(ROSETTA_COLIMA_FIX).toBe(
+			"Colima was installed with the Intel Homebrew at /usr/local and cannot run under Rosetta. Run `locastack setup` again: it will install the native Homebrew at /opt/homebrew and reinstall Colima from it (or use `locastack setup --runtime docker-desktop`).",
+		);
+		// The tee'd output already reached the terminal: no duplicate log lines.
+		expect(events.some((e) => e.kind === "log")).toBe(false);
+	});
+
+	test("other colima start failures keep the generic fix", async () => {
+		const facts = createPlatformFacts({ installedRuntimes: ["colima"] });
+		const plan = planFor(facts, DOWN);
+		const w = setupWorld(facts);
+		w.down();
+		w.runner.on(SETUP_STEP.colimaStart, {
+			exitCode: 1,
+			output: "FATA[0001] error starting vm: disk full\n",
+		});
+		const end = expectOneTerminal(
+			await collect(runSetupPlan(w.deps, { plan, attached: true })),
+		);
+		expect(String(end.error?.details?.fix)).toContain(
+			"Run `colima start` yourself",
+		);
+	});
+
+	test("stepFailureFix only matches the Colima start steps", () => {
+		const failed = { exitCode: 1, timedOut: false, output: ROSETTA_OUTPUT };
+		const step: CommandStep = {
+			id: SETUP_STEP.colimaInstall,
+			title: "Installing Colima",
+			argv: ["brew", "install", "colima"],
+		};
+		expect(stepFailureFix(step, failed)).not.toBe(ROSETTA_COLIMA_FIX);
+		expect(
+			stepFailureFix({ ...step, id: SETUP_STEP.colimaStartAtLogin }, failed),
+		).toBe(ROSETTA_COLIMA_FIX);
 	});
 });

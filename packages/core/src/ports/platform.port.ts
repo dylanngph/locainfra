@@ -91,6 +91,24 @@ export const PlatformFacts = Type.Composite([
 					"`brew --prefix` (e.g. /opt/homebrew); absent when Homebrew is missing. Planned steps call `<brewPrefix>/bin/brew` by absolute path",
 			}),
 		),
+		brewNative: Type.Optional(
+			Type.Boolean({
+				description:
+					"The Homebrew at `brewPrefix` is built for this CPU. False on Apple silicon when it is the Intel build running under Rosetta (prefix /usr/local, or an x86_64-only `bin/brew`): formulae it installs (Colima, Lima) are x86_64 and cannot start a VM. Absent when Homebrew is missing",
+			}),
+		),
+		nativeBrewPrefix: Type.Optional(
+			Type.String({
+				description:
+					"Apple silicon only: prefix of a native Homebrew found at its default location (/opt/homebrew), also when `brewPrefix` names an Intel one next to it. Absent when there is none",
+			}),
+		),
+		intelBrewFormulae: Type.Optional(
+			Type.Array(Type.String(), {
+				description:
+					"Apple silicon with an Intel Homebrew (`brewNative: false`): which of colima, lima, docker and docker-compose that Homebrew has installed (`<brewPrefix>/Cellar/<name>`), in that order. Absent otherwise",
+			}),
+		),
 		isRoot: Type.Boolean({
 			description:
 				"Running as uid 0 (Linux): steps are planned without `sudo` and the docker-group check is ok",

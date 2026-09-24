@@ -23,13 +23,19 @@ import {
 	dockerGroupStep,
 	downloadStep,
 	homebrewSteps,
+	intelBrewUninstallStep,
 	MAC_RUNTIMES,
 	MANUAL_INSTALL_URLS,
+	NATIVE_BREW_PREFIX,
+	nativeBrewPathNote,
+	nativeHomebrewSteps,
 	RUNTIME_LABELS,
+	rosettaBrew,
 	runtimeOfContext,
 	runtimeStartStep,
 	SETUP_STEP,
 	startableRuntimes,
+	withNativeBrew,
 	withSudo,
 } from "./setup-steps";
 
@@ -245,6 +251,78 @@ function withContextNote(facts: PlatformFacts, step: CommandStep): CommandStep {
 	return { ...step, note: step.note ? `${step.note} ${note}` : note };
 }
 
+/** Why Colima is reinstalled from the native Homebrew (`SetupPlan.reason`). */
+export const ROSETTA_BREW_REASON = `Homebrew at /usr/local is the Intel build running under Rosetta; Colima needs the native one at ${NATIVE_BREW_PREFIX}.`;
+
+/**
+ * Colima on an Apple silicon Mac whose Homebrew is the Intel build: remove
+ * the Intel colima/lima/docker/docker-compose, install the native Homebrew
+ * (unless it already sits at /opt/homebrew), install Colima, the CLI and
+ * Compose with it, link the plugin and start `/opt/homebrew/bin/colima`
+ * with `/opt/homebrew/bin` first on PATH.
+ */
+function rosettaColimaPlan(
+	facts: PlatformFacts,
+	options: SetupOptions,
+	reasonPrefix: string,
+): SetupPlan {
+	const native = withNativeBrew(facts);
+	const uninstall = intelBrewUninstallStep(facts);
+	const hasNative = facts.nativeBrewPrefix !== undefined;
+	const steps: CommandStep[] = [
+		...(uninstall === undefined ? [] : [uninstall]),
+		...(hasNative ? [] : nativeHomebrewSteps(facts)),
+		{
+			id: SETUP_STEP.colimaInstall,
+			title: `Installing Colima, the Docker CLI and Compose with the native Homebrew`,
+			argv: [brewBin(native), "install", "colima", "docker", "docker-compose"],
+		},
+		...composeLinkSteps(native),
+		withContextNote(
+			facts,
+			runtimeStartStep("colima", native, {
+				freshBrew: true,
+				...(options.startAtLogin === undefined
+					? {}
+					: { startAtLogin: options.startAtLogin }),
+			}),
+		),
+	];
+	const notes = [nativeBrewPathNote(facts)];
+	if (!options.startAtLogin) {
+		notes.push(
+			`Colima does not start at login: run \`colima start\` after a reboot (or \`${brewBin(native)} services start colima\` to start it at login).`,
+		);
+	}
+	const using = hasNative
+		? ` Uses the native Homebrew already at ${brewPrefixOf(native)}.`
+		: "";
+	return plan({
+		kind: "install",
+		provider: "colima",
+		alternatives: MAC_RUNTIMES.filter((r) => r !== "colima"),
+		reason: [reasonPrefix, `${ROSETTA_BREW_REASON}${using}`]
+			.filter((part) => part.length > 0)
+			.join(" "),
+		steps,
+		postNotes: notes,
+		pathAdditions: brewPathDirs(native),
+	});
+}
+
+/**
+ * The installed Colima came from the Intel Homebrew (or it cannot be told):
+ * starting it would fail with "limactl is running under rosetta".
+ */
+function intelColima(facts: PlatformFacts): boolean {
+	const formulae = facts.intelBrewFormulae;
+	return (
+		formulae === undefined ||
+		formulae.includes("colima") ||
+		formulae.includes("lima")
+	);
+}
+
 function macInstallPlan(
 	facts: PlatformFacts,
 	problems: Problems,
@@ -252,6 +330,8 @@ function macInstallPlan(
 	options: SetupOptions,
 	reasonPrefix: string,
 ): SetupPlan {
+	if (provider === "colima" && rosettaBrew(facts))
+		return rosettaColimaPlan(facts, options, reasonPrefix);
 	const brew = ensureBrew(facts);
 	const bin = brewBin(facts);
 	const freshBrew = brewOffPath(facts);
@@ -331,6 +411,12 @@ function macStartPlan(
 			steps: [runtimeStartStep(provider, facts)],
 		});
 	}
+	if (rosettaBrew(facts) && intelColima(facts))
+		return rosettaColimaPlan(
+			facts,
+			options,
+			`${name} is installed from the Intel Homebrew and cannot start.`,
+		);
 	const repair =
 		problems.cliMissing || problems.composeMissing || problems.composeOld;
 	// Homebrew is installed but not on PATH: call Colima by its brew path.

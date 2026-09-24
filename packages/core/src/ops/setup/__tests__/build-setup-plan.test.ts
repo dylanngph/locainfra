@@ -8,7 +8,7 @@ import {
 } from "../../../testing/setup-fakes";
 import { DOCTOR_CHECK } from "../../doctor/doctor.model";
 import { SETUP_INSTALLER_URLS, SetupPlan } from "../../ops.model";
-import { buildSetupPlan } from "../build-setup-plan.op";
+import { buildSetupPlan, ROSETTA_BREW_REASON } from "../build-setup-plan.op";
 import { SETUP_STEP } from "../setup-steps";
 import { DOWN, reportWith } from "./setup-world";
 
@@ -615,5 +615,125 @@ describe("buildSetupPlan: review fixes", () => {
 			"/usr/local/bin/brew install colima docker docker-compose",
 		);
 		expect(noCli.postNotes.join(" ")).toContain("brew link --overwrite docker");
+	});
+});
+
+describe("buildSetupPlan: Apple silicon with the Intel Homebrew", () => {
+	const intel = (overrides: Partial<PlatformFacts> = {}): PlatformFacts =>
+		createPlatformFacts({
+			brewPrefix: "/usr/local",
+			brewNative: false,
+			intelBrewFormulae: [],
+			...overrides,
+		});
+	const PATH =
+		"/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin";
+
+	test("nothing installed: native Homebrew via arch -arm64, then Colima from /opt/homebrew", () => {
+		const plan = build(intel(), NOTHING);
+		expect(plan.kind).toBe("install");
+		expect(plan.provider).toBe("colima");
+		expect(ROSETTA_BREW_REASON).toBe(
+			"Homebrew at /usr/local is the Intel build running under Rosetta; Colima needs the native one at /opt/homebrew.",
+		);
+		expect(plan.reason).toContain(ROSETTA_BREW_REASON);
+		expect(commands(plan)).toEqual([
+			`curl -fsSL --create-dirs -o /tmp/locastack-setup-test/brew-install.sh ${SETUP_INSTALLER_URLS.homebrew}`,
+			"arch -arm64 /bin/bash /tmp/locastack-setup-test/brew-install.sh",
+			"/opt/homebrew/bin/brew install colima docker docker-compose",
+			"mkdir -p /Users/test/.docker/cli-plugins",
+			"ln -sfn /opt/homebrew/opt/docker-compose/bin/docker-compose /Users/test/.docker/cli-plugins/docker-compose",
+			`PATH=${PATH} /opt/homebrew/bin/colima start`,
+		]);
+		expect(plan.steps[0]?.remoteScript).toBeDefined();
+		expect(plan.steps[1]?.id).toBe(SETUP_STEP.brewInstall);
+		expect(plan.steps[1]?.attached).toBe(true);
+		expect(plan.steps.at(-1)?.tee).toBe(true);
+		expect(plan.needsTerminal).toBe(true);
+		expect(plan.pathAdditions).toEqual([
+			"/opt/homebrew/bin",
+			"/opt/homebrew/sbin",
+		]);
+		expect(plan.postNotes[0]).toContain(
+			"/opt/homebrew/bin comes before /usr/local/bin",
+		);
+		expect(plan.postNotes[0]).toContain("~/.zprofile");
+		expect(commands(plan).join("\n")).not.toContain("/usr/local/bin/brew");
+	});
+
+	test("Intel Colima installed and stopped: uninstall only what is present, then reinstall natively", () => {
+		const plan = build(
+			intel({
+				installedRuntimes: ["colima"],
+				intelBrewFormulae: ["colima", "lima", "docker-compose"],
+				dockerCliPath: "/usr/local/bin/docker",
+			}),
+			DOWN,
+		);
+		expect(plan.kind).toBe("install");
+		expect(plan.reason).toContain(ROSETTA_BREW_REASON);
+		expect(plan.steps[0]?.id).toBe(SETUP_STEP.intelBrewUninstall);
+		expect(commands(plan)[0]).toBe(
+			"/usr/local/bin/brew uninstall colima lima docker-compose",
+		);
+		expect(commands(plan)).toContain(
+			"/opt/homebrew/bin/brew install colima docker docker-compose",
+		);
+		expect(commands(plan).at(-1)).toBe(
+			`PATH=${PATH} /opt/homebrew/bin/colima start`,
+		);
+	});
+
+	test("native /opt/homebrew next to the Intel one: no Homebrew install, /opt/homebrew used explicitly", () => {
+		const plan = build(
+			intel({
+				nativeBrewPrefix: "/opt/homebrew",
+				intelBrewFormulae: ["colima", "lima"],
+			}),
+			NOTHING,
+			{ startAtLogin: true },
+		);
+		expect(commands(plan)).toEqual([
+			"/usr/local/bin/brew uninstall colima lima",
+			"/opt/homebrew/bin/brew install colima docker docker-compose",
+			"mkdir -p /Users/test/.docker/cli-plugins",
+			"ln -sfn /opt/homebrew/opt/docker-compose/bin/docker-compose /Users/test/.docker/cli-plugins/docker-compose",
+			`PATH=${PATH} /opt/homebrew/bin/brew services start colima`,
+		]);
+		expect(plan.needsTerminal).toBe(false);
+		expect(plan.reason).toContain("already at /opt/homebrew");
+		expect(plan.pathAdditions).toEqual([
+			"/opt/homebrew/bin",
+			"/opt/homebrew/sbin",
+		]);
+	});
+
+	test("a native Colima next to the Intel Homebrew just starts", () => {
+		const plan = build(
+			intel({ installedRuntimes: ["colima"], intelBrewFormulae: ["docker"] }),
+			DOWN,
+		);
+		expect(plan.kind).toBe("start");
+		expect(commands(plan)).toEqual(["colima start"]);
+	});
+
+	test("Docker Desktop requested with the Intel Homebrew is unchanged", () => {
+		const plan = build(intel(), NOTHING, { runtime: "docker-desktop" });
+		expect(commands(plan)[0]).toBe("/usr/local/bin/brew install --cask docker");
+	});
+
+	test("an Intel Mac with Homebrew at /usr/local is native: plain Colima install", () => {
+		const plan = build(
+			createPlatformFacts({
+				arch: "x64",
+				brewPrefix: "/usr/local",
+				brewNative: true,
+			}),
+			NOTHING,
+		);
+		expect(commands(plan)[0]).toBe(
+			"/usr/local/bin/brew install colima docker docker-compose",
+		);
+		expect(plan.reason).not.toContain("Rosetta");
 	});
 });
