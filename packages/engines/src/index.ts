@@ -176,7 +176,10 @@ export {
 	readLines,
 	runToCompletion,
 } from "./process/command-runner";
-export type { BunProcessRunnerOptions } from "./process/process-runner";
+export type {
+	BunProcessRunnerOptions,
+	TeeEcho,
+} from "./process/process-runner";
 export {
 	BunProcessRunner,
 	PROCESS_KILL_GRACE_MS,

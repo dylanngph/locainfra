@@ -6,11 +6,13 @@ import {
 } from "node:fs/promises";
 import { homedir, tmpdir, userInfo } from "node:os";
 import { dirname, join } from "node:path";
-import type {
-	PlatformFacts,
-	PlatformInspector,
-	PlatformOs,
-	RuntimeProvider,
+import {
+	INTEL_COLIMA_FORMULAE,
+	NATIVE_BREW_PREFIX,
+	type PlatformFacts,
+	type PlatformInspector,
+	type PlatformOs,
+	type RuntimeProvider,
 } from "@locastack/core";
 import {
 	defaultSocketCandidates,
@@ -280,6 +282,26 @@ function brewCandidates(os: PlatformOs, home: string): string[] {
 	return [];
 }
 
+/** What {@link HostPlatformInspector} learns about Homebrew. */
+interface BrewFacts {
+	readonly prefix: string;
+	readonly onPath: boolean;
+	/** Only on macOS. */
+	readonly native?: boolean;
+	readonly nativeBrewPrefix?: string;
+	readonly intelBrewFormulae?: string[];
+}
+
+/**
+ * Parses `file -b <path>` output.
+ *
+ * @param output - e.g. `Mach-O 64-bit executable x86_64`.
+ * @returns Whether it describes an Intel-only Mach-O binary (no arm64 slice).
+ */
+export function isIntelOnlyBinary(output: string): boolean {
+	return /x86_64/.test(output) && !/arm64/.test(output);
+}
+
 const SYSTEMD_UNIT_FILES = [
 	"/lib/systemd/system/docker.service",
 	"/usr/lib/systemd/system/docker.service",
@@ -375,6 +397,13 @@ export class HostPlatformInspector implements PlatformInspector {
 			...base,
 			hasBrew: brewPrefix !== undefined,
 			...(brew === undefined ? {} : { brewOnPath: brew.onPath }),
+			...(brew?.native === undefined ? {} : { brewNative: brew.native }),
+			...(brew?.nativeBrewPrefix === undefined
+				? {}
+				: { nativeBrewPrefix: brew.nativeBrewPrefix }),
+			...(brew?.intelBrewFormulae === undefined
+				? {}
+				: { intelBrewFormulae: brew.intelBrewFormulae }),
 			...(dockerContext === undefined ? {} : { dockerContext }),
 			...(dockerHost === "" ? {} : { dockerHost }),
 			hasSystemd,
@@ -405,19 +434,67 @@ export class HostPlatformInspector implements PlatformInspector {
 		return this.#safe(() => this.#probe.exec(argv), undefined);
 	}
 
-	/** Homebrew's prefix and whether `brew` is on PATH (`undefined`: no Homebrew). */
-	async #brew(): Promise<{ prefix: string; onPath: boolean } | undefined> {
+	/**
+	 * Homebrew's prefix, whether `brew` is on PATH and, on macOS, whether it
+	 * is built for this CPU (`undefined`: no Homebrew). On Apple silicon it
+	 * also looks for a native Homebrew at /opt/homebrew and, when the one
+	 * found is the Intel build, for the Colima formulae it installed.
+	 */
+	async #brew(): Promise<BrewFacts | undefined> {
 		const onPath = await this.#safe(() => this.#probe.which("brew"), undefined);
 		const brew =
 			onPath ??
 			(await this.#firstExisting(brewCandidates(this.#os, this.#homeDir)));
 		if (brew === undefined) return undefined;
 		const out = await this.#exec([brew, "--prefix"]);
-		const prefix = out?.exitCode === 0 ? out.stdout.trim() : "";
+		const printed = out?.exitCode === 0 ? out.stdout.trim() : "";
+		const prefix = printed.startsWith("/") ? printed : dirname(dirname(brew));
+		const found = { prefix, onPath: onPath !== undefined };
+		if (this.#os !== "darwin") return found;
+		if (this.#arch !== "arm64") return { ...found, native: true };
+		const native = !(await this.#intelBrew(prefix, brew));
+		const nativeBrewPrefix = (await this.#firstExisting([
+			`${NATIVE_BREW_PREFIX}/bin/brew`,
+		]))
+			? NATIVE_BREW_PREFIX
+			: undefined;
+		const intelBrewFormulae = native
+			? undefined
+			: await this.#installedFormulae(prefix, INTEL_COLIMA_FORMULAE);
 		return {
-			prefix: prefix.startsWith("/") ? prefix : dirname(dirname(brew)),
-			onPath: onPath !== undefined,
+			...found,
+			native,
+			...(nativeBrewPrefix === undefined ? {} : { nativeBrewPrefix }),
+			...(intelBrewFormulae === undefined ? {} : { intelBrewFormulae }),
 		};
+	}
+
+	/**
+	 * On Apple silicon: Homebrew at /usr/local is the Intel build (it installs
+	 * there only under Rosetta). `bin/brew` is a shell script, so for any
+	 * other prefix `file` only tells when it is an x86_64-only binary.
+	 */
+	async #intelBrew(prefix: string, brew: string): Promise<boolean> {
+		if (prefix === "/usr/local") return true;
+		if (prefix === NATIVE_BREW_PREFIX) return false;
+		const out = await this.#exec(["file", "-b", brew]);
+		return out?.exitCode === 0 && isIntelOnlyBinary(out.stdout);
+	}
+
+	/** The `names` with a keg in `<prefix>/Cellar` (in `names` order). */
+	async #installedFormulae(
+		prefix: string,
+		names: readonly string[],
+	): Promise<string[]> {
+		const found = await Promise.all(
+			names.map((name) =>
+				this.#safe(
+					() => this.#probe.exists(join(prefix, "Cellar", name)),
+					false,
+				),
+			),
+		);
+		return names.filter((_, index) => found[index] === true);
 	}
 
 	async #inDockerGroup(isRoot: boolean): Promise<boolean> {

@@ -212,4 +212,34 @@ describe("BunProcessRunner", () => {
 		expect(result.output).toContain("started");
 		expect(performance.now() - started).toBeLessThan(2_500);
 	});
+
+	test("an attached tee step echoes its output live and still returns it", async () => {
+		const echoed: string[] = [];
+		const decoder = new TextDecoder();
+		const teeing = new BunProcessRunner({
+			killGraceMs: 200,
+			echo: {
+				stdout: (chunk) => echoed.push(`out:${decoder.decode(chunk)}`),
+				stderr: (chunk) => echoed.push(`err:${decoder.decode(chunk)}`),
+			},
+		});
+		const result = await teeing.run(
+			step(
+				[
+					"/bin/sh",
+					"-c",
+					"echo starting; echo 'FATA[0000] limactl is running under rosetta' 1>&2; exit 1",
+				],
+				{ tee: true },
+			),
+			{ attached: true },
+		);
+		expect(result.exitCode).toBe(1);
+		expect(result.output).toContain("starting\n");
+		expect(result.output).toContain("running under rosetta");
+		expect(echoed).toContain("out:starting\n");
+		expect(echoed.join("")).toContain(
+			"err:FATA[0000] limactl is running under rosetta\n",
+		);
+	});
 });
