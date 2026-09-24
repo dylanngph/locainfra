@@ -8,17 +8,19 @@ Type `locastack`, a dashboard opens on `127.0.0.1`, and you add Postgres, Redis 
 
 ## Install
 
+With npm (Node 20+; the package pulls the prebuilt binary for your platform):
+
+```sh
+npm i -g locastack@next      # release candidate; `npm i -g locastack` once 0.1.0 ships
+```
+
+Or the standalone installer:
+
 ```sh
 curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | VERSION=0.1.0-rc.0 sh
 ```
 
-Until the first stable release, pass `VERSION=` as above (the plain command installs the latest stable release). From 0.1.0 on, Homebrew works too:
-
-```sh
-brew install dylanngph/locastack/locastack
-```
-
-`npm i -g locastack` is coming soon. Binaries for every release, with `SHA256SUMS` and build attestations, are on the [Releases](https://github.com/dylanngph/locastack/releases) page. The installer verifies the checksum and puts `locastack` in `~/.locastack/bin`.
+Until the first stable release, pass `VERSION=` as above (the plain command installs the latest stable release). A Homebrew tap (`brew install dylanngph/locastack/locastack`) follows the first stable release. Binaries for every release, with `SHA256SUMS` and build attestations, are on the [Releases](https://github.com/dylanngph/locastack/releases) page. The installer verifies the checksum and puts `locastack` in `~/.locastack/bin`.
 
 **Requirements:** Docker Desktop, or Docker Engine 24+ with the Compose plugin 2.24+. macOS (Apple Silicon and Intel) and Linux (x64 and arm64, glibc or musl).
 

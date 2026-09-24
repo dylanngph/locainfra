@@ -225,7 +225,7 @@ jobs:
   npm:
     name: Publish to npm (gated on NPM_PUBLISH)
     needs: [build, release]
-    if: needs.build.outputs.prerelease == 'false' && vars.NPM_PUBLISH == 'true'
+    if: vars.NPM_PUBLISH == 'true'
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -248,8 +248,15 @@ jobs:
       - name: Publish platform packages, then the launcher
         env:
           VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+          # Token auth when NPM_TOKEN is set (granular token, publish scope); otherwise
+          # npm 11.5+ uses GitHub OIDC trusted publishing automatically.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -eu
+          tag=latest
+          [ "$PRERELEASE" = "true" ] && tag=next
+          echo "publishing $VERSION under dist-tag $tag"
           for TARGET in $TARGETS; do
             os=${TARGET%%-*}; rest=${TARGET#*-}; cpu=${rest%%-*}
             case "$TARGET" in *-musl) libc=musl ;; linux-*) libc=glibc ;; *) libc= ;; esac
@@ -265,7 +272,7 @@ jobs:
             if npm view "@locastack/cli-$TARGET@$VERSION" version >/dev/null 2>&1; then
               echo "@locastack/cli-$TARGET@$VERSION already published, skipping"
             else
-              (cd "$dir" && npm publish --provenance --access public)
+              (cd "$dir" && npm publish --provenance --access public --tag "$tag")
             fi
           done
           for TARGET in $TARGETS; do
@@ -276,4 +283,4 @@ jobs:
           cp -R npm/locastack/bin npm/locastack/README.md LICENSE npm-out/locastack/
           jq --arg v "$VERSION" '.version = $v | .optionalDependencies |= map_values($v)' \
             npm/locastack/package.json > npm-out/locastack/package.json
-          (cd npm-out/locastack && npm publish --provenance --access public)
+          (cd npm-out/locastack && npm publish --provenance --access public --tag "$tag")
