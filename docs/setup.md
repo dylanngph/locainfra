@@ -81,6 +81,47 @@ compose check fails. The link step's note says it replaces any existing
 installed without a CLI on PATH, a note warns that Homebrew's `docker` may
 clash with its links (`brew link --overwrite docker`, run by hand).
 
+### macOS: Apple Silicon with Intel Homebrew
+
+A Homebrew at `/usr/local` on an arm64 Mac is the Intel build, installed
+under Rosetta. Colima and Lima installed from it are x86_64, and `colima
+start` fails with "limactl is running under rosetta, please reinstall lima
+with native arch". The platform inspector reports this as `brewNative:
+false`: the prefix is `/usr/local`, or `file` says `bin/brew` is an
+x86_64-only binary. It also reports `nativeBrewPrefix: /opt/homebrew` when
+a native Homebrew sits next to the Intel one, and `intelBrewFormulae`, the
+colima/lima/docker/docker-compose kegs under `/usr/local/Cellar`.
+
+The Colima plan then never uses the Intel `brew`. Its reason says "Homebrew
+at /usr/local is the Intel build running under Rosetta; Colima needs the
+native one at /opt/homebrew." The steps are:
+
+1. `/usr/local/bin/brew uninstall <colima lima docker docker-compose>`, listing only the formulae that are installed (skipped when none is)
+2. The Homebrew download step, then `arch -arm64 /bin/bash <tmp>/brew-install.sh`
+   (attached, so it installs to `/opt/homebrew`). Both are skipped when `/opt/homebrew/bin/brew` already exists.
+3. `/opt/homebrew/bin/brew install colima docker docker-compose`
+4. The plugin link from `/opt/homebrew/opt/docker-compose/bin/docker-compose`
+5. `PATH=/opt/homebrew/bin:/opt/homebrew/sbin:… /opt/homebrew/bin/colima start` (or `brew services start colima` with `--start-at-login`)
+
+The plan carries `pathAdditions: [/opt/homebrew/bin, /opt/homebrew/sbin]`
+and a note to add `eval "$(/opt/homebrew/bin/brew shellenv)"` to the shell
+profile, so that `/opt/homebrew/bin` comes before `/usr/local/bin`. A Colima
+installed natively next to the Intel Homebrew (no Intel colima or lima keg)
+is started as usual. Docker Desktop and OrbStack plans are unchanged.
+
+The Colima start step sets `tee`, so its output is captured even when it
+runs attached (it is still echoed live, but the child writes to pipes
+instead of a TTY). When the start fails and the output contains "running
+under rosetta" (case-insensitive), the fix says that Colima came from the
+Intel Homebrew, and that running `locastack setup` again installs the native
+Homebrew (or use `--runtime docker-desktop`).
+
+When the npm launcher runs under an Intel Node on an Apple Silicon Mac
+(`process.arch` is `x64` and `sysctl.proc_translated` is `1`), it runs
+`@locastack/cli-darwin-arm64` if that package resolves. Otherwise it runs
+the x64 binary and prints one line on stderr telling the user to install an
+Apple Silicon Node.
+
 ### macOS: Docker Desktop (alternative)
 
 1. `brew install --cask docker` (attached, so a password prompt is visible)
