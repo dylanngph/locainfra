@@ -22,7 +22,7 @@ curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh
 
 Until the first stable release, pass `VERSION=` as above (the plain command installs the latest stable release). A Homebrew tap (`brew install dylanngph/locastack/locastack`) follows the first stable release. Binaries for every release, with `SHA256SUMS` and build attestations, are on the [Releases](https://github.com/dylanngph/locastack/releases) page. The installer verifies the checksum and puts `locastack` in `~/.locastack/bin`.
 
-**Requirements:** Docker Desktop, or Docker Engine 24+ with the Compose plugin 2.24+. macOS (Apple Silicon and Intel) and Linux (x64 and arm64, glibc or musl).
+**Requirements:** a Docker daemon plus the `docker` CLI with the Compose plugin 2.24+. On macOS that is Docker Desktop, or an alternative such as OrbStack or Colima (with the compose plugin installed); on Linux, Docker Engine 24+ with your user in the `docker` group. LocaStack finds the daemon through `DOCKER_HOST`, then the active `docker context`, then the default socket. Without a running daemon, `locastack` stops with the doctor checks and how to fix them. macOS (Apple Silicon and Intel) and Linux (x64 and arm64, glibc or musl).
 
 **macOS note:** the binaries are not code-signed yet. Installs through `curl` or `brew` run without prompts. If you download a tarball in a browser, macOS quarantines it: right-click the binary and choose Open once, or run `xattr -d com.apple.quarantine locastack`.
 

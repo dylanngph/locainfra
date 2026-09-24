@@ -32,6 +32,19 @@ jobs:
         run: bun test npm
       - name: Dashboard build
         run: bun run build:dashboard
+      - name: Smoke the embedded dashboard and API (needs Docker, present on this runner)
+        env:
+          LOCASTACK_HOME: ${{ runner.temp }}/locastack-home
+        run: |
+          set -eu
+          bun run build
+          ./dist/locastack --no-open --port 4599 > server.log 2>&1 &
+          pid=$!
+          for _ in $(seq 1 50); do curl -fsS http://127.0.0.1:4599/api/health >/dev/null 2>&1 && break; sleep 0.2; done
+          curl -fsS http://127.0.0.1:4599/api/health
+          curl -fsS -o /dev/null -w "index %{http_code}\n" http://127.0.0.1:4599/
+          kill -INT "$pid"; wait "$pid" || true
+          cat server.log
 
   build:
     name: Binary build and budgets
@@ -69,15 +82,3 @@ jobs:
           print(f"startup median {median:.0f} ms (samples: {[round(s) for s in samples]}); local target 60 ms, CI limit 150 ms")
           sys.exit(1 if median > 150 else 0)
           PY
-      - name: Smoke the embedded dashboard and API
-        env:
-          LOCASTACK_HOME: ${{ runner.temp }}/locastack-home
-        run: |
-          set -eu
-          ./dist/locastack --no-open --port 4599 > server.log 2>&1 &
-          pid=$!
-          for _ in $(seq 1 50); do curl -fsS http://127.0.0.1:4599/api/health >/dev/null 2>&1 && break; sleep 0.2; done
-          curl -fsS http://127.0.0.1:4599/api/health
-          curl -fsS -o /dev/null -w "index %{http_code}\n" http://127.0.0.1:4599/
-          kill -INT "$pid"; wait "$pid" || true
-          cat server.log
