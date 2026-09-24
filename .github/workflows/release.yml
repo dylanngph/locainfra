@@ -289,8 +289,13 @@ jobs:
               fi
             fi
           done
-          # New packages take a little while to appear on the registry's read path.
-          visible() { npm view "$1@$VERSION" version >/dev/null 2>&1; }
+          # `npm view` reads through npm's CDN cache, which can lag for many minutes after a publish.
+          # The uncached document (?write=true) reflects the primary registry: a version missing there
+          # for 10 minutes is a stuck/staged publish, not lag.
+          visible() {
+            encoded=$(printf '%s' "$1" | sed 's#/#%2F#')
+            curl -fsS "https://registry.npmjs.org/${encoded}?write=true" 2>/dev/null | jq -e --arg v "$VERSION" '.versions[$v] != null' >/dev/null 2>&1
+          }
           for TARGET in $TARGETS; do
             pkg="@locastack/cli-$TARGET"
             # Up to 10 minutes; the publish already succeeded, so a slow read replica is a warning, not a failure.
