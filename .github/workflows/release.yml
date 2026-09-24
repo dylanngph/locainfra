@@ -171,7 +171,13 @@ jobs:
           set -eu
           flags=""
           [ "$PRERELEASE" = "true" ] && flags="--prerelease"
-          gh release create "$TAG" out/* --title "LocaStack $VERSION" --notes-file notes.md --verify-tag $flags
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG exists: refreshing notes and assets"
+            gh release edit "$TAG" --title "LocaStack $VERSION" --notes-file notes.md $flags
+            gh release upload "$TAG" out/* --clobber
+          else
+            gh release create "$TAG" out/* --title "LocaStack $VERSION" --notes-file notes.md --verify-tag $flags
+          fi
 
   homebrew:
     name: Update the Homebrew tap
