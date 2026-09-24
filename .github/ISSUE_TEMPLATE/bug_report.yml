@@ -1,0 +1,30 @@
+name: Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: LocaStack version
+      description: Output of `locastack --version`
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS and architecture
+      placeholder: macOS 15.6 arm64 / Ubuntu 24.04 x64
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `locastack doctor --json`
+      render: json
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, what you expected, what happened. Remove secrets from any pasted output.
+    validations:
+      required: true

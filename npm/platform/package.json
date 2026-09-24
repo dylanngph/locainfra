@@ -1,0 +1,25 @@
+{
+	"name": "@locastack/cli-TARGET",
+	"version": "0.0.0",
+	"description": "The prebuilt LocaStack binary for TARGET. Install `locastack` instead; it selects this package automatically.",
+	"license": "MIT",
+	"homepage": "https://github.com/dylanngph/locastack#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dylanngph/locastack.git",
+		"directory": "npm/platform"
+	},
+	"os": [
+		"OS"
+	],
+	"cpu": [
+		"CPU"
+	],
+	"libc": [
+		"LIBC"
+	],
+	"files": [
+		"bin/locastack"
+	],
+	"preferUnplugged": true
+}

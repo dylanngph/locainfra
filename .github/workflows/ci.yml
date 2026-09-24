@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, typecheck, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run typecheck
+      - name: Schemas are up to date
+        run: bun packages/core/scripts/emit-schemas.ts --check
+      - name: Package tests (live Docker tests run on this runner)
+        run: bun run test
+      - name: Installer and npm launcher tests
+        run: bun test npm
+      - name: Dashboard build
+        run: bun run build:dashboard
+
+  build:
+    name: Binary build and budgets
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: Binary size budget (fails on more than 10% growth over the baseline)
+        env:
+          SIZE_OK: ${{ contains(github.event.pull_request.labels.*.name, 'size-ok') }}
+        run: |
+          set -eu
+          size=$(stat -f%z dist/locastack)
+          baseline=$(bun -p "require('./.github/binary-size-baseline.json')['bun-darwin-arm64']")
+          limit=$((baseline * 110 / 100))
+          echo "binary: ${size} bytes, baseline: ${baseline}, limit: ${limit}"
+          if [ "$size" -gt "$limit" ] && [ "$SIZE_OK" != "true" ]; then
+            echo "::error::dist/locastack grew more than 10% over the baseline. Update .github/binary-size-baseline.json deliberately or add the size-ok label."
+            exit 1
+          fi
+      - name: Startup budget (median of 5 runs of --version)
+        run: |
+          python3 - <<'PY'
+          import statistics, subprocess, sys, time
+          samples = []
+          for _ in range(5):
+              t = time.perf_counter()
+              subprocess.run(["./dist/locastack", "--version"], check=True, capture_output=True)
+              samples.append((time.perf_counter() - t) * 1000)
+          median = statistics.median(samples)
+          print(f"startup median {median:.0f} ms (samples: {[round(s) for s in samples]}); local target 60 ms, CI limit 150 ms")
+          sys.exit(1 if median > 150 else 0)
+          PY
+      - name: Smoke the embedded dashboard and API
+        env:
+          LOCASTACK_HOME: ${{ runner.temp }}/locastack-home
+        run: |
+          set -eu
+          ./dist/locastack --no-open --port 4599 > server.log 2>&1 &
+          pid=$!
+          for _ in $(seq 1 50); do curl -fsS http://127.0.0.1:4599/api/health >/dev/null 2>&1 && break; sleep 0.2; done
+          curl -fsS http://127.0.0.1:4599/api/health
+          curl -fsS -o /dev/null -w "index %{http_code}\n" http://127.0.0.1:4599/
+          kill -INT "$pid"; wait "$pid" || true
+          cat server.log

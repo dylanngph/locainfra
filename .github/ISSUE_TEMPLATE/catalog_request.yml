@@ -1,0 +1,21 @@
+name: Catalog request
+description: Ask for a new service in the built-in catalog.
+labels: [catalog]
+body:
+  - type: input
+    id: image
+    attributes:
+      label: Docker image
+      placeholder: mongo:8.0
+    validations:
+      required: true
+  - type: input
+    id: port
+    attributes:
+      label: Default port
+      placeholder: "27017"
+  - type: textarea
+    id: config
+    attributes:
+      label: Environment variables, health check and data path
+      description: How the image is configured, how to tell it is healthy, and where it stores data.

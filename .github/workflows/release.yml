@@ -1,0 +1,249 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and publish (for example v0.1.0)
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  TARGETS: darwin-arm64 darwin-x64 linux-x64 linux-arm64 linux-x64-musl linux-arm64-musl
+
+jobs:
+  build:
+    name: Build all targets
+    runs-on: macos-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - name: Tag must match packages/cli/package.json
+        id: meta
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -eu
+          version="${TAG#v}"
+          pkg=$(bun -p "require('./packages/cli/package.json').version")
+          if [ "$version" != "$pkg" ]; then
+            echo "::error::tag $TAG does not match packages/cli/package.json version $pkg"
+            exit 1
+          fi
+          case "$version" in *-*) pre=true ;; *) pre=false ;; esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$pre" >> "$GITHUB_OUTPUT"
+      - run: bun run build:dashboard
+      - name: Compile every target
+        run: |
+          set -eu
+          for t in $TARGETS; do
+            bun run build:bin --target="bun-$t" --outfile="dist/bun-$t/locastack"
+          done
+      - name: Host binary reports the tagged version
+        run: |
+          set -eu
+          out=$(./dist/bun-darwin-arm64/locastack --version)
+          [ "$out" = "${{ steps.meta.outputs.version }}" ] || { echo "::error::binary reports $out"; exit 1; }
+      - name: Sign and notarise macOS binaries (only when Apple secrets exist)
+        env:
+          APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        if: env.APPLE_CERTIFICATE_P12 != ''
+        run: |
+          set -eu
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          security create-keychain -p "" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "" "$keychain"
+          echo "$APPLE_CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$keychain"
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          cat > "$RUNNER_TEMP/entitlements.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>com.apple.security.cs.allow-jit</key><true/>
+            <key>com.apple.security.cs.allow-unsigned-executable-memory</key><true/>
+            <key>com.apple.security.cs.disable-executable-page-protection</key><true/>
+            <key>com.apple.security.cs.allow-dyld-environment-variables</key><true/>
+            <key>com.apple.security.cs.disable-library-validation</key><true/>
+          </dict></plist>
+          PLIST
+          echo "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+          for t in darwin-arm64 darwin-x64; do
+            bin="dist/bun-$t/locastack"
+            codesign --force --options runtime --timestamp --entitlements "$RUNNER_TEMP/entitlements.plist" --sign "$APPLE_SIGNING_IDENTITY" "$bin"
+            ditto -c -k --keepParent "$bin" "$RUNNER_TEMP/$t.zip"
+            xcrun notarytool submit "$RUNNER_TEMP/$t.zip" --key "$RUNNER_TEMP/AuthKey.p8" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER_ID" --wait
+            codesign --verify --verbose "$bin"
+          done
+      - name: Package tarballs and checksums
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -eu
+          mkdir -p out
+          for t in $TARGETS; do
+            stage="$RUNNER_TEMP/stage-$t"
+            mkdir -p "$stage"
+            install -m 755 "dist/bun-$t/locastack" "$stage/locastack"
+            cp LICENSE README.md "$stage/"
+            tar -C "$stage" -czf "out/locastack-$VERSION-$t.tar.gz" locastack LICENSE README.md
+          done
+          (cd out && shasum -a 256 *.tar.gz > SHA256SUMS && cat SHA256SUMS)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-assets
+          path: out/
+          if-no-files-found: error
+
+  release:
+    name: GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets
+          path: out
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: out/*.tar.gz
+      - name: Release notes from the CLI changelog
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          awk -v v="$VERSION" '
+            $0 ~ "^## " { printing = ($2 == v) ; next }
+            printing { print }
+          ' packages/cli/CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "LocaStack $VERSION" > notes.md
+          printf '\n---\nInstall: `curl -fsSL https://raw.githubusercontent.com/dylanngph/locastack/main/install.sh | sh` (set `VERSION=%s` for this exact release). Verify a tarball with `gh attestation verify <file> --repo dylanngph/locastack`.\n' "$VERSION" >> notes.md
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+          VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        run: |
+          set -eu
+          flags=""
+          [ "$PRERELEASE" = "true" ] && flags="--prerelease"
+          gh release create "$TAG" out/* --title "LocaStack $VERSION" --notes-file notes.md --verify-tag $flags
+
+  homebrew:
+    name: Update the Homebrew tap
+    needs: [build, release]
+    if: needs.build.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets
+          path: out
+      - name: Render the formula
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -eu
+          sha() { awk -v f="locastack-$VERSION-$1.tar.gz" '$2 == f { print $1 }' out/SHA256SUMS; }
+          sed -e "s/@VERSION@/$VERSION/g" \
+              -e "s/@SHA_DARWIN_ARM64@/$(sha darwin-arm64)/" \
+              -e "s/@SHA_DARWIN_X64@/$(sha darwin-x64)/" \
+              -e "s/@SHA_LINUX_ARM64@/$(sha linux-arm64)/" \
+              -e "s/@SHA_LINUX_X64@/$(sha linux-x64)/" \
+              homebrew/locastack.rb.tmpl > locastack.rb
+          grep -q '@' locastack.rb && { echo "::error::unfilled placeholder in formula"; exit 1; } || true
+          ruby -c locastack.rb
+      - name: Push to dylanngph/homebrew-locastack
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -eu
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "::notice::HOMEBREW_TAP_TOKEN is not set; skipping the tap update. See docs/release.md."
+            exit 0
+          fi
+          git clone --depth 1 "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/dylanngph/homebrew-locastack.git" tap
+          mkdir -p tap/Formula
+          cp locastack.rb tap/Formula/locastack.rb
+          cd tap
+          git config user.name "locastack-release[bot]"
+          git config user.email "locastack-release@users.noreply.github.com"
+          git add Formula/locastack.rb
+          git commit -m "locastack $VERSION" || { echo "formula unchanged"; exit 0; }
+          git push
+
+  npm:
+    name: Publish to npm (gated on NPM_PUBLISH)
+    needs: [build, release]
+    if: needs.build.outputs.prerelease == 'false' && vars.NPM_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets
+          path: out
+      - name: Publish platform packages, then the launcher
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -eu
+          for TARGET in $TARGETS; do
+            os=${TARGET%%-*}; rest=${TARGET#*-}; cpu=${rest%%-*}
+            case "$TARGET" in *-musl) libc=musl ;; linux-*) libc=glibc ;; *) libc= ;; esac
+            dir="npm-out/cli-$TARGET"
+            mkdir -p "$dir/bin"
+            tar -xzf "out/locastack-$VERSION-$TARGET.tar.gz" -C "$dir/bin" locastack
+            chmod 755 "$dir/bin/locastack"
+            cp npm/platform/README.md LICENSE "$dir/"
+            jq --arg t "$TARGET" --arg v "$VERSION" --arg os "$os" --arg cpu "$cpu" --arg libc "$libc" \
+              '.name = "@locastack/cli-\($t)" | .version = $v | .description |= gsub("TARGET"; $t)
+               | .os = [$os] | .cpu = [$cpu] | if $libc == "" then del(.libc) else .libc = [$libc] end' \
+              npm/platform/package.json > "$dir/package.json"
+            (cd "$dir" && npm publish --provenance --access public)
+          done
+          mkdir -p npm-out/locastack
+          cp -R npm/locastack/bin npm/locastack/README.md LICENSE npm-out/locastack/
+          jq --arg v "$VERSION" '.version = $v | .optionalDependencies |= map_values($v)' \
+            npm/locastack/package.json > npm-out/locastack/package.json
+          (cd npm-out/locastack && npm publish --provenance --access public)
